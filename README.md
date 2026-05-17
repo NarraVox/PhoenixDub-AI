@@ -18,13 +18,12 @@ https://narravox.github.io/bio/
 
 
 
-> [!Requisitos]
-> - **Requisitos do Sistema (Atualizado)
-Processador: Compatível com Intel (6ª geração ou superior) ou equivalente AMD
-Placa de Vídeo (OBRIGATÓRIA):
-GPU dedicada com suporte a CUDA
-Recomendado: NVIDIA RTX 3050 (6GB) ou superior
-Memória RAM: Mínimo de 16 GB
+> [!IMPORTANTE]
+> ### 🖥️ Requisitos do Sistema (Atualizado)
+> * **Processador**: Compatível com Intel (6ª geração ou superior) ou equivalente AMD
+> * **Placa de Vídeo (OBRIGATÓRIA)**: GPU dedicada com suporte a CUDA
+>   * *Recomendado*: NVIDIA RTX 3050 (6GB) ou superior
+> * **Memória RAM**: Mínimo de 16 GB
 
 ### 🌟 O que há de novo na Versão 0.10 (TURBO-PATCH-UNLEASHED)
 *   **Modo Turbo Ativado**: Desativamos o raciocínio interno da IA para aumentar a velocidade em até 10x em CPUs i5/i7.
@@ -34,6 +33,14 @@ Memória RAM: Mínimo de 16 GB
 *   **Web Interface Auto-Detect**: Opções de idioma e vozes agora começam em "Auto-Detectar" por padrão.
 
 ### 🚀 Tutorial de Instalação (Passo a Passo)
+
+> [!TIP]
+> ### 📦 Versão Portátil Independente (.EXE) - Recomendado!
+> Se você prefere **não instalar Python, Anaconda ou Git manualmente**, pode baixar o instalador único executável compilado automaticamente pelo nosso GitHub Release:
+> 1. Acesse as **Releases** do projeto no GitHub.
+> 2. Baixe o arquivo `setup.exe` mais recente.
+> 3. Execute o instalador para configurar toda a suíte de forma automática no Windows.
+> 4. Abra o estúdio instantaneamente clicando no atalho do **NarraVox Sentinel** criado na sua Área de Trabalho!
 
 #### Passo 1: Ferramentas de Base (Obrigatório)
 1.  **Git para Windows**: [Baixe Aqui](https://git-scm.com/download/win). (Essencial para baixar a IA).
@@ -52,16 +59,16 @@ Memória RAM: Mínimo de 16 GB
 2.  Cole seu Token de acesso (gerado no site huggingface.co).
 
 #### Passo 4: Rodando o Instalador/Reparador
-Na pasta do projeto, execute:
-```bash
-python setup.py
-```
-*   **Opção [ 1 ] (REPARO RÁPIDO)**: Use se algo der erro ou se estiver atualizando. (Recomendado).
-*   **Opção [ 2 ] (MODO TURBO/RTX)**: Use se você tiver uma placa NVIDIA RTX.
-*   **Opção [ 3 ] (MODO PADRÃO/CPU)**: Use se você for rodar apenas no processador.
+Na pasta do projeto, você pode rodar o setup inteligente diretamente:
+*   **Via Windows (Duplo Clique - Altamente Recomendado)**: Rode o arquivo `TESTAR_SETUP.bat` para iniciar o instalador e verificar os requisitos.
+*   **Via Terminal (Anaconda Prompt)**:
+    ```bash
+    python build_tools/nexus_setup.py
+    ```
+*   **Em caso de erros graves de arquivos travados**: Execute o arquivo `REPARAR_TOTAL.bat`. Ele vai fechar todos os processos fantasmas do Python, limpar a pasta do ambiente virtual `env` e reinstalar do zero de forma limpa!
 
 #### Passo 5: Como Rodar e Usar (A Hora da Verdade) 🎮
-Agora que tudo está instalado, veja como abrir o painel de controle pelo **Anaconda Prompt**:
+Agora que tudo está instalado, veja como abrir a suíte completa de aplicativos pelo **Anaconda Prompt**:
 
 1. **Ative o ambiente virtual** (VITAL):
    ```bash
@@ -71,11 +78,12 @@ Agora que tudo está instalado, veja como abrir o painel de controle pelo **Anac
    ```bash
    cd C:\IA_dublagem
    ```
-3. Digite o comando para o que você deseja fazer:
-   - Para dublar **Jogos**: `python app_jogos.py`
-   - Para dublar **Vídeos**: `python app_videos.py`
-4. O terminal mostrará que o servidor Flask está ativo.
-5. **Abra o seu navegador** (Chrome ou Edge) e digite: `http://localhost:5000`
+3. Digite o comando único para abrir a Central NarraVox:
+   ```bash
+   python nexus_app.py
+   ```
+4. **Pronto!** O aplicativo mestre **NarraVox Studios Sentinel** abrirá em uma janela desktop dedicada e bonita, iniciando automaticamente todos os motores em segundo plano (Dublagem de Jogos, Vídeos, Editor de Áudio e Vortex DJ).
+5. Se preferir abrir manualmente no navegador (Chrome ou Edge), acesse: `http://localhost:5000`
 
 ---
 
@@ -91,17 +99,15 @@ Diferente do FFmpeg comum, você precisa da versão **completa** para gerar arqu
 
 ---
 
-### 🕹️ Como Usar (App Jogos vs App Vídeos)
+### 🕹️ Os Motores do Ecossistema NarraVox
 
-> [!WARNING]
-> **⚠️ ESTADO DO DESENVOLVIMENTO**: 
-> O motor **`app_jogos.py`** é o foco principal das atualizações atuais e está em sua versão mais estável e inteligente. 
-> O motor **`app_videos.py`** está **desatualizado** e pode apresentar falhas ou comportamentos inesperados. Uma reconstrução completa para o motor de vídeos está nos planos para as próximas versões!
+O NarraVox Sentinel centraliza 5 motores de ponta em uma única interface inteligente:
 
-O PhoenixDub possui dois motores independentes:
-
-*   **Dublagem de Jogos (`app_jogos.py`)**: Para arquivos de áudio extraídos de games (WAV/MP3). Possui sistema agêntico que respeita a duração original e usa o estilo do personagem.
-*   **Dublagem de Vídeos (`app_videos.py`)**: Para trailers e cutscenes. Possui o **Magic Cut** (corte automático de silêncios) e redublagem sincronizada.
+*   **Central de Controle (`nexus_app.py`)**: O aplicativo desktop principal que inicializa todos os sub-motores em portas isoladas e exibe a interface unificada na porta 5000.
+*   **Dublagem de Jogos (`nexus_dub_games.py`)**: Especialista em traduzir e dublar centenas de arquivos de áudio de games em lote na porta 5002. Possui sistema de threads paralelas CUDA e respeito rigoroso ao tempo original.
+*   **Dublagem de Vídeos (`nexus_dub_video.py`)**: Dublador completo de vídeos e trailers longos na porta 5004, com orquestração inteligente de Pyannote 3.1 para vozes nativas e Whisper para transcrição ultrarrápida.
+*   **Editor Portátil (`narravox_editor.py`)**: Editor visual de ondas de áudio na porta 5003 para refinar ou cortar trechos gerados com facilidade.
+*   **Vortex DJ (`vortex_dj.py`)**: O motor avançado de inteligência artificial voltado a músicas e sets na porta 5005, com análise técnica (BPM, tom e espectro) e mixagem profissional via comandos complexos de FFmpeg.
 
 ---
 
@@ -125,9 +131,11 @@ Para conhecer todas as pessoas e tecnologias envolvidas no PhoenixDub, veja o ar
 **PhoenixDub AI** is a complete **AI Video Editing and automated dubbing** solution for professional-grade media projects. Designed for high precision and natural flow, it uses state-of-the-art AI to edit and synchronize videos and games into Portuguese (PT-BR).
 
 > [!IMPORTANT]
-> - **Processor**: Optimized for **Intel** (6th Gen or newer). Full compatibility to run on the processor alone.
-> - **Video Card**: **NVIDIA RTX 2060** (6GB) recommended for "Turbo Mode". A video card provides much higher speeds, but the system is 100% functional on the processor alone.
-> - **Memory**: Minimum 16 GB RAM.
+> ### 🖥️ System Requirements (Updated)
+> * **Processor**: Compatible with Intel (6th Gen or newer) or AMD equivalent
+> * **Graphics Card (MANDATORY)**: Dedicated GPU with CUDA support
+>   * *Recommended*: NVIDIA RTX 3050 (6GB) or higher
+> * **System Memory (RAM)**: Minimum of 16 GB
 
 ### 🌟 What's New in v0.10 (TURBO-PATCH-UNLEASHED)
 *   **Turbo Mode Activated**: Disabled internal AI reasoning for up to 10x speed boost on i5/i7 CPUs.
@@ -137,6 +145,14 @@ Para conhecer todas as pessoas e tecnologias envolvidas no PhoenixDub, veja o ar
 *   **Web Interface Auto-Detect**: Language and speaker options now default to "Auto-Detect".
 
 ### 🚀 Installation Tutorial (Step-by-Step)
+
+> [!TIP]
+> ### 📦 Standalone Portable Version (.EXE) - Recommended!
+> If you prefer **not to install Python, Anaconda, or Git manually**, you can download the consolidated single-executable installer generated automatically via our GitHub Releases:
+> 1. Go to the project's **Releases** page on GitHub.
+> 2. Download the latest `setup.exe` file.
+> 3. Run the installer to automatically configure the entire suite on Windows.
+> 4. Launch the studio instantly using the **NarraVox Sentinel** shortcut created on your Desktop!
 
 #### Step 1: Base Tools (Mandatory)
 1.  **Git for Windows**: [Download Here](https://git-scm.com/download/win). (Essential for downloading the AI models).
@@ -154,17 +170,17 @@ Para conhecer todas as pessoas e tecnologias envolvidas no PhoenixDub, veja o ar
 1.  In your terminal (Anaconda Prompt), type: `huggingface-cli login`.
 2.  Paste your access Token (generated at huggingface.co).
 
-#### Step 4: Running the Installer/Repairer
-In the project folder, execute:
-```bash
-python setup.py
-```
-*   **Option [ 1 ] (QUICK REPAIR)**: Use this if you encounter errors or are updating. (Recommended).
-*   **Option [ 2 ] (TURBO/RTX MODE)**: Use if you have an NVIDIA RTX card.
-*   **Option [ 3 ] (STANDARD/CPU MODE)**: Use if you are running on the processor only.
+#### Step 4: Running the Installer/Repair Tool
+In the project folder, you can run the intelligent setup utility directly:
+*   **Via Windows (Double Click - Highly Recommended)**: Run the `TESTAR_SETUP.bat` file to launch the setup interface and verify all dependencies.
+*   **Via Terminal (Anaconda Prompt)**:
+    ```bash
+    python build_tools/nexus_setup.py
+    ```
+*   **In case of locked files or critical errors**: Run `REPARAR_TOTAL.bat`. It will forcefully terminate any frozen Python instances, clean up the virtual environment directory (`env`), and reinstall a clean copy from scratch!
 
 #### Step 5: How to Run and Use 🎮
-Now that everything is installed, here's how to launch the control panel via **Anaconda Prompt**:
+Now that everything is installed, here's how to launch the complete application suite via **Anaconda Prompt**:
 
 1. **Activate the virtual environment** (VITAL):
    ```bash
@@ -174,13 +190,12 @@ Now that everything is installed, here's how to launch the control panel via **A
    ```bash
    cd C:\IA_dublagem
    ```
-3. Type the command for your desired task:
-   - For **Game** dubbing: `python app_jogos.py`
-   - For **Video** dubbing: `python app_videos.py`
-4. The terminal will show that the Flask server is active.
-5. **Open your browser** (Chrome or Edge) and type: `http://localhost:5000`
-6. **Done!** The intelligent panel will appear, and you can start dubbing.
-
+3. Type the single master command to launch the NarraVox Hub:
+   ```bash
+   python nexus_app.py
+   ```
+4. **Done!** The master **NarraVox Studios Sentinel** app will open directly in a dedicated, beautiful desktop window, automatically initializing all background engines (Games, Videos, Audio Editor, and Vortex DJ).
+5. If you prefer to access it manually via web browser (Chrome or Edge), navigate to: `http://localhost:5000`
 
 ---
 
@@ -196,17 +211,15 @@ Unlike basic FFmpeg, you need the **Full** build to support MP3 encoding and hig
 
 ---
 
-### 🕹️ How to Use (Game App vs Video App)
+### 🕹️ The NarraVox Ecosystem Engines
 
-> [!WARNING]
-> **⚠️ DEVELOPMENT STATUS**: 
-> The **`app_jogos.py`** engine is the primary focus of current updates and is in its most stable and intelligent state. 
-> The **`app_videos.py`** engine is currently **outdated** and may experience bugs or unexpected behavior. A complete overhaul for the video engine is planned for future releases!
+The NarraVox Sentinel centralizes 5 cutting-edge AI engines within a single unified control panel:
 
-PhoenixDub features two independent engines:
-
-*   **Game Dubbing (`app_jogos.py`)**: For audio assets extracted from games. Agentic system that respects timing and character style.
-*   **Video Dubbing (`app_videos.py`)**: For trailers and cutscenes. Features **Magic Cut** and synchronized re-dubbing.
+*   **Master Sentinel Hub (`nexus_app.py`)**: The core desktop app that initializes all sub-services on isolated ports and coordinates the unified user interface on port 5000.
+*   **Game Dubbing (`nexus_dub_games.py`)**: Highly optimized batch processor on port 5002 for gaming audio assets. Utilizes concurrent multithreaded CUDA queues and strict time preservation logic.
+*   **Video Dubbing (`nexus_dub_video.py`)**: End-to-end translation and voice cloning for movies and trailers on port 5004. Orchestrates Pyannote 3.1 speaker tracking and GPU-accelerated Whisper transcription.
+*   **Audio Editor (`narravox_editor.py`)**: A portable visual audio workspace on port 5003 for real-time waveform edits and fine-tuning.
+*   **Vortex DJ (`vortex_dj.py`)**: Advanced AI-driven music curation and analysis assistant on port 5005, supporting technical audits (BPM, key, energy profiling) and professional mix renders.
 
 ---
 
