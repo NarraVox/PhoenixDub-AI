@@ -20,7 +20,7 @@ https://narravox.github.io/bio/
 
 > [!IMPORTANTE]
 > - **Processador**: Otimizado para **Intel** (6ª geração ou superior). Compatibilidade total para rodar apenas no processador.
-> - **Placa de Vídeo**: Recomendado **NVIDIA RTX 2060** (6GB) para o "Modo Turbo". A placa de vídeo entrega muito mais velocidade, mas o sistema funciona 100% apenas com o processador.
+> - **Placa de Vídeo**: Recomendado **NVIDIA RTX 3050** (6GB) para o "Modo Turbo". A placa de vídeo entrega muito mais velocidade, mas o sistema funciona 100% apenas com o processador.
 > - **Memória**: Mínimo 16 GB de RAM.
 
 ### 🌟 O que há de novo na Versão 0.10 (TURBO-PATCH-UNLEASHED)
