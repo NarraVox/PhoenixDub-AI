@@ -19,16 +19,12 @@ https://narravox.github.io/bio/
 
 
 > [!IMPORTANTE]
-> - **Processador**: Otimizado para **Intel** (6ª geração ou superior). Compatibilidade total para rodar apenas no processador.
-> - **Placa de Vídeo**: Recomendado **NVIDIA RTX 2060** (6GB) para o "Modo Turbo". A placa de vídeo entrega muito mais velocidade, mas o sistema funciona 100% apenas com o processador.
+> - **Processador**: Otimizado para **Intel** (6ª geração ou superior) ou AMD equivalente.
+> - **Placa de Vídeo (Obrigatória)**: Exclusivo para **NVIDIA RTX 3050** (6GB) ou superior (CUDA). Atenção: Plataforma testada e usada apenas na RTX 3050 do fundador. O sistema NÃO roda apenas no processador, e não garanto que funcionará em AMD ou Apple.
 > - **Memória**: Mínimo 16 GB de RAM.
 
-### 🌟 O que há de novo na Versão 0.10 (TURBO-PATCH-UNLEASHED)
-*   **Modo Turbo Ativado**: Desativamos o raciocínio interno da IA para aumentar a velocidade em até 10x em CPUs i5/i7.
-*   **Universal Hardware Support**: Detecção inteligente e automática de NVIDIA (CUDA), AMD (ROCm), Apple (MPS) e CPU.
-*   **AI Video Editing**: O motor `App_videos` agora conta com o **Magic Cut**, que remove silências e falhas de gravação automaticamente via IA.
-*   **Thinking Scrubber**: Filtro que elimina "vazamentos" de pensamentos da IA nas traduções.
-*   **Web Interface Auto-Detect**: Opções de idioma e vozes agora começam em "Auto-Detectar" por padrão.
+### 🌟 O Futuro do NarraVox (Em Desenvolvimento: A Evolução 1.0)
+A versão 1.0 **ainda não foi lançada e está em pleno desenvolvimento**. Ela será 100% focada na **experiência definitiva de Dublagem**, trazendo um poderoso **Editor de Vídeo Integrado** (para cortar, juntar e refinar cenas nativamente), tudo dentro de uma **Nova Interface Desktop Premium** com isolamento avançado de VRAM e um **Instalador Descomplicado**. Fique de olho nas novidades!
 
 ### 🚀 Tutorial de Instalação (Passo a Passo)
 
@@ -122,16 +118,12 @@ Para conhecer todas as pessoas e tecnologias envolvidas no PhoenixDub, veja o ar
 **PhoenixDub AI** is a complete **AI Video Editing and automated dubbing** solution for professional-grade media projects. Designed for high precision and natural flow, it uses state-of-the-art AI to edit and synchronize videos and games into Portuguese (PT-BR).
 
 > [!IMPORTANT]
-> - **Processor**: Optimized for **Intel** (6th Gen or newer). Full compatibility to run on the processor alone.
-> - **Video Card**: **NVIDIA RTX 2060** (6GB) recommended for "Turbo Mode". A video card provides much higher speeds, but the system is 100% functional on the processor alone.
+> - **Processor**: Optimized for **Intel** (6th Gen or newer) or AMD equivalent.
+> - **Video Card (Mandatory)**: Exclusive for **NVIDIA RTX 3050** (6GB) or higher (CUDA). Warning: Platform tested and used only on the founder's RTX 3050. The system does NOT run on the processor alone, and I do not guarantee it will work on AMD or Apple.
 > - **Memory**: Minimum 16 GB RAM.
 
-### 🌟 What's New in v0.10 (TURBO-PATCH-UNLEASHED)
-*   **Turbo Mode Activated**: Disabled internal AI reasoning for up to 10x speed boost on i5/i7 CPUs.
-*   **Universal Hardware Support**: Smart auto-detection for NVIDIA (CUDA), AMD (ROCm), Apple (MPS), and CPU.
-*   **AI Video Editing**: The `App_videos` engine now features **Magic Cut**, automatically removing silences and recording errors.
-*   **Thinking Scrubber**: Filter to eliminate AI "thought leaks" in translations.
-*   **Web Interface Auto-Detect**: Language and speaker options now default to "Auto-Detect".
+### 🌟 The Future of NarraVox (In Development: The 1.0 Evolution)
+Version 1.0 **has not been released yet and is currently in full development**. It will be 100% focused on the **ultimate Dubbing experience**, featuring a powerful **Integrated Video Editor** (to cut, join, and refine scenes natively), all within a **New Premium Desktop Interface** with advanced VRAM isolation and a **1-Click Installer**. Stay tuned!
 
 ### 🚀 Installation Tutorial (Step-by-Step)
 
