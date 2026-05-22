@@ -16,7 +16,13 @@
 Meu site que tem todos os projetos que fiz até o momento
 https://narravox.github.io/bio/
 
-
+> [!IMPORTANT]
+> ### 💖 Ajude a Construir o Cine Gen e a Versão 1.0! (Apoia.se)
+> O PhoenixDub é um projeto monumental feito de forma independente (*Bootstrapping*). Nosso foco não é pagar servidores na nuvem, e sim **rodar IAs pesadas localmente no seu computador**.
+> * Com a sua ajuda, vamos financiar a **Versão 1.0** (experiência definitiva de dublagem) e o projeto **Cine Gen** (gerador de vídeo via IA para placas caseiras).
+> * Apoiadores ganham **Acesso Antecipado**, **Vídeos Mensais de Bastidores (Devlog)**, **Masterclass**, **Poder de Voto** e **Suporte VIP** no Discord.
+> 
+> 👉 **[Apoie a NarraVox Studios no Apoia.se clicando aqui!](https://apoia.se/narravox_studios)**
 
 > [!IMPORTANTE]
 > - **Processador**: Otimizado para **Intel** (6ª geração ou superior) ou AMD equivalente.
@@ -116,6 +122,14 @@ Para conhecer todas as pessoas e tecnologias envolvidas no PhoenixDub, veja o ar
 ## English
 
 **PhoenixDub AI** is a complete **AI Video Editing and automated dubbing** solution for professional-grade media projects. Designed for high precision and natural flow, it uses state-of-the-art AI to edit and synchronize videos and games into Portuguese (PT-BR).
+
+> [!IMPORTANT]
+> ### 💖 Help Build Cine Gen and Version 1.0! (Sponsor Us)
+> PhoenixDub is a monumental independent project (bootstrapped). Our goal is not to rely on cloud servers, but to **run heavy AI locally on your PC**.
+> * With your help, we will fund **Version 1.0** (the ultimate dubbing experience) and the **Cine Gen** project (local AI video generator).
+> * Sponsors get **Early Access**, **Monthly Video Devlogs**, **Masterclasses**, **Voting Power**, and **VIP Support** on Discord.
+> 
+> 👉 **[Support NarraVox Studios on Apoia.se by clicking here!](https://apoia.se/narravox_studios)**
 
 > [!IMPORTANT]
 > - **Processor**: Optimized for **Intel** (6th Gen or newer) or AMD equivalent.
