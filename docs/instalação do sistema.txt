@@ -1,0 +1,2 @@
+cd C:\IA_dublagem
+python setup.py

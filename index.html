@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paulo Henrik | Portfólio Tech</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00d2ff;
+            --secondary: #3a7bd5;
+            --accent: #00f2fe;
+            --bg: #030712;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(58, 123, 213, 0.15) 0%, transparent 35%),
+                radial-gradient(circle at 100% 100%, rgba(0, 210, 255, 0.1) 0%, transparent 35%);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        /* Decorative blobs */
+        .blob {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            background: var(--primary);
+            filter: blur(120px);
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0.2;
+            animation: move 20s infinite alternate;
+        }
+
+        @keyframes move {
+            from { transform: translate(-10%, -10%); }
+            to { transform: translate(100%, 50%); }
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 80px;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .profile-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 22px;
+            margin: 0 auto 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.3);
+            transform: rotate(-5deg);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            letter-spacing: -2px;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--primary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+
+        .contact-info {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .contact-tag {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .contact-tag:hover {
+            border-color: var(--primary);
+            color: var(--text);
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(0, 210, 255, 0.2);
+            background: rgba(0, 210, 255, 0.1);
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 60px;
+            opacity: 0;
+            animation: fadeInUp 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        section:nth-child(1) { animation-delay: 0.2s; }
+        section:nth-child(2) { animation-delay: 0.4s; }
+        section:nth-child(3) { animation-delay: 0.6s; }
+        section:nth-child(4) { animation-delay: 0.8s; }
+        section:nth-child(5) { animation-delay: 1.0s; }
+        section:nth-child(6) { animation-delay: 1.2s; }
+        section:nth-child(7) { animation-delay: 1.4s; }
+        section:nth-child(8) { animation-delay: 1.6s; }
+
+        .section-title {
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::after {
+            content: '';
+            height: 1px;
+            flex-grow: 1;
+            background: linear-gradient(to right, var(--border), transparent);
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(0, 210, 255, 0.4);
+            box-shadow: 0 30px 60px rgba(0, 210, 255, 0.15);
+            transform: translateY(-8px);
+        }
+
+        /* Skills */
+        .skills-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .skill-pill {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+        }
+
+        .skill-pill:hover {
+            background: var(--primary);
+            color: var(--bg);
+            border-color: var(--primary);
+            transform: scale(1.1) rotate(2deg);
+            box-shadow: 0 5px 15px rgba(0, 210, 255, 0.4);
+        }
+
+        /* Experience Items */
+        .experience-box {
+            margin-bottom: 40px;
+        }
+
+        .exp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .exp-role {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .exp-time {
+            font-size: 0.8rem;
+            color: var(--primary);
+            font-weight: 800;
+            background: rgba(0, 210, 255, 0.1);
+            padding: 5px 15px;
+            border-radius: 50px;
+        }
+
+        .exp-list {
+            list-style: none;
+        }
+
+        .exp-list li {
+            position: relative;
+            padding-left: 20px;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .exp-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: 800;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 100px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+
+        .exp-logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid var(--border);
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-50px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: rotate(-5deg) scale(1); box-shadow: 0 10px 30px rgba(0, 210, 255, 0.3); }
+            50% { transform: rotate(-5deg) scale(1.05); box-shadow: 0 15px 45px rgba(0, 210, 255, 0.5); }
+            100% { transform: rotate(-5deg) scale(1); box-shadow: 0 10px 30px rgba(0, 210, 255, 0.3); }
+        }
+
+        .profile-icon {
+            animation: pulse 3s infinite ease-in-out;
+        }
+
+        .exp-list li {
+            opacity: 0;
+            animation: fadeInRight 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeInRight {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .exp-list li:nth-child(1) { animation-delay: 0.1s; }
+        .exp-list li:nth-child(2) { animation-delay: 0.2s; }
+        .exp-list li:nth-child(3) { animation-delay: 0.3s; }
+        .exp-list li:nth-child(4) { animation-delay: 0.4s; }
+        .exp-list li:nth-child(5) { animation-delay: 0.5s; }
+
+        a { color: inherit; text-decoration: none; }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2.5rem; }
+            .glass-card { padding: 25px; }
+            .exp-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+        }
+        /* Print Optimization - Beautiful & Professional */
+        @media print {
+            body { background: white !important; color: black !important; padding: 0; }
+            .blob { display: none; }
+            .container { box-shadow: none; margin: 0; width: 100%; max-width: none; background: white; }
+            .glass-card { background: white !important; border: 1px solid #eee !important; color: black !important; box-shadow: none; border-radius: 15px; padding: 20px !important; }
+            .section-title { color: #2563eb !important; border-bottom: 2px solid #2563eb !important; font-size: 14pt; }
+            .skill-pill { border: 1px solid #ddd !important; color: black !important; background: #f8fafc !important; border-radius: 50px; }
+            .contact-tag { color: #475569 !important; border: 1px solid #ddd !important; background: #f8fafc !important; border-radius: 10px; }
+            a { color: #2563eb !important; text-decoration: none; }
+            header h1 { color: black !important; background: none !important; -webkit-text-fill-color: black !important; font-size: 32pt; }
+            .exp-role { color: #1e40af !important; }
+            footer { color: #94a3b8 !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="blob"></div>
+    
+    <div class="container">
+        <header>
+            <div class="profile-icon">P</div>
+            <h1>Paulo Henrik Carvalho Araújo</h1>
+            <div class="subtitle">ADS Student & AI Developer</div>
+            <div class="contact-info">
+                <div class="contact-tag">🎂 28 Anos</div>
+                <div class="contact-tag">📅 Disponibilidade Imediata</div>
+                <div class="contact-tag">⏰ Horário Flexível</div>
+                <div class="contact-tag">📍 Recanto das Emas, DF (Qd 604, Cj 12)</div>
+                <div class="contact-tag">📧 rick6001@gmail.com</div>
+                <div class="contact-tag">📱 (61) 99209-5019</div>
+                <a href="https://github.com/NarraVox/PhoenixDub-AI" target="_blank" class="contact-tag">🔗 GitHub</a>
+                <a href="https://narravox.github.io/portfolio-ai/" target="_blank" class="contact-tag">🌐 Portfólio Digital</a>
+                <a href="https://www.youtube.com/@narravoxstudios.oficial" target="_blank" class="contact-tag">🎬 NarraVox (Studio)</a>
+                <a href="https://www.youtube.com/@PauloDubsStudio100" target="_blank" class="contact-tag">🎮 PauloDubs (Games)</a>
+            </div>
+        </header>
+
+        <section>
+            <div class="section-title">Sobre Mim</div>
+            <div class="glass-card">
+                Iniciei o desenvolvimento de sistemas complexos de forma autônoma <b>antes mesmo de ingressar na graduação</b>, utilizando a Inteligência Artificial como principal mentora. Focado em <b>Desenvolvimento Assistido por IA</b>, utilizo ferramentas como Antigravity e LLMs para criar automações de alto impacto, unindo iniciativa técnica e execução ágil.
+            </div>
+        </section>
+
+        <section>
+            <div class="section-title">Educação</div>
+            <div class="glass-card">
+                <strong>Graduação em Análise e Desenvolvimento de Sistemas</strong><br>
+                <span style="color: var(--primary)">UniFatecie</span> | 1º Semestre (Previsão: Dez/2027)
+            </div>
+        </section>
+
+
+        <section>
+            <div class="section-title">Habilidades Tech</div>
+            <div class="skills-container">
+                <div class="skill-pill">AI-Assisted Dev</div>
+                <div class="skill-pill">Engenharia de Prompt</div>
+                <div class="skill-pill">Automação de Pipelines</div>
+                <div class="skill-pill">Git & GitHub</div>
+                <div class="skill-pill">Python Assistant</div>
+                <div class="skill-pill">Resolução de Problemas</div>
+            </div>
+        </section>
+
+        <section>
+            <div class="section-title">Stack de Inteligência Artificial</div>
+            <div class="skills-container">
+                <div class="skill-pill"><b>Gemma 4</b> (LLM & Tradução)</div>
+                <div class="skill-pill"><b>Whisper</b> (Transcrição AI)</div>
+                <div class="skill-pill"><b>Chatterbox</b> (Clonagem de Voz)</div>
+                <div class="skill-pill"><b>OpenUnmix</b> (Separação de Áudio)</div>
+                <div class="skill-pill"><b>Veo 3</b> (Vídeo Generativo)</div>
+            </div>
+        </section>
+
+        <section>
+            <div class="section-title">Diferenciais & Soft Skills</div>
+            <div class="glass-card">
+                <ul class="exp-list">
+                    <li><b>Resolução de Problemas:</b> Capacidade comprovada de contornar limitações técnicas, como a otimização de modelos de IA para rodar em hardware básico.</li>
+                    <li><b>Resiliência & Consistência:</b> Persistência e dedicação em projetos de longo prazo, mantendo o desenvolvimento ativo do ecossistema Nexus há mais de 1 ano.</li>
+                    <li><b>Comunicação & Criatividade:</b> Experiência na criação de conteúdo audiovisual e comunicação direta com o público através de canais no YouTube.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <div class="section-title">Experiência Profissional</div>
+            <div class="glass-card">
+                <div class="experience-box">
+                    <div class="exp-header">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <a href="https://www.youtube.com/@narravoxstudios.oficial" target="_blank">
+                                <img src="narravox_logo.png" alt="NarraVox Logo" class="exp-logo">
+                            </a>
+                            <a href="https://www.youtube.com/@narravoxstudios.oficial" target="_blank" class="exp-role">NarraVox Studios</a>
+                        </div>
+                        <div class="exp-time">Jan 2025 - Presente</div>
+                    </div>
+                    <ul class="exp-list">
+                        <li>Desenvolvimento e operação do ecossistema <b>Nexus</b>, tecnologia proprietária para dublagem e localização autônoma.</li>
+                        <li><b>Desenvolvimento Ativo no GitHub:</b> Repositório público com atualizações constantes de código, focado em novas funcionalidades e otimização.</li>
+                        <li>Desenvolvimento de fluxos de tradução contextual e síntese de voz (TTS) de alta qualidade.</li>
+                        <li>Implementação de controle de qualidade automatizado para sincronia de áudio.</li>
+                        <li><b>Refinamento de Modelos:</b> Ajuste constante de hiperparâmetros em modelos TTS (Chatterbox) para redução de instabilidades vocais e aumento da precisão na clonagem de voz.</li>
+                        <li><b>Redução de Custos Operacionais:</b> Economia superior a 95% em comparação a serviços de nuvem proprietários (ElevenLabs), com custo de energia estimado em menos de R$ 0,30 por hora de vídeo processado.</li>
+                        <li><b>Alta Performance:</b> Sistema projetado para aceleração via GPU (<b>RTX 3050 6GB</b>), garantindo a viabilidade de processar vídeos longos em apenas <b>4 horas</b>, mantendo compatibilidade técnica com setups base (i5 6ª Gen).</li>
+                    </ul>
+                </div>
+
+                <div class="experience-box" style="margin-bottom: 0;">
+                    <div class="exp-header">
+                        <div class="exp-role">Auxiliar de Limpeza (DNA Facilities)</div>
+                        <div class="exp-time">Jul 2025 - Abr 2026</div>
+                    </div>
+                    <ul class="exp-list">
+                        <li>Responsável pela manutenção e organização de ambientes.</li>
+                        <li>Foco em disciplina, cumprimento de horários e zelo pelo patrimônio.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div class="section-title">Roadmap & Visão de Futuro</div>
+            <div class="glass-card">
+                <div class="experience-box" style="margin-bottom: 0;">
+                    <div class="exp-role">Pipeline de Vídeo Generativo Autônomo</div>
+                    <ul class="exp-list" style="margin-top: 15px;">
+                        <li><b>Produção Atual:</b> Criação de séries e localização de jogos no YouTube utilizando IAs de nuvem (<b>Veo 3</b>).</li>
+                        <li><b>Migração Local:</b> Planejamento para execução de modelos de vídeo generativo (<b>LTX 2.3</b>) localmente na RTX 3050.</li>
+                        <li><b>Automação Total:</b> Desenvolvimento de um sistema "Script-to-Video", onde a entrada de um roteiro gera automaticamente o vídeo, dublagem e sincronia final.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div class="section-title">Aprendizado Autônomo</div>
+            <div class="glass-card">
+                Domínio de tecnologias complexas (Python, IA de Áudio) desenvolvido de forma independente. O <b>Projeto Nexus</b> é a prova desse progresso: iniciado antes da faculdade e movido inteiramente por pesquisa autônoma e <b>colaboração avançada com IA</b>, resultando em um avanço técnico veloz e independente de grade acadêmica.
+            </div>
+        </section>
+
+
+
+        <footer>
+            &copy; 2026 Paulo Henrik Carvalho Araújo. Todos os direitos reservados.
+        </footer>
+    </div>
+</body>
+</html>
