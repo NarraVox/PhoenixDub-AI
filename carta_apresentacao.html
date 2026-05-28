@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carta de Apresentação - Paulo Henrik</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00d2ff;
+            --secondary: #3a7bd5;
+            --bg: #030712;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(58, 123, 213, 0.15) 0%, transparent 35%),
+                radial-gradient(circle at 100% 100%, rgba(0, 210, 255, 0.1) 0%, transparent 35%);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .btn-pdf {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.3);
+        }
+
+        .btn-pdf:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 210, 255, 0.4);
+        }
+
+        .letter-paper {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 50px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: var(--primary);
+            font-weight: 600;
+            letter-spacing: 1px;
+            font-size: 1.1rem;
+        }
+
+        .contact-info {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .date-section {
+            text-align: right;
+            margin-bottom: 30px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .content p {
+            margin-bottom: 18px;
+            text-align: justify;
+        }
+
+        .highlight {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .signature {
+            margin-top: 40px;
+        }
+
+        .signature img {
+            max-width: 150px;
+            opacity: 0.8;
+        }
+
+        /* Print Optimization - Makes it look like a standard PDF document */
+        @media print {
+            body { 
+                background: white !important; 
+                color: black !important; 
+                padding: 0; 
+                display: block;
+            }
+            .controls { display: none; }
+            .letter-paper { 
+                background: white !important; 
+                border: none !important; 
+                color: black !important; 
+                box-shadow: none; 
+                padding: 0 !important; 
+            }
+            h1 { 
+                color: black !important; 
+                background: none !important; 
+                -webkit-text-fill-color: black !important; 
+            }
+            .subtitle { color: #2563eb !important; }
+            .contact-info { color: #475569 !important; }
+            .header { border-bottom: 2px solid #2563eb !important; }
+            .date-section { color: black !important; }
+            .content p { color: black !important; }
+            .highlight { color: #1e40af !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="controls">
+            <button class="btn-pdf" onclick="window.print()">
+                📄 Salvar como PDF
+            </button>
+        </div>
+
+        <div class="letter-paper">
+            <div class="header">
+                <h1>Paulo Henrik Carvalho Araújo</h1>
+                <div class="subtitle">Desenvolvedor Assistido por IA | Estudante de ADS</div>
+                <div class="contact-info">
+                    <span>📍 Brasília, DF</span>
+                    <span>📧 rick6001@gmail.com</span>
+                    <span>📱 (61) 99209-5019</span>
+                    <span>🔗 narravox.github.io/portfolio-ai/</span>
+                    <span>🐙 github.com/NarraVox/PhoenixDub-AI</span>
+                </div>
+            </div>
+
+            <div class="date-section">
+                Brasília, <span id="currentDate"></span>
+            </div>
+
+            <div class="content">
+                <p>À Equipe de Recrutamento da <strong>QIMA (CPQuali)</strong>,</p>
+
+                <p>É com grande entusiasmo que apresento meu currículo para a vaga de <span class="highlight">Estágio em Desenvolvimento de Sistemas</span>. Atualmente curso o 1º semestre de Análise e Desenvolvimento de Sistemas (ADS) na UniFatecie, mas minha jornada com a tecnologia começou de forma autônoma e intensa antes mesmo do ingresso acadêmico.</p>
+
+                <p>Movido por resolver problemas reais, desenvolvi o ecossistema <span class="highlight">"PhoenixDub-AI" (Nexus)</span>, uma aplicação de localização e dublagem autônoma. Nesse projeto, orquestrei modelos de Inteligência Artificial (Whisper, Gemma 4, Qwen 3 TTS) para processar mídia de forma local, focando em alta performance e redução drástica de custos operacionais.</p>
+
+                <p>Minha metodologia principal é o <span class="highlight">Desenvolvimento Assistido por IA</span>. Isso significa que utilizo ferramentas avançadas (LLMs e assistentes de código) para arquitetar sistemas, integrar APIs REST e escrever lógicas complexas. Vi que a vaga envolve atuar com <span class="highlight">PHP (Laravel), Vue.js e conceitos de IA</span>. Graças ao meu perfil autodidata e ao uso eficiente de IAs como "co-pilotos" no meu dia a dia, possuo uma extrema facilidade de aprendizado (Adaptabilidade) e estou totalmente preparado para assimilar a sintaxe do PHP e as regras de negócio da QIMA rapidamente.</p>
+
+                <p>Trago também resiliência e forte ética de trabalho de experiências profissionais anteriores fora da área de TI. Estou muito animado com a possibilidade de integrar a equipe da QIMA, aprender as melhores práticas de um ambiente real de produção e ajudar na evolução do sistema interno com muita dedicação.</p>
+
+                <p>Agradeço desde já a atenção e a oportunidade de análise do meu perfil. Convido-os a visitar meu portfólio digital para conhecer mais sobre o projeto Nexus.</p>
+
+                <div class="signature">
+                    <p>Atenciosamente,</p>
+                    <h3 style="margin-top: 10px; font-family: 'Outfit', sans-serif;">Paulo Henrik C. Araújo</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set current date in Portuguese format
+        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR', dateOptions);
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+# Ambientes Virtuais
+env/
+venv/
+.env
+
+# Arquivos Binários Grandes
+*.exe
+*.msi
+*.7z
+*.zip
+
+# Pastas de Trabalho e Temporários
+uploads/
+logs/
+__pycache__/
+*.pyc
+
+# Dados de IA (Modelos)
+models/
+*.gguf
+.aider*
+_MODELS_/
+uploads/
+logs/
+dj_sets/
+client/
+call of duty/
+vpk_manager/
+narravox_logo.png
+*.mp4
+*.mp3
+*.wav
+*.png
+*.jpg
+*.jpeg
+
