@@ -28,9 +28,9 @@ def build_nexus_pro():
         '--collect-all=webview',
         '--collect-all=clr_loader',
         '--collect-all=pythonnet',
-        # Incluindo a pasta client (interface)
-        '--add-data=nexus/client;client',
-        '--add-data=requirements.txt;.',
+        # Incluindo a pasta client (interface) com caminhos absolutos para evitar erro de .spec no PyInstaller
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "client"))};client',
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "requirements.txt"))};.',
     ]
 
     print(f"Empacotando recursos (Coleta Bruta) e gerando {app_name}.exe...")

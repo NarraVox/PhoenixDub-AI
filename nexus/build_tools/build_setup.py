@@ -50,13 +50,13 @@ def build_setup():
         '--exclude-module=webview', # Evita o crash de analise
         '--hidden-import=__future__', # CORREÇÃO: Força inclusao do modulo base
         '--hidden-import=clr',        # Necessario para o PythonNet no Windows
-        # Embutir o programa principal e os codigos
-        '--add-data=Nexus_AI_Pro.exe;.',
-        '--add-data=nexus/nexus_app.py;.',
-        '--add-data=vpk_manager.py;.',
-        '--add-data=nexus/client;client',
-        '--add-data=requirements.txt;.',
-        f'--add-data={webview_path};webview', # Adiciona webview manualmente
+        # Embutir o programa principal e os codigos com caminhos absolutos para evitar erros de localizacao no PyInstaller
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "Nexus_AI_Pro.exe"))};.',
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "nexus_app.py"))};.',
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "vpk_manager.py"))};.',
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "client"))};client',
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "requirements.txt"))};.',
+        f'--add-data={os.path.abspath(webview_path)};webview', # Adiciona webview manualmente
     ]
 
     print("Empacotando Instalador...")
