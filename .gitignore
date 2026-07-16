@@ -64,6 +64,72 @@ Rubbish/
 nexus_godogen/
 ABRIR_AIDER_godogen_LOCAL.bat
 ABRIR_DASHBOARD_AIDER.bat
+# Ambientes Virtuais
+env/
+venv/
+.env
+
+# Arquivos Binários Grandes
+*.exe
+*.msi
+*.7z
+*.zip
+
+# Pastas de Trabalho e Temporários
+uploads/
+logs/
+__pycache__/
+*.pyc
+
+# Dados de IA (Modelos)
+models/
+*.gguf
+.aider*
+_MODELS_/
+uploads/
+logs/
+dj_sets/
+client/
+call of duty/
+vpk_manager/
+narravox_logo.png
+*.mp4
+*.mp3
+*.wav
+*.png
+*.jpg
+*.jpeg
+
+# Nexus Godogen (O motor base e os projetos gerados não devem ir para o Git)
+nexus_godogen/godogen/
+nexus_godogen/projects/
+
+# Segurança e Credenciais (CRÍTICO)
+token_hf.txt
+
+# Documentos Pessoais e Temporários
+Contrato de Aluguel*
+contrato_editor.html
+carta_apresentacao*
+curriculo.html
+trabalho*
+roteiro_consultoria*
+roteiro_diario*
+codebase_structure.txt
+ace_help.txt
+ace_help_err.txt
+temp_video_pipeline.txt
+
+# Pastas de Rascunho e Testes de Voz
+scratch/
+voz1
+voz3
+Rubbish/
+
+# Motores de Desenvolvimento e Rascunho
+nexus_godogen/
+ABRIR_AIDER_godogen_LOCAL.bat
+ABRIR_DASHBOARD_AIDER.bat
 usar_qwen_06b.txt
 
 # Arquivos de Teste Acadêmicos/Pessoais adicionais
@@ -73,3 +139,6 @@ carta_apresentacao.html
 # Ferramentas auxiliares - Ignorar tudo exceto o vgmstream-cli
 tools/*
 !tools/vgmstream-cli/
+
+# Customizações de Agente AI
+.agents/
