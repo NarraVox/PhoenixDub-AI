@@ -22,7 +22,7 @@ jobs:
     - name: Instalar Dependências de Build
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller pywebview psutil
+        pip install pyinstaller pywebview psutil flask flask-cors pythonnet clr-loader requests tqdm
 
     - name: Gerar Executável do Aplicativo Principal (Nexus AI Pro)
       run: |
