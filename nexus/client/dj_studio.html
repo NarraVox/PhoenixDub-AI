@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRIADOR DE MÚSICA LOCAL // VORTEX ENGINE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/dj_studio.css">
+    <style>
+        .dj-input, .dj-textarea {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 0.75rem;
+            transition: 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .dj-input:focus, .dj-textarea:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 10px var(--accent-glow);
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .dj-textarea {
+            height: 90px;
+            resize: none;
+        }
+        label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.6;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .audio-player-container {
+            margin-top: 15px;
+            width: 100%;
+            display: none;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        audio {
+            width: 100%;
+            height: 30px;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="maestro-container">
+        
+        <header>
+            <div style="display: flex; align-items: center;">
+                <a href="nexus_premium.html" class="back-btn">← HUB CENTRAL</a>
+                <button onclick="stopAndRefresh()" class="back-btn" style="background: none; cursor: pointer; margin-left: 10px;">🔄 PARAR E RESETAR</button>
+                <div class="logo" style="margin-left: 30px; display: inline-flex; align-items: center; gap: 10px;">
+                    🌪️ VORTEX GENERATOR 
+                    <span style="font-size: 0.55rem; background: var(--accent); color: #050505; padding: 2px 8px; border-radius: 4px; font-weight: 900; letter-spacing: 1px; text-shadow: none; font-family: 'Inter', sans-serif; vertical-align: middle;">BETA</span>
+                </div>
+            </div>
+            <div class="status-badge" id="system-status">SYSTEMS READY // IDLE</div>
+        </header>
+
+        <!-- MUSIC MAKER PANEL -->
+        <aside class="panel-tracks">
+            <h2 style="font-size: 1.1rem; color: var(--accent); margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">
+                IA MUSIC CREATOR 
+                <span style="font-size: 0.5rem; background: rgba(0, 255, 65, 0.15); color: var(--accent); border: 1px solid var(--accent); padding: 1px 5px; border-radius: 3px; font-weight: bold; letter-spacing: 0.5px;">BETA</span>
+            </h2>
+            <p style="font-size: 0.5rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">ACE-Step Local & Masterização Multibanda</p>
+            
+            <div style="display: flex; flex-direction: column;">
+                <label>Nome da Música</label>
+                <input id="song-title" type="text" placeholder="Ex: Desert Bass" class="dj-input" value="Desert Bass">
+                
+                <label>Estilo / Prompt Musical</label>
+                <input id="song-style" type="text" placeholder="Ex: Arabic Deep House, Dark Arabic Bass House" class="dj-input" value="Arabic Deep House, Dark Arabic Bass House">
+                
+                <label>Modo de Geração</label>
+                <select id="generation-mode" class="dj-input" onchange="toggleGenerationMode()" style="background: rgba(0,0,0,0.5); color: #fff;">
+                    <option value="text2music">🎵 Normal (Text-to-Music)</option>
+                    <option value="cover">🔄 Remix / Cover (Áudio de Origem)</option>
+                    <option value="extend">⏩ Estender Música (Extended)</option>
+                </select>
+
+                <!-- Campos dinâmicos para Remix/Extended -->
+                <div id="source-audio-container" style="display: none; border-left: 2px solid var(--accent); padding-left: 10px; margin-bottom: 10px;">
+                    <label>Música Base (Origem)</label>
+                    <select id="source-audio-select" class="dj-input" style="background: rgba(0,0,0,0.5); color: #fff;">
+                        <!-- Será preenchido dinamicamente -->
+                    </select>
+
+                    <div style="margin-top: 10px; margin-bottom: 10px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
+                        <label>Ou Enviar do PC (Forró, Funk, etc.)</label>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="file" id="local-audio-file" accept="audio/*" class="dj-input" style="padding: 6px; font-size: 0.65rem; margin-bottom: 0; flex: 1;">
+                            <button onclick="uploadLocalAudio()" class="back-btn" style="padding: 8px 12px; font-size: 0.65rem; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; cursor: pointer; white-space: nowrap; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                📁 CARREGAR
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="cover-strength-container" style="display: none;">
+                        <label>Força do Remix / Cover (0.1 - 0.9)</label>
+                        <input id="cover-strength" type="range" min="0.1" max="0.9" step="0.1" value="0.6" style="width: 100%; margin: 8px 0;" oninput="document.getElementById('cover-strength-val').innerText = this.value">
+                        <span id="cover-strength-val" style="font-size: 0.6rem; color: var(--accent); display: block; margin-bottom: 8px;">0.6</span>
+                    </div>
+
+                    <div id="extend-time-container" style="display: none;">
+                        <label>Duração da Extensão (segundos)</label>
+                        <input id="extend-duration" type="number" min="10" max="120" value="30" class="dj-input">
+                    </div>
+                </div>
+                
+                <label>Letra (Deixe em branco para Instrumental)</label>
+                <textarea id="song-lyrics" placeholder="[intro]\n[verse]\nLetra aqui...\n[chorus]\nRefrão..." class="dj-textarea">[intro]
+[verse]
+Ela dança na festa,
+Ela dança que dança.</textarea>
+
+                <!-- CONTROLES DE QUALIDADE -->
+                <div style="border-top: 1px solid rgba(255,255,255,0.08); margin: 10px 0 8px; padding-top: 10px;">
+                    <label style="color: var(--accent); opacity: 1; font-size: 0.6rem; margin-bottom: 8px; display: block;">⚙️ CONFIGURAÇÕES DE QUALIDADE</label>
+
+                    <label>Passos de Geração (Steps) — <span id="steps-val" style="color:var(--accent)">50</span></label>
+                    <input id="gen-steps" type="range" min="8" max="100" step="1" value="50"
+                        style="width:100%; margin:4px 0 10px; accent-color:var(--accent);"
+                        oninput="document.getElementById('steps-val').innerText=this.value">
+                    <div style="display:flex; justify-content:space-between; font-size:0.5rem; opacity:0.5; margin-top:-8px; margin-bottom:10px;">
+                        <span>8 (Rápido)</span><span>50 (Ideal)</span><span>100 (Máx)</span>
+                    </div>
+
+                    <label>Duração da Música (segundos) — <span id="duration-val" style="color:var(--accent)">180</span>s</label>
+                    <input id="gen-duration" type="range" min="15" max="180" step="5" value="180"
+                        style="width:100%; margin:4px 0 10px; accent-color:var(--accent);"
+                        oninput="document.getElementById('duration-val').innerText=this.value">
+                    <div style="display:flex; justify-content:space-between; font-size:0.5rem; opacity:0.5; margin-top:-8px; margin-bottom:10px;">
+                        <span>15s</span><span>60s</span><span>3min</span>
+                    </div>
+
+                    <label>Fidelidade ao Estilo (CFG Scale) — <span id="cfg-val" style="color:var(--accent)">4.0</span></label>
+                    <input id="gen-cfg" type="range" min="1" max="10" step="0.5" value="4"
+                        style="width:100%; margin:4px 0 10px; accent-color:var(--accent);"
+                        oninput="document.getElementById('cfg-val').innerText=parseFloat(this.value).toFixed(1)">
+                    <div style="display:flex; justify-content:space-between; font-size:0.5rem; opacity:0.5; margin-top:-8px; margin-bottom:4px;">
+                        <span>1 (Livre)</span><span>4 (Ideal)</span><span>10 (Rígido)</span>
+                    </div>
+                </div>
+
+                <label>Quantidade de Músicas a Gerar (Fila)</label>
+                <select id="batch-count" class="dj-input" style="background: rgba(0,0,0,0.5); color: #fff; margin-bottom: 12px;">
+                    <option value="1">🎵 1 Música (Normal)</option>
+                    <option value="2">👥 2 Músicas (Em fila)</option>
+                    <option value="4">🎚️ 4 Músicas (Em fila)</option>
+                </select>
+
+                <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                    <input id="enable-mastering" type="checkbox" checked style="margin-right: 8px; width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer;" onchange="document.getElementById('upscale-steps-container').style.display = this.checked ? 'block' : 'none'">
+                    <label for="enable-mastering" style="margin-bottom: 0; cursor: pointer; font-size: 0.65rem; opacity: 0.9; text-transform: none; letter-spacing: 0;">Ativar Masterização Analógica (Hi-Fi)</label>
+                </div>
+                
+                <div id="upscale-steps-container" style="display: block; border-left: 2px solid var(--accent); padding-left: 10px; margin-bottom: 12px; margin-left: 10px;">
+                    <label>Velocidade / Qualidade do Upscale (AudioSR)</label>
+                    <select id="upscale-steps" class="dj-input" style="background: rgba(0,0,0,0.5); color: #fff; margin-bottom: 0;">
+                        <option value="15">⚡ Ultra Rápido (15 passos - 3.3x mais rápido)</option>
+                        <option value="25" selected>⚖️ Equilibrado (25 passos - 2x mais rápido)</option>
+                        <option value="50">✨ Qualidade Estúdio (50 passos - padrão lento)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="flex: 1; overflow-y: auto; padding-right: 5px; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px;">
+                <h3>MÚSICAS GERADAS (HISTÓRICO)</h3>
+                <div id="track-list">
+                    <div class="track-item" style="font-size: 0.6rem; opacity: 0.5;">Buscando músicas...</div>
+                </div>
+            </div>
+            
+            <button onclick="loadGeneratedSongs()" style="margin-top: 10px; width: 100%; background: none; border: 1px solid var(--accent); color: var(--accent); padding: 8px; cursor: pointer; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px;">🔄 ATUALIZAR LISTA</button>
+        </aside>
+
+        <!-- VISUALIZER / TURNTABLE -->
+        <main class="visualizer-area">
+            <div class="turntable" id="turntable">
+                <canvas id="visualizer-canvas"></canvas>
+                <div class="turntable-vinyl">
+                    <div class="turntable-core"></div>
+                </div>
+            </div>
+            <div style="margin-top: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; width: 100%;">
+                <h4 id="now-playing" style="font-family: 'Orbitron'; letter-spacing: 3px; font-size: 0.7rem; color: var(--accent);">STANDBY</h4>
+                <div id="progress-bar" style="width: 300px; height: 3px; background: #222; margin-top: 10px; border-radius: 2px; overflow: hidden;">
+                    <div id="progress-fill" style="width: 0%; height: 100%; background: var(--accent); transition: 0.3s;"></div>
+                </div>
+                
+                <!-- PLAYBACK CONTAINER -->
+                <div class="audio-player-container" id="player-container">
+                    <audio id="audio-player" controls></audio>
+                </div>
+            </div>
+        </main>
+
+        <!-- BRAIN LOG -->
+        <aside class="panel-brain">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="font-family: 'Orbitron'; font-size: 0.7rem; opacity: 0.6; margin: 0;">CONSOLE VORTEX</h3>
+                <button onclick="document.getElementById('brain-log').innerHTML=''" style="background:none; border:1px solid #333; color:#666; font-size:0.5rem; cursor:pointer; padding:2px 8px;">LIMPAR CONSOLE</button>
+            </div>
+            <div id="brain-log">
+                [SYSTEM] AGUARDANDO INSTRUÇÃO...<br>
+                [SYSTEM] VORTEX ENGINE CONECTADO NA PORTA 5005.
+            </div>
+        </aside>
+
+        <!-- CONTROL DECK -->
+        <section class="control-deck">
+            <div class="fx-indicator">
+                <div class="fx-light" id="fx-generation"></div>
+                <div class="fx-label">IA GERANDO</div>
+            </div>
+            <div class="fx-indicator">
+                <div class="fx-light" id="fx-vram-purge"></div>
+                <div class="fx-label">VRAM PURGE</div>
+            </div>
+            
+            <button class="btn-ignition" onclick="generateMusic()">⚡ GERAR MÚSICA POR IA</button>
+
+            <div class="fx-indicator">
+                <div class="fx-light" id="fx-mastering"></div>
+                <div class="fx-label">MASTERIZANDO</div>
+            </div>
+            <div class="fx-indicator">
+                <div class="fx-light" id="fx-completed"></div>
+                <div class="fx-label">CONCLUÍDO</div>
+            </div>
+        </section>
+
+    </div>
+
+    <script src="js/dj_studio.js"></script>
+</body>
+</html>

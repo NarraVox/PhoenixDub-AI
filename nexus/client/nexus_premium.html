@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NARRAVOX COMMAND // TITAN CENTER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/nexus_premium.css">
+    <style>
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(3, 6, 12, 0.85);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Modal Content Box */
+        .modal-content {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid var(--border);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.15), inset 0 0 15px rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            width: 95%;
+            max-width: 550px;
+            padding: 40px;
+            position: relative;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        /* Close Button */
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 2rem;
+            color: var(--neon-cyan);
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+        .close-btn:hover {
+            color: var(--neon-pink);
+        }
+
+        .modal-content h2 {
+            font-size: 1.8rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #ffd700, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .modal-intro {
+            font-size: 0.95rem;
+            color: #f8fafc;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .modal-highlight {
+            background: rgba(255, 170, 0, 0.1);
+            border: 1px solid var(--neon-orange);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .modal-highlight p {
+            color: var(--neon-orange);
+            font-size: 0.85rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin: 0;
+        }
+
+        .modal-body-text {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            line-height: 1.5;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .modal-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-primary-action {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #03060c;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-decoration: none;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-block;
+        }
+
+        .btn-primary-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .btn-secondary-action {
+            background: transparent;
+            color: #f8fafc;
+            border: 1px solid var(--border);
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-decoration: none;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            display: inline-block;
+        }
+
+        .btn-secondary-action:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #f8fafc;
+        }
+        
+        .btn-utility-support:hover {
+            background: #ffd700 !important;
+            color: #000 !important;
+            box-shadow: 0 0 20px #ffd700 !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="conn-guard">
+        <div class="guard-spinner"></div>
+        <h2 style="color: var(--neon-cyan); letter-spacing: 5px;">RECONECTANDO AO TITAN...</h2>
+        <p style="font-size: 0.6rem; opacity: 0.5; margin-top: 10px;">O servidor está reiniciando para aplicar atualizações.</p>
+    </div>
+
+    <div class="mouse-follow" id="mouse-glow"></div>
+
+    <!-- UTILITY HUD -->
+    <div class="utility-hud">
+        <div id="sentinel-status" style="display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.5); padding: 5px 15px; border: 1px solid var(--border); border-radius: 4px; backdrop-filter: blur(10px);">
+            <div id="sentinel-led" style="width: 8px; height: 8px; border-radius: 50%; background: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan);"></div>
+            <span style="font-size: 0.55rem; font-weight: 900; letter-spacing: 1px; color: #fff;">SENTINEL: <span id="sentinel-text">SISTEMA ÍNTEGRO</span></span>
+        </div>
+        <button class="btn-utility btn-utility-support" onclick="openSupportModal()" style="border-color: #ffd700; color: #ffd700;">💖 Apoiar Projeto</button>
+        <button class="btn-utility" onclick="runSecurityAudit()" style="border-color: var(--neon-pink); color: var(--neon-pink);">🛡️ Auditoria de Segurança</button>
+        <button class="btn-utility btn-restart" onclick="restartServer()">⚡ Reiniciar Servidor</button>
+    </div>
+
+    <header class="header-command">
+        <h1>NARRAVOX COMMAND</h1>
+        <p>UNIDADE CENTRAL DE PROCESSAMENTO E INTELIGÊNCIA</p>
+        
+        <!-- AVISO BETA -->
+        <div style="margin-top: 20px; padding: 15px 25px; background: rgba(255, 170, 0, 0.1); border: 1px solid var(--neon-orange); border-radius: 8px; display: inline-block; max-width: 750px; backdrop-filter: blur(5px);">
+            <p style="color: var(--neon-orange); font-size: 0.95rem; font-weight: 700; text-transform: none; letter-spacing: 1px; line-height: 1.6; opacity: 1;">
+                ⚠️ <strong style="letter-spacing: 2px;">SISTEMA EM FASE BETA</strong><br>
+                Este programa é um projeto vivo e em constante evolução. Alguns recursos visíveis no painel são atualmente apenas demonstrativos (visuais) e serão testados e implementados em atualizações futuras.
+            </p>
+        </div>
+
+        <!-- BANNER DE APOIO/FEEDBACK -->
+        <div style="margin-top: 15px; padding: 15px 25px; background: rgba(0, 243, 255, 0.05); border: 1px solid rgba(0, 243, 255, 0.25); border-radius: 8px; display: inline-block; max-width: 750px; backdrop-filter: blur(5px); text-align: left; box-shadow: 0 0 15px rgba(0, 243, 255, 0.05);">
+            <p style="color: #f8fafc; font-size: 0.95rem; font-weight: 500; text-transform: none; letter-spacing: 0.5px; line-height: 1.6; margin: 0;">
+                ⭐ <strong style="color: #ffd700;">O PhoenixDub te ajudou?</strong> Criei este projeto sozinho de forma independente! 
+                Deixe uma 🌟 no nosso <a href="https://github.com/rick60496/PhoenixDub-AI" target="_blank" style="color: var(--neon-cyan); text-decoration: underline; font-weight: 700;">GitHub</a> e me conte o que achou na aba de <a href="https://github.com/rick60496/PhoenixDub-AI/discussions" target="_blank" style="color: #ffd700; text-decoration: underline; font-weight: 700;">Discussões</a> 
+                (leva menos de 1 minuto e me ajuda a não ter que parar o projeto para arrumar um emprego comum!).
+            </p>
+        </div>
+    </header>
+
+    <div class="nexus-grid">
+        
+        <!-- ESTÚDIO DE VÍDEO -->
+        <a href="video_studio.html" class="card-nexus video">
+            <div class="glow-aura"></div>
+            <div class="icon-vibe">🎬</div>
+            <h2>ESTÚDIO DE VÍDEO</h2>
+            <p class="desc">Dublagem autônoma de cinema e processamento de vetores.</p>
+            
+            <div class="telemetry-box">
+                <div class="tele-title">TELEMETRIA TITAN</div>
+                <div class="tele-status" id="video-status">SISTEMA OPERACIONAL // PORTA 5004</div>
+            </div>
+        </a>
+
+        <!-- EDITOR VORTEX AI -->
+        <a href="vortex_editor.html" class="card-nexus vortex">
+            <div class="glow-aura"></div>
+            <div class="icon-vibe">🌪️</div>
+            <h2>EDITOR VORTEX AI</h2>
+            <p class="desc">Reconstrução de timeline e efeitos de parallax tático.</p>
+            
+            <div class="telemetry-box">
+                <div class="tele-title">TELEMETRIA TITAN</div>
+                <div class="tele-status" id="vortex-status">ERRO: MOTOR VORTEX OFFLINE.</div>
+            </div>
+        </a>
+
+        <!-- ENGENHARIA TITAN -->
+        <a href="games_studio.html" class="card-nexus games">
+            <div class="glow-aura"></div>
+            <div class="icon-vibe">🎮</div>
+            <h2>ENGENHARIA TITAN</h2>
+            <p class="desc">Localização profunda de assets e injeção de código fonético.</p>
+            
+            <div class="telemetry-box">
+                <div class="tele-title">TELEMETRIA TITAN</div>
+                <div class="tele-status" id="games-status">STANDBY // AGUARDANDO INJEÇÃO</div>
+            </div>
+        </a>
+
+        <!-- DJ BEAT-MASTER (NOVO) -->
+        <a href="dj_studio.html" class="card-nexus dj" style="--accent-card: #00ff41;">
+            <div class="glow-aura" style="background: var(--accent-card);"></div>
+            <div class="icon-vibe">🎧</div>
+            <h2 style="color: var(--accent-card); display: flex; align-items: center; gap: 8px;">
+                DJ BEAT-MASTER 
+                <span style="font-size: 0.5rem; background: rgba(0, 255, 65, 0.15); color: var(--accent-card); border: 1px solid var(--accent-card); padding: 1px 5px; border-radius: 3px; font-weight: bold; letter-spacing: 0.5px;">BETA</span>
+            </h2>
+            <p class="desc">Mixagem inteligente de sets e análise harmônica via IA.</p>
+            
+            <div class="telemetry-box" style="border-color: rgba(0, 255, 65, 0.2); background: rgba(0, 255, 65, 0.05);">
+                <div class="tele-title" style="color: var(--accent-card);">AUDIO ENGINE</div>
+                <div class="tele-status" id="dj-status">VORTEX CORE // STANDBY</div>
+            </div>
+        </a>
+
+        <!-- CINE GEN (MOCKUP VISUAL) -->
+        <a href="nexus_cine_gen.html" class="card-nexus cine" style="--accent-card: #ff00ff;">
+            <div class="glow-aura" style="background: var(--accent-card);"></div>
+            <div class="icon-vibe">🎞️</div>
+            <h2 style="color: var(--accent-card);">CINE GEN</h2>
+            <p class="desc">Geração autônoma de vídeos cinematográficos via IA (LTX 2.3).</p>
+            
+            <div class="telemetry-box" style="border-color: rgba(255, 0, 255, 0.2); background: rgba(255, 0, 255, 0.05);">
+                <div class="tele-title" style="color: var(--accent-card);">CINEMA ENGINE</div>
+                <div class="tele-status" style="color: #ff00ff; opacity: 0.8;">MÓDULO VISUAL // EM DESENVOLVIMENTO</div>
+            </div>
+        </a>
+
+    </div>
+
+    <!-- POPUP DE APOIO/DOAÇÃO -->
+    <div id="support-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeSupportModal()">&times;</span>
+            <h2>💖 Apoie a NarraVox Studios!</h2>
+            <p class="modal-intro">
+                O <strong>PhoenixDub AI</strong> é um ecossistema independente e gratuito criado para democratizar a inteligência artificial de dublagem e vídeo local. 
+            </p>
+            <div class="modal-highlight">
+                <p>⚠️ <strong>Para continuar funcionando e crescendo:</strong> Sem o apoio financeiro da comunidade, o ritmo de desenvolvimento cairá drasticamente. Precisamos garantir recursos mínimos para que o projeto continue ativo e recebendo novas atualizações constantes!</p>
+            </div>
+            <p class="modal-body-text">
+                Com o seu apoio, poderemos avançar na <strong>Versão 1.0</strong> (que traz o novo motor de voz <strong>Qwen3-TTS</strong> e a beta do gerador de músicas) e pavimentar o caminho para o <strong>Cine Gen</strong> (geração de vídeos via IA para PCs modestos).
+            </p>
+            <div class="modal-actions">
+                <a href="https://apoia.se/narravox_studios" target="_blank" class="btn-primary-action">👉 Visitar Campanha no Apoia.se</a>
+                <a href="https://polar.sh/narravox_studios" target="_blank" class="btn-secondary-action">Apoiar via Polar.sh</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/nexus_premium.js"></script>
+    <script>
+        function openSupportModal() {
+            const modal = document.getElementById('support-modal');
+            modal.classList.add('active');
+        }
+        function closeSupportModal() {
+            const modal = document.getElementById('support-modal');
+            modal.classList.remove('active');
+        }
+        // Fechar ao clicar fora do modal
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('support-modal');
+            if (event.target === modal) {
+                closeSupportModal();
+            }
+        });
+    </script>
+
+</body>
+</html>

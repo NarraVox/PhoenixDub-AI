@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TITAN // CRIMSON COMMAND RIG</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/games_studio.css">
+</head>
+<body>
+
+    <div class="rig-background"></div>
+
+    <div class="crimson-world">
+        <!-- HEADER HUD -->
+        <div class="hud-header">
+            <div style="display: flex; align-items: center; gap: 30px;">
+                <a href="nexus_premium.html" class="back-btn">← HUB CENTRAL</a>
+                <div style="font-weight: 900; letter-spacing: 5px; font-size: 1rem; color: #fff;">
+                    TITAN // <span style="color: var(--accent)">CRIMSON COMMAND RIG</span>
+                </div>
+            </div>
+            <div style="border: 1px solid var(--accent); color: var(--accent); padding: 8px 20px; font-size: 0.6rem; font-weight: 900; letter-spacing: 3px; background: rgba(255,18,79,0.05);">
+                OPERATIONAL STATUS: READY
+            </div>
+        </div>
+
+        <!-- THE RACK (SIDEBAR) -->
+        <div class="tactical-rack">
+            
+            <!-- ETAPA 1: SCANNER -->
+            <div class="rig-module">
+                <label>ETAPA 1: VETOR DE ENTRADA (VPK/PCK/FSB)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="asset-path" placeholder="Caminho do asset..." style="margin-bottom: 0;">
+                    <button class="back-btn" style="padding: 0 15px;" onclick="selecionarArquivo('asset-path', 'Arquivos de Jogo|*.vpk;*.pck;*.fsb;*.fev')">📂</button>
+                </div>
+                <button class="btn-rig" style="margin-top: 15px; font-size: 0.7rem;" onclick="executar('analisar')">SCANNER INICIAL</button>
+            </div>
+
+            <!-- ETAPA 2: EXTRAÇÃO FMOD/QUICKBMS -->
+            <div class="rig-module">
+                <label>ETAPA 2: EXTRAÇÃO DE ASSETS (FMOD/WAV)</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="btn-rig" style="font-size: 0.6rem; background: transparent; border: 1px solid var(--accent); color: var(--accent);" onclick="executar('extrair')">EXTRAIR VPK/PCK</button>
+                    <button class="btn-rig" style="font-size: 0.6rem; background: transparent; border: 1px solid var(--accent); color: var(--accent);" onclick="executar('fmod_extract')">EXTRAIR FMOD (FSB)</button>
+                </div>
+                <div id="extraction-status" style="font-size: 0.6rem; color: #555; margin-top: 10px; text-align: center;">AGUARDANDO COMANDO DE EXTRAÇÃO...</div>
+            </div>
+
+            <!-- ETAPA 3: CONFIG & DUBLAGEM -->
+            <div class="rig-module">
+                <label>ETAPA 3: ESTAÇÃO DOSSIER (CONFIG)</label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <select id="project-selector" style="margin-bottom: 0; width: 100%;">
+                        <option value="">SELECIONE O PROJETO...</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label>OU SELECIONAR PASTA WAV MANUALMENTE</label>
+                    <div style="color: #ffaa00; font-size: 0.5rem; font-weight: 900; margin-bottom: 8px; letter-spacing: 1px;">⚠️ RECOMENDADO: ATÉ 500 ARQUIVOS OU .ZIP PARA ESTABILIDADE TOTAL.</div>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="manual-wav-path" placeholder="Pasta com arquivos .wav..." style="margin-bottom: 0;">
+                        <button class="back-btn" style="padding: 0 15px;" onclick="selecionarPasta('manual-wav-path')">📂</button>
+                    </div>
+                    <div id="folder-preview-info" style="display: none;"></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label>ORIGEM</label>
+                        <select id="src-lang">
+                            <option value="auto">AUTO</option>
+                            <option value="en" selected>INGLÊS</option>
+                            <option value="pt">PORTUGUÊS</option>
+                            <option value="es">ESPANHOL</option>
+                            <option value="fr">FRANCÊS</option>
+                            <option value="de">ALEMÃO</option>
+                            <option value="it">ITALIANO</option>
+                            <option value="ja">JAPONÊS</option>
+                            <option value="zh">CHINÊS</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>DESTINO</label>
+                        <select id="target-lang">
+                            <option value="pt" selected>PORTUGUÊS</option>
+                            <option value="en">INGLÊS</option>
+                            <option value="es">ESPANHOL</option>
+                            <option value="fr">FRANCÊS</option>
+                            <option value="de">ALEMÃO</option>
+                            <option value="it">ITALIANO</option>
+                            <option value="ja">JAPONÊS</option>
+                            <option value="zh">CHINÊS</option>
+                        </select>
+                    </div>
+                </div>
+                <select id="game-profile">
+                    <option value="state_of_decay">STATE OF DECAY (SURVIVOR/OPEN-WORLD)</option>
+                    <option value="cod">CALL OF DUTY (AÇÃO MILITAR)</option>
+                    <option value="xcom">XCOM / SCI-FI (TÁTICO)</option>
+                    <option value="the_bureau">XCOM THE BUREAU (VINTAGE/TACTICAL)</option>
+                </select>
+                <button class="btn-rig" onclick="executar('dublar')" id="btn-iniciar">INICIAR DUBLAGEM</button>
+                <button class="btn-rig" onclick="executar('dublar')" id="btn-continuar" style="display: none; background: #ffaa00; margin-top: 10px; box-shadow: 0 0 20px rgba(255, 170, 0, 0.4);">CONTINUAR DUBLAGEM</button>
+            </div>
+
+            <!-- ETAPA 4: REPACK -->
+            <div class="rig-module">
+                <label>ETAPA 4: INJEÇÃO & REPACK</label>
+                <div style="margin-bottom: 15px;">
+                    <label>CAMINHO FERRAMENTA FMOD (OPCIONAL)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="fmod-tool-path" placeholder="Caminho do FMOD Designer/Banker..." style="margin-bottom: 0;">
+                        <button class="back-btn" style="padding: 0 15px;" onclick="selecionarArquivo('fmod-tool-path', 'FMOD Tool|*.exe')">📂</button>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="dubbed-folder" placeholder="Pasta com áudios dublados..." style="margin-bottom: 0;">
+                    <button class="back-btn" style="padding: 0 15px;" onclick="selecionarPasta('dubbed-folder')">📂</button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="btn-rig" onclick="executar('repack')">REPACK VPK/PCK</button>
+                    <button class="btn-rig" style="background: #fff; color: #000;" onclick="executar('fmod_repack')">REPACK FMOD</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- THE MONITOR (MAIN) -->
+         <div class="tactical-monitor">
+            <div class="monitor-core">
+                <!-- LOADER OVERLAY (v2026.AUTO_LOCK) -->
+                <div id="engine-loader-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3,0,5,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(10px); transition: opacity 0.5s ease;">
+                    <div style="position: relative; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+                        <div class="progress-circle spinning-circle" style="border-top-color: var(--accent); width: 100px; height: 100px; position: absolute; margin-bottom: 0;"></div>
+                        <div style="font-size: 0.6rem; font-weight: 900; letter-spacing: 2px; color: var(--accent); z-index: 10;">TITAN</div>
+                    </div>
+                    <div style="font-weight: 900; color: #fff; letter-spacing: 4px; font-size: 0.8rem; text-transform: uppercase; margin-top: 10px;">Sincronizando Link Neural...</div>
+                    <div style="color: #888; font-size: 0.55rem; letter-spacing: 2px; margin-top: 8px; text-transform: uppercase;">Aguardando liberação de portas e inicialização do motor</div>
+                </div>
+
+                <div class="progress-circle">
+                    <div class="percent-tag" id="percent-text">0%</div>
+                </div>
+                <div id="current-step-text" style="font-weight: 900; color: var(--accent); letter-spacing: 5px; font-size: 0.8rem;">IDLE STATUS</div>
+                
+                <!-- [v2026.TIMER] Cronômetro de Performance Titan -->
+                <div id="titan-timer" style="font-family: 'Consolas', monospace; font-size: 1.2rem; font-weight: 900; color: #fff; margin-top: 5px; letter-spacing: 2px; opacity: 0.8;">0:00:00</div>
+                
+                <div id="project-progress-area" style="display: none; width: 100%; margin-top: 40px; transform: translateZ(30px);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: flex-end;">
+                        <div id="active-tool-badge" style="background: var(--accent); color: #000; padding: 5px 15px; font-weight: 900; font-size: 0.6rem; letter-spacing: 2px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);">OFFLINE</div>
+                        <div id="segment-counter" style="color: #fff; font-weight: 900; font-size: 0.7rem; letter-spacing: 3px; opacity: 0.7;">000 / 000</div>
+                    </div>
+                    <div style="width: 100%; height: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,60,60,0.1); position: relative; overflow: hidden;">
+                        <div id="dynamic-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff124f, #ff3c3c); box-shadow: 0 0 30px var(--accent-glow); transition: 0.5s cubic-bezier(0.17, 0.67, 0.83, 0.67);"></div>
+                    </div>
+                    <div id="status-msg-detail" style="font-size: 0.6rem; color: var(--accent); margin-top: 15px; text-align: center; letter-spacing: 3px; font-weight: 900; text-transform: uppercase;">ESTABELECENDO LINK NEURAL...</div>
+                </div>
+            </div>
+
+            <div class="telemetry-console" id="console-container">
+                <div style="border-bottom: 1px solid var(--border); padding-bottom: 5px; margin-bottom: 10px; font-weight: 900; letter-spacing: 2px;">
+                    TITAN RIG TELEMETRY // ENCRYPTED LINK
+                </div>
+                <div id="manual-logs">
+                    <div style="color: #888;">[SYSTEM] Secure tactical link established.</div>
+                </div>
+                <pre id="console-log" style="margin: 0; white-space: pre-wrap; color: var(--accent);"></pre>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="js/games_studio.js"></script>
+</body>
+</html>

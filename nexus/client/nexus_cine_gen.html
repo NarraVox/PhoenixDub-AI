@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS CINE-GEN | AI Cinema Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/nexus_cine_gen.css">
+</head>
+<body>
+    <div class="layout">
+        <!-- ÁREA DE ROTEIRO -->
+        <section class="editor-zone">
+            <header>
+            <div class="brand">
+                <a href="nexus_premium.html" style="color: var(--accent); text-decoration: none; font-size: 0.75rem; letter-spacing: 1px; font-weight: 800; margin-bottom: 10px; border: 1px solid var(--accent); padding: 5px 12px; border-radius: 6px; display: inline-block; transition: 0.3s;" onmouseover="this.style.background='var(--accent)'; this.style.color='#000';" onmouseout="this.style.background='transparent'; this.style.color='var(--accent)';">← VOLTAR AO HUB</a>
+                <h1>NEXUS CINE-GEN</h1>
+                <p style="color: var(--text-dim); font-size: 0.75rem; letter-spacing: 1px;">AI SERIES AUTOMATION ENGINE</p>
+                </div>
+                <div class="vram-badge">VRAM: 6.0GB RTX_MODE</div>
+            </header>
+            
+            <!-- AVISO MOCKUP -->
+            <div style="background: rgba(255, 77, 77, 0.1); border: 1px dashed var(--danger); padding: 15px; border-radius: 10px; margin-top: 5px;">
+                <p style="color: var(--danger); font-size: 0.8rem; font-weight: 800; letter-spacing: 1px; margin-bottom: 5px;">⚠️ MÓDULO EM DESENVOLVIMENTO (MOCKUP VISUAL)</p>
+                <p style="color: var(--text-main); font-size: 0.75rem; line-height: 1.4;">Esta interface é apenas demonstrativa no momento. O motor de geração de vídeo (LTX) ainda não está ativo. As funções de clique aqui servem apenas para testar a experiência visual e serão conectadas ao backend em futuras atualizações.</p>
+            </div>
+
+            <div class="script-container">
+                <label>Roteiro da Série (Prompt por Cena)</label>
+                <textarea id="script-input" class="script-area" placeholder="Digite o roteiro aqui... Ex: Carol correndo na floresta enquanto chove."></textarea>
+            </div>
+
+            <!-- SEÇÃO DE ELENCO (CASTING) -->
+            <div style="margin-top: 25px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label>Elenco da Série (Referências IP-Adapter)</label>
+                    <button onclick="addActor()" style="background: var(--glass); border: 1px solid var(--accent); color: var(--accent); padding: 4px 12px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; font-weight: 800; transition: 0.3s;">+ ADICIONAR ATOR</button>
+                </div>
+                <div id="character-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-height: 250px; overflow-y: auto; padding-right: 5px;">
+                    <!-- Personagens serão inseridos aqui dinamicamente -->
+                </div>
+            </div>
+
+            <script src="js/nexus_cine_gen.js"></script>
+
+            <div class="controls">
+                <div id="global-status" style="font-size: 0.9rem; color: var(--text-dim); display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim);"></div>
+                    Pronto para gravar
+                </div>
+                <div class="btn-group">
+                    <button id="start-btn" class="btn-start" onclick="startGeneration()">Gravar Cenas</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- MONITOR DE PRODUÇÃO -->
+        <section class="monitor-zone">
+            <div class="status-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <span style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;">Produção em Tempo Real</span>
+                    <span id="progress-text" style="font-size: 0.85rem; color: var(--accent); font-weight: 800;">0%</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.03); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);">
+                    <div id="progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), #7c4dff); transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 15px var(--accent-glow);"></div>
+                </div>
+            </div>
+
+            <div class="scene-list" id="scene-list">
+                <div style="text-align: center; color: var(--text-dim); margin-top: 60px; font-size: 0.9rem; opacity: 0.5;">
+                    <p>Nenhuma cena na fila de renderização.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    
+</body>
+</html>

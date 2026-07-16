@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NarraVox AI - Aider Dashboard</title>
+    <!-- Google Fonts: Outfit & Fira Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/aider_dashboard.css">
+</head>
+<body>
+
+    <header>
+        <div class="logo-area">
+            <div class="logo-icon">N</div>
+            <div class="logo-title">NARRAVOX AI</div>
+        </div>
+        
+        <!-- Navigation Buttons -->
+        <div class="nav-tabs">
+            <button id="navAider" class="nav-tab-btn active" onclick="switchMainTab('aider')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                Dashboard Aider
+            </button>
+            <button id="navVideo" class="nav-tab-btn" onclick="switchMainTab('video')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                Copiloto de Vídeo IA
+            </button>
+        </div>
+
+        <div class="system-status-badge">
+            <div id="statusDot" class="status-dot"></div>
+            <span id="statusText">Status: Carregando...</span>
+        </div>
+    </header>
+
+    <main>
+        <div id="contentAider" class="dashboard-content">
+            
+            <!-- Power Control Panel -->
+            <div class="power-panel">
+                <div class="power-info-text">
+                    <h3 id="panelStateTitle">Servidor Inativo</h3>
+                    <p id="panelStateSubtitle">Configure e ligue para iniciar o Aider Chat</p>
+                </div>
+                <button id="btnPower" class="btn-power" onclick="togglePower()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                    <span>Ligar</span>
+                </button>
+            </div>
+
+            <!-- Settings Card -->
+            <div class="glass-card" id="settingsCard">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        Personalizar Parâmetros da IA
+                    </h2>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Model Selection -->
+                    <div class="input-group" style="grid-column: span 2;">
+                        <label for="modelSelect">Selecione o Modelo (.gguf) <span id="modelSizeDisplay">0.0 GB</span></label>
+                        <select id="modelSelect" class="input-control" onchange="onModelChange()">
+                            <!-- Populated dynamically -->
+                            <option value="">Carregando modelos...</option>
+                        </select>
+                    </div>
+
+                    <!-- GPU Layers Slider -->
+                    <div class="input-group">
+                        <label for="gpuLayers">Camadas na GPU: <span id="gpuLayersVal">33</span></label>
+                        <div class="slider-container">
+                            <input type="range" id="gpuLayers" class="slider-control" min="0" max="60" value="33" oninput="updateEstimate()">
+                        </div>
+                    </div>
+
+                    <!-- Context Size Slider -->
+                    <div class="input-group">
+                        <label for="contextSize">Tamanho de Contexto: <span id="contextVal">4096</span></label>
+                        <div class="slider-container">
+                            <input type="range" id="contextSize" class="slider-control" min="2048" max="32768" step="1024" value="4096" oninput="updateEstimate()">
+                        </div>
+                    </div>
+
+
+
+                    <!-- Flash Attention Toggle -->
+                    <div class="input-group" style="justify-content: center;">
+                        <label class="checkbox-container">
+                            <div class="switch-toggle">
+                                <input type="checkbox" id="flashAttn" checked>
+                                <span class="switch-slider"></span>
+                            </div>
+                            <span>Ativar Flash Attention (Recomendado)</span>
+                        </label>
+                    </div>
+
+                    <!-- Host -->
+                    <div class="input-group">
+                        <label for="serverHost">Endereço (Host)</label>
+                        <input type="text" id="serverHost" class="input-control" value="127.0.0.1">
+                    </div>
+
+                    <!-- Port -->
+                    <div class="input-group">
+                        <label for="serverPort">Porta</label>
+                        <input type="number" id="serverPort" class="input-control" value="1234">
+                    </div>
+
+                    <!-- Actions Footer -->
+                    <div class="settings-footer">
+                        <button class="btn-secondary" onclick="restoreDefaults()">Restaurar Padrões</button>
+                        <button class="btn-primary" onclick="saveSettings()">Salvar Configurações</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Terminal Log Viewer -->
+            <div class="glass-card terminal-panel">
+                <div class="terminal-header">
+                    <h3 class="card-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                        Console de Inicialização (Logs)
+                    </h3>
+                    <div class="terminal-tabs" style="display: flex; gap: 8px; align-items: center;">
+                        <button id="tabServer" class="terminal-tab active" onclick="switchTab('server')">Llama Server</button>
+                        <button id="tabAider" class="terminal-tab" onclick="switchTab('aider')">Aider Client</button>
+                        <button onclick="copyTerminalLogs()" class="btn-secondary" style="font-size: 11px; padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; border-color: rgba(255,255,255,0.15);">📋 Copiar Logs</button>
+                    </div>
+                </div>
+                <div id="terminalBody" class="terminal-body">Nenhum log disponível. Inicie o servidor para ver a saída.</div>
+            </div>
+
+        </div>
+
+        <!-- Left Side: Video Copilot (Tab 2) -->
+        <div id="contentVideo" class="dashboard-content hidden">
+            
+            <!-- Video Selector & Editing Configuration -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                        Seleção do Vídeo & Recursos Extras
+                    </h2>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <p style="font-size: 14px; color: var(--text-muted);">
+                        Selecione o arquivo de vídeo original e marque os recursos inteligentes que deseja aplicar à sua edição.
+                    </p>
+                    <div class="input-group">
+                        <label for="vCopilotInput">Arquivo de Vídeo Origem</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="vCopilotInput" class="input-control" readonly placeholder="Nenhum vídeo selecionado..." style="background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.06); flex-grow: 1;">
+                            <button class="btn-primary" onclick="chooseVideoFile()" style="padding: 12px 24px; white-space: nowrap; display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color:#0b0d19;">
+                                📂 Selecionar Vídeo
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden field to preserve DOM reference -->
+                    <input type="hidden" id="vCopilotOutput" value="C:\IA_dublagem\uploads\VID_editado.mp4">
+                    
+                    <div id="projectFolderDisplay" style="background: rgba(79, 172, 254, 0.05); border: 1px solid rgba(79, 172, 254, 0.15); border-radius: 8px; padding: 16px; display: none;">
+                        <h4 style="font-size: 14px; color: var(--primary); margin-bottom: 6px; font-weight: 600;">Pasta do Projeto Criada</h4>
+                        <span id="projectFolderPath" style="font-size: 13px; color: var(--text-main); font-family: monospace; word-break: break-all;"></span>
+                    </div>
+
+                    <!-- Smart Editing Features Checkboxes -->
+                    <div style="background: rgba(255, 255, 255, 0.015); border: 1px solid var(--glass-border); border-radius: 10px; padding: 20px;">
+                        <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 15px; color: var(--primary); display: flex; align-items: center; gap: 8px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                            Configuração de Edição Inteligente
+                        </h3>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                            <label class="checkbox-container">
+                                <div class="switch-toggle">
+                                    <input type="checkbox" id="optRemoveSilence" checked>
+                                    <span class="switch-slider"></span>
+                                </div>
+                                <span style="font-size: 13px;">Auto-Limpar Silêncios (Pacing)</span>
+                            </label>
+                            <label class="checkbox-container">
+                                <div class="switch-toggle">
+                                    <input type="checkbox" id="optRemoveHesitations" checked>
+                                    <span class="switch-slider"></span>
+                                </div>
+                                <span style="font-size: 13px;">Cortar Hesitações ("Eeees")</span>
+                            </label>
+                            <label class="checkbox-container">
+                                <div class="switch-toggle">
+                                    <input type="checkbox" id="optVerticalFormat">
+                                    <span class="switch-slider"></span>
+                                </div>
+                                <span style="font-size: 13px;">Formato Vertical (Reels/Shorts 9:16)</span>
+                            </label>
+                            <label class="checkbox-container">
+                                <div class="switch-toggle">
+                                    <input type="checkbox" id="optGenerateChapters" checked>
+                                    <span class="switch-slider"></span>
+                                </div>
+                                <span style="font-size: 13px;">Gerar Capítulos para YouTube</span>
+                            </label>
+                            <label class="checkbox-container" style="grid-column: span 2;">
+                                <div class="switch-toggle">
+                                    <input type="checkbox" id="optAddSoundtrack">
+                                    <span class="switch-slider"></span>
+                                </div>
+                                <span style="font-size: 13px;">Mixar Trilha Sonora de Fundo (Se houver)</span>
+                            </label>
+                            <div id="soundtrackCustomSection" style="display: none; grid-column: span 2; margin-top: -6px; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 6px; width: 100%;">
+                                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                                    <input type="text" id="soundtrackPathsInput" class="input-control" placeholder="Nenhuma música selecionada..." readonly style="flex-grow: 1; font-size: 12px; height: 32px; background: rgba(0,0,0,0.25);">
+                                    <button class="btn-secondary" onclick="selectSoundtrackFiles()" style="font-size: 11px; padding: 0 10px; height: 32px; white-space: nowrap; line-height: 32px;">Selecionar Música(s)</button>
+                                </div>
+                                <div style="font-size: 10px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;" id="soundtrackHint">
+                                    Selecione um arquivo de áudio local (.mp3, .wav).
+                                </div>
+                            </div>
+                            <label class="checkbox-container" style="grid-column: span 2;">
+                                <div class="switch-toggle">
+                                    <input type="checkbox" id="optAddTransitions" checked>
+                                    <span class="switch-slider"></span>
+                                </div>
+                                <span style="font-size: 13px;">Transições nos Cortes (Fade/Zoom)</span>
+                            </label>
+                            <label class="checkbox-container" style="grid-column: span 2;">
+                                <div class="switch-toggle">
+                                    <input type="checkbox" id="optGenerateSrt">
+                                    <span class="switch-slider"></span>
+                                </div>
+                                <span style="font-size: 13px;">Gerar Legenda Externa (.srt)</span>
+                            </label>
+                            <label class="checkbox-container">
+                                <div class="switch-toggle">
+                                    <input type="checkbox" id="optNoiseReduction" checked>
+                                    <span class="switch-slider"></span>
+                                </div>
+                                <span style="font-size: 13px;">Redução de Ruído na Voz (FFT)</span>
+                            </label>
+                            <label class="checkbox-container">
+                                <div class="switch-toggle">
+                                    <input type="checkbox" id="optLoudnorm" checked>
+                                    <span class="switch-slider"></span>
+                                </div>
+                                <span style="font-size: 13px;">Normalizar Volume de Áudio</span>
+                            </label>
+                            <label class="checkbox-container">
+                                <div class="switch-toggle">
+                                    <input type="checkbox" id="optSmartZoom" checked>
+                                    <span class="switch-slider"></span>
+                                </div>
+                                <span style="font-size: 13px;">Multi-Câmera Virtual (Zoom)</span>
+                            </label>
+                            <label class="checkbox-container">
+                                <div class="switch-toggle">
+                                    <input type="checkbox" id="optAudioPadding">
+                                    <span class="switch-slider"></span>
+                                </div>
+                                <span style="font-size: 13px;">Margem de Respiro nos Cortes</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Transcription Viewer -->
+            <div class="glass-card" id="transcriptionCard">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        Transcrição do Vídeo (Whisper GPU)
+                    </h2>
+                    <span id="transcribeStatusText" style="font-size: 13px; color: var(--text-muted);">Inativo</span>
+                </div>
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">
+                    Veja o conteúdo transcrito do seu vídeo para planejar seus cortes e edições.
+                </p>
+                
+                <div id="transcriptionContentContainer" class="transcription-body" style="background: rgba(0, 0, 0, 0.25); border: 1px solid var(--glass-border); border-radius: 12px; height: 200px; overflow-y: auto; padding: 16px; font-family: inherit; font-size: 14px; line-height: 1.6; color: #d1d8e0; white-space: pre-wrap; margin-bottom: 16px;">Nenhuma transcrição encontrada. Selecione um vídeo acima e envie uma mensagem no chat para transcrever na GPU automaticamente, ou use os botões abaixo para gerenciar a transcrição manual.</div>
+                
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <button id="btnTranscribe" class="btn-primary" onclick="startTranscription()" style="font-size: 12px; padding: 8px 16px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #0b0d19;">Forçar Transcrição</button>
+                    <button id="btnStopTranscribe" class="btn-secondary" onclick="stopCopilotProcess()" disabled style="font-size: 12px; padding: 8px 16px;">Parar</button>
+                    <button id="btnLoadTranscript" class="btn-secondary" onclick="loadTranscriptionText()" style="font-size: 12px; padding: 8px 16px;">Recarregar Texto</button>
+                </div>
+                
+                <!-- Keep transcribeTerminal hidden so logs can still be parsed in background logs -->
+                <div id="transcribeTerminal" style="display: none;"></div>
+            </div>
+
+            <!-- New Section: Estúdio de Clipes & Ganchos -->
+            <div class="glass-card" id="clipsHooksCard">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                        Estúdio de Clipes &amp; Ganchos (Shorts) 🎬
+                    </h2>
+                    <span id="clipsStatusText" style="font-size: 13px; color: var(--text-muted);">Inativo</span>
+                </div>
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">
+                    Use a IA local para analisar a transcrição do vídeo, sugerir ganchos (hooks) atrativos e gerar pequenos clipes prontos para Shorts/TikTok.
+                </p>
+                
+                <div style="margin-bottom: 20px;">
+                    <button id="btnAnalyzeClips" class="btn-primary" onclick="analyzeClips()" style="padding: 10px 20px; font-size: 13px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #0b0d19;">
+                        🔍 Analisar Transcrição com IA
+                    </button>
+                </div>
+
+                <!-- Analysis Results (Hidden by default, shown when results load) -->
+                <div id="clipsAnalysisResults" style="display: none; flex-direction: column; gap: 20px;">
+                    
+                    <!-- Hooks Section -->
+                    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--glass-border); border-radius: 10px; padding: 16px;">
+                        <h4 style="font-size: 14px; color: var(--primary); margin-bottom: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                            🪝 Sugestões de Ganchos (Hooks) para Gravar
+                        </h4>
+                        <ul id="scriptedHooksList" style="font-size: 13px; color: var(--text-main); line-height: 1.6; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+                            <!-- Populated dynamically -->
+                        </ul>
+                        
+                        <div id="existingHookContainer" style="margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 13px;">
+                            <span style="font-weight: 600; color: var(--warning);">Gancho existente no vídeo:</span>
+                            <p id="existingHookText" style="margin-top: 4px; color: var(--text-muted); font-style: italic;"></p>
+                        </div>
+                    </div>
+
+                    <!-- Recommended Clips Section -->
+                    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--glass-border); border-radius: 10px; padding: 16px;">
+                        <h4 style="font-size: 14px; color: var(--primary); margin-bottom: 12px; font-weight: 600;">
+                            ✂️ Clipes de Destaque Recomendados (Shorts)
+                        </h4>
+                        <div id="recommendedClipsList" style="display: flex; flex-direction: column; gap: 14px;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Step 2: Chat Copilot (Chat UI) -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        Chat com Copiloto de Vídeo IA
+                    </h2>
+                </div>
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">
+                    Converse com o copiloto para orientar a edição profissional do seu vídeo.
+                </p>
+
+                <!-- Chat History Area -->
+                <div id="chatHistory" style="background: rgba(0, 0, 0, 0.25); border: 1px solid var(--glass-border); border-radius: 12px; height: 350px; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                    <!-- Message bubbles populated by JS -->
+                </div>
+
+                <!-- Chat Input Row -->
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
+                    <input type="text" id="chatInput" class="input-control" placeholder="Digite instruções para refinar a edição... (Ex: 'Adicione respiro de 500ms no segmento 3')" style="flex-grow: 1;" onkeydown="if(event.key === 'Enter') handleChatSend()">
+                    <button id="btnSend" class="btn-primary" onclick="handleChatSend()" style="padding: 12px 28px; white-space: nowrap; font-weight: 700; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #0b0d19; border-radius: 8px; box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);">
+                        🚀 Enviar
+                    </button>
+                </div>
+
+                <!-- Hidden/Advanced features collapsed -->
+                <div style="display: flex; gap: 16px; align-items: center;">
+                    <button class="btn-secondary" onclick="clearQueue()" style="font-size: 12px; padding: 8px 16px;">Limpar Conversa</button>
+                    <button id="btnOpenAiderLocal" class="btn-secondary" onclick="copyPromptAndOpenAider()" style="font-size: 12px; padding: 8px 16px; display: none;">Abrir Chat Aider Local</button>
+                    <span id="copyFeedback" style="font-size: 13px; color: var(--success); font-weight: 500; opacity: 0; transition: opacity 0.3s ease;">
+                        ✓ Copiado com sucesso!
+                    </span>
+                </div>
+
+                <!-- Hidden elements to preserve JS references -->
+                <div style="display: none;">
+                    <span id="queueCount">0</span>
+                    <div id="queueListContainer"></div>
+                    <textarea id="consolidatedPromptText"></textarea>
+                    <textarea id="prePromptText">Quero fazer uma edição profissional neste vídeo. Leia a transcrição em 'transcricao_video.txt', identifique as melhores tomadas (removendo repetições e erros), e atualize a lista 'good_segments' em 'editar_video_profissional.py'. Também adicione palavras de impacto chave na lista 'key_captions' com estilos ASS animados, centralizados na parte inferior (Alignment=2, MarginV=60), garantindo que as legendas não entrem simultaneamente. Configure os caminhos de entrada e saída corretamente.</textarea>
+                </div>
+            </div>
+
+            <!-- Step 3: Render Video -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span style="background: var(--primary); color: #0b0d19; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; margin-right: 8px;">3</span>
+                        Renderizar Edição de Vídeo Final (GPU NVENC)
+                    </h2>
+                    <span id="renderStatusText" style="font-size: 13px; color: var(--text-muted);">Inativo</span>
+                </div>
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">
+                    Aplica os cortes inteligentes, efeitos de zoom (punch-in), queima as legendas ASS estilizadas e exporta o vídeo editado.
+                </p>
+
+                <div style="display: flex; gap: 16px; margin-bottom: 20px;">
+                    <button id="btnRender" class="btn-primary" onclick="startRendering()">Iniciar Renderização</button>
+                    <button id="btnStopRender" class="btn-secondary" onclick="stopCopilotProcess()" disabled>Parar</button>
+                </div>
+                <div class="terminal-header" style="border-top: 1px solid var(--glass-border); padding-top: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 class="card-title" style="font-size: 14px;">Console do Renderizador (FFmpeg)</h3>
+                    <button onclick="copyRenderLogs()" class="btn-secondary" style="font-size: 11px; padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; border-color: rgba(255,255,255,0.15);">📋 Copiar Logs</button>
+                </div>
+                <div id="renderTerminal" class="terminal-body" style="height: 180px;">Nenhum log disponível. Inicie a renderização.</div>
+            </div>
+
+            <!-- Step 4: Quick Actions -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                        Remover Ruído de Fundo ⚡
+                    </h2>
+                </div>
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">
+                    Aplica redução de ruído espectral por FFT no áudio do vídeo original completo (limpa o chiado e estática de forma rápida).
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <button id="btnQuickDenoise" class="btn-primary" onclick="runQuickAction('denoise')" style="display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; padding: 14px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #0b0d19; border: none; border-radius: 8px; box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);">
+                        🧹 Iniciar Remoção de Ruído de Fundo
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sidebar / Memory Gauges -->
+        <div class="sidebar-panels">
+            
+            <!-- Estimation Gauges -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                        Simulador de Impacto (VRAM/RAM)
+                    </h2>
+                </div>
+                
+                <!-- Estimated VRAM Gauge -->
+                <div class="gauge-section">
+                    <div class="gauge-header">
+                        <span class="gauge-label">VRAM Estimada (GPU)</span>
+                        <span class="gauge-value" id="estVramVal">0.0 / 6.0 GB</span>
+                    </div>
+                    <div class="gauge-bar-bg">
+                        <div id="estVramBar" class="gauge-bar-fill" style="width: 0%;"></div>
+                    </div>
+                    <div class="gauge-details">
+                        <span id="vramSafetyText">Status: Seguro</span>
+                        <span class="gauge-estimate-hint">RTX 3050 (6GB)</span>
+                    </div>
+                </div>
+
+                <!-- Estimated RAM Gauge -->
+                <div class="gauge-section">
+                    <div class="gauge-header">
+                        <span class="gauge-label">RAM Estimada (Sistema)</span>
+                        <span class="gauge-value" id="estRamVal">0.0 / 16.0 GB</span>
+                    </div>
+                    <div class="gauge-bar-bg">
+                        <div id="estRamBar" class="gauge-bar-fill success" style="width: 0%;"></div>
+                    </div>
+                    <div class="gauge-details">
+                        <span>Peso do Modelo na RAM</span>
+                        <span>Estimado</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Real Hardware Stats Gauges -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                        Monitoramento Real do PC
+                    </h2>
+                </div>
+                
+                <!-- Real VRAM Gauge -->
+                <div class="gauge-section">
+                    <div class="gauge-header">
+                        <span class="gauge-label">VRAM Real em Uso (NVIDIA)</span>
+                        <span class="gauge-value" id="realVramVal">-- GB</span>
+                    </div>
+                    <div class="gauge-bar-bg">
+                        <div id="realVramBar" class="gauge-bar-fill" style="width: 0%;"></div>
+                    </div>
+                    <div class="gauge-details">
+                        <span id="realVramDetail">Consultando GPU...</span>
+                        <span>Hardware Físico</span>
+                    </div>
+                </div>
+
+                <!-- Real RAM Gauge -->
+                <div class="gauge-section">
+                    <div class="gauge-header">
+                        <span class="gauge-label">Memória RAM Real (Sistema)</span>
+                        <span class="gauge-value" id="realRamVal">-- GB</span>
+                    </div>
+                    <div class="gauge-bar-bg">
+                        <div id="realRamBar" class="gauge-bar-fill" style="width: 0%;"></div>
+                    </div>
+                    <div class="gauge-details">
+                        <span id="realRamDetail">Consultando RAM...</span>
+                        <span id="cpuUsageText">CPU: --%</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Overlay Loader -->
+    <div id="loaderOverlay" class="overlay">
+        <div class="spinner"></div>
+        <div class="overlay-text" id="loaderText">Carregando Modelo na GPU...<br><span style="font-size: 13px; color: var(--text-muted); font-weight: normal;">Isso pode demorar entre 15 e 40 segundos.</span></div>
+    </div>
+
+    <script src="js/aider_dashboard.js"></script>
+</body>
+</html>

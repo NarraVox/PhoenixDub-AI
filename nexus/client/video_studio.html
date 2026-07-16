@@ -1,0 +1,212 @@
+    <link rel="stylesheet" href="css/video_studio.css">
+</head>
+<body>
+    <div id="conn-guard">
+        <div class="guard-spinner"></div>
+        <h2 style="color: var(--accent); letter-spacing: 5px; font-family: 'Outfit', sans-serif;">CONEXÃO TITAN PERDIDA</h2>
+        <p style="font-size: 0.6rem; color: #fff; opacity: 0.5; margin-top: 10px;">Aguardando o motor de vídeo se estabilizar...</p>
+    </div>
+
+    <div class="nebula-bg"></div>
+
+    <div class="neural-world">
+        <!-- HEADER HUD -->
+        <div class="hud-header">
+            <div style="display: flex; align-items: center; gap: 30px;">
+                <a href="nexus_premium.html" class="back-btn">← HUB CENTRAL</a>
+                <div style="font-weight: 900; letter-spacing: 5px; font-size: 1rem; color: #fff;">
+                    TITAN // <span style="color: var(--accent)">LABORATÓRIO DE PROJEÇÃO NEURAL</span>
+            </div>
+        </div>
+        <div style="border: 1px solid var(--accent); color: var(--accent); padding: 8px 20px; font-size: 0.6rem; font-weight: 900; letter-spacing: 3px; background: rgba(0,243,255,0.05);">
+            FLUXO: ESTÁVEL
+        </div>
+    </div>
+
+        <div class="projection-table">
+            
+            <!-- CENTRAL CORE -->
+            <div class="quantum-core">
+                <div class="quantum-ring">
+                    <div class="liquid-fill" id="liquid-tank"></div>
+                    <div class="percent-tag" id="percent-text">0%</div>
+                </div>
+                <div id="current-step-text" class="status-vortex-text" style="font-size: 1.45rem; text-shadow: 0 0 20px var(--accent); margin-top: 25px; margin-bottom: 5px; font-weight: 900; color: var(--accent); text-align: center; text-transform: uppercase; letter-spacing: 2px;">AGUARDANDO...</div>
+                <div id="status-msg-detail" style="font-family: 'Outfit', sans-serif; font-weight: 600; color: #888; letter-spacing: 2px; font-size: 0.85rem; text-transform: uppercase; text-align: center; margin-top: 5px; text-shadow: none;">AGUARDANDO COMANDO TITAN</div>
+                
+                <div id="video-progress-area" style="display: none; width: 320px; margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: flex-end;">
+                        <div id="active-tool-badge" style="background: var(--accent); color: #000; padding: 4px 12px; font-weight: 900; font-size: 0.55rem; letter-spacing: 2px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);">STANDBY</div>
+                        <div id="segment-counter" style="color: #fff; font-weight: 900; font-size: 0.65rem; letter-spacing: 2px; opacity: 0.7;">000 / 000</div>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: rgba(0,243,255,0.05); border: 1px solid rgba(0,243,255,0.1); position: relative; overflow: hidden;">
+                        <div id="dynamic-progress-bar" style="width: 0%; height: 100%; background: var(--accent); box-shadow: 0 0 20px var(--accent); transition: 0.5s cubic-bezier(0.17, 0.67, 0.83, 0.67);"></div>
+                    </div>
+                    <button id="btn-edit-script" class="btn-titan" style="margin-top: 20px; padding: 10px; font-size: 0.65rem; display: none; background: var(--violet); color: #fff;" onclick="openScriptEditor()">📝 EDITAR VOZES & TRANSCRIÇÃO</button>
+                </div>
+            </div>
+
+            <!-- MODULE: INPUT -->
+            <div class="orbital-module module-input" style="height: 380px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h2 style="margin: 0;">VETOR DE ENTRADA</h2>
+                        <div style="display: flex; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2px; border-radius: 4px;">
+                            <button id="btn-mode-single" class="mode-tab active" onclick="switchMode('single')" style="background: var(--accent); color: #000; border: none; font-size: 0.55rem; font-weight: 900; padding: 4px 8px; cursor: pointer; letter-spacing: 1px; border-radius: 2px; transition: 0.2s; font-family: 'Outfit', sans-serif;">ÚNICO</button>
+                            <button id="btn-mode-batch" class="mode-tab" onclick="switchMode('batch')" style="background: transparent; color: #fff; border: none; font-size: 0.55rem; font-weight: 900; padding: 4px 8px; cursor: pointer; letter-spacing: 1px; border-radius: 2px; transition: 0.2s; margin-left: 2px; font-family: 'Outfit', sans-serif;">LOTE</button>
+                        </div>
+                    </div>
+
+                    <!-- SINGLE MODE CONTAINER -->
+                    <div id="container-single">
+                        <label>ARQUIVO DE VÍDEO ORIGEM</label>
+                        <button class="btn-titan" style="margin-bottom: 15px; font-size: 0.7rem;" onclick="selectVideo()">📂 SELECIONAR VÍDEO</button>
+                        <div id="selected-file-name" style="font-size: 0.7rem; color: var(--accent); font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 20px;">NENHUM ARQUIVO</div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                            <div>
+                                <label>ORIGEM (SOURCE)</label>
+                                <select id="src-lang" style="margin-bottom: 0;">
+                                    <option value="auto" selected>AUTO (DETECÇÃO)</option>
+                                    <option value="en">INGLÊS</option>
+                                    <option value="pt">PORTUGUÊS</option>
+                                    <option value="es">ESPANHOL</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>DESTINO (TARGET)</label>
+                                <select id="tgt-lang" style="margin-bottom: 0;">
+                                    <option value="pt" selected>PORTUGUÊS</option>
+                                    <option value="en">INGLÊS</option>
+                                    <option value="es">ESPANHOL</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn-titan" onclick="iniciarProcesso()">LANÇAR OPERAÇÃO</button>
+                    </div>
+
+                    <!-- BATCH MODE CONTAINER -->
+                    <div id="container-batch" style="display: none;">
+                        <label>PASTA OU VÍDEOS DE ENTRADA</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                            <button class="btn-titan" style="font-size: 0.6rem; padding: 10px;" onclick="addBatchFiles()">📂 ADICIONAR VÍDEOS</button>
+                            <button class="btn-titan" style="font-size: 0.6rem; padding: 10px; background: var(--violet); color: #fff;" onclick="openWatchdogFolder()">📁 PASTA WATCHDOG</button>
+                        </div>
+                        <div id="batch-stats-text" style="font-size: 0.65rem; color: var(--accent); font-family: monospace; margin-bottom: 15px; text-align: center; font-weight: bold; letter-spacing: 1px;">FILA VAZIA (0 VÍDEOS)</div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                            <div>
+                                <label>ORIGEM (SOURCE)</label>
+                                <select id="batch-src-lang" style="margin-bottom: 0;">
+                                    <option value="auto" selected>AUTO (DETECÇÃO)</option>
+                                    <option value="en">INGLÊS</option>
+                                    <option value="pt">PORTUGUÊS</option>
+                                    <option value="es">ESPANHOL</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label>DESTINO (TARGET)</label>
+                                <select id="batch-tgt-lang" style="margin-bottom: 0;">
+                                    <option value="pt" selected>PORTUGUÊS</option>
+                                    <option value="en">INGLÊS</option>
+                                    <option value="es">ESPANHOL</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 8px; margin-top: 15px;">
+                            <button id="btn-queue-start" class="btn-titan" style="background: #00ff41; color: #000; flex: 2; font-size: 0.65rem; padding: 10px;" onclick="controlQueue('start')">▶️ INICIAR FILA</button>
+                            <button id="btn-queue-pause" class="btn-titan" style="background: #ffa500; color: #000; flex: 2; font-size: 0.65rem; padding: 10px; display: none;" onclick="controlQueue('pause')">⏸️ PAUSAR FILA</button>
+                            <button class="btn-titan" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); flex: 1; padding: 10px; font-size: 0.55rem;" onclick="controlQueue('clear')">LIMPAR</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODULE: CONFIG -->
+            <div class="orbital-module module-config">
+                <h2>CONFIGURAÇÃO</h2>
+                <div style="background: rgba(0, 243, 255, 0.1); padding: 10px; border: 1px solid var(--accent); margin-bottom: 20px;">
+                    <label style="margin: 0;">MOTOR ATIVO</label>
+                    <div style="font-size: 0.8rem; font-weight: 900; color: #fff;">GEMMA 4 PRO (AGENTIC)</div>
+                </div>
+
+                <div style="display: flex; gap: 15px;">
+                    <div style="flex: 1;">
+                        <label>INÍCIO (START)</label>
+                        <div id="start-time-display" style="font-size: 1rem; color: #fff;">--:--:--</div>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>ESTIMATIVA (ETA)</label>
+                        <div id="end-time-display" style="font-size: 1rem; color: var(--accent);">--:--:--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODULE: HISTORY -->
+            <div class="orbital-module module-history">
+                <h2 id="history-title">DOSSIÊS RECENTES</h2>
+                <!-- SINGLE HISTORY -->
+                <div id="job-history" style="height: 180px; overflow-y: auto;">
+                    <div style="color: rgba(255,255,255,0.1); font-size: 0.6rem; text-align: center; margin-top: 50px;">SINCRONIZANDO...</div>
+                </div>
+                <!-- BATCH QUEUE -->
+                <div id="queue-history" style="display: none; height: 180px; overflow-y: auto;">
+                    <div style="color: rgba(255,255,255,0.1); font-size: 0.6rem; text-align: center; margin-top: 50px;">FILA VAZIA</div>
+                </div>
+            </div>
+
+            <!-- MODULE: CONSOLE -->
+            <div class="orbital-module module-console">
+                <h2>TELEMETRIA TITAN</h2>
+                <div id="vortex-terminal" style="font-family: 'Courier New', monospace; font-size: 0.85rem; color: var(--accent); height: 180px; overflow-y: auto; padding: 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(0,243,255,0.1); user-select: text !important; -webkit-user-select: text !important; cursor: text;">
+                    [TITAN_READY] Aguardando sinal...
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="js/video_studio.js"></script>
+
+    <!-- FULLSCREEN NEURAL SCRIPT EDITOR MODAL -->
+    <div id="script-editor-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,1,10,0.98); z-index: 10000; backdrop-filter: blur(30px); overflow-y: auto; padding: 40px; box-sizing: border-box; font-family: 'Outfit', sans-serif;">
+        <div style="max-width: 1200px; margin: 0 auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--accent); padding-bottom: 20px; margin-bottom: 30px;">
+                <div>
+                    <h1 style="margin: 0; font-size: 1.8rem; font-weight: 900; letter-spacing: 5px; color: #fff;">PAINEL DE ALINHAMENTO DE VOZ</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 0.75rem; color: var(--accent); letter-spacing: 2px;">CORRIJA TRANSCRIÇÕES E REATRIBUA VOZES ANTES DO PROCESSO FINAL</p>
+                </div>
+                <div style="display: flex; gap: 15px;">
+                    <button class="btn-titan" style="background: #00ff41; color: #000; width: auto; padding: 12px 30px; font-size: 0.7rem;" onclick="saveEditedScript()">💾 SALVAR E RECONSTRUIR</button>
+                    <button class="btn-titan" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.2); width: auto; padding: 12px 30px; font-size: 0.7rem;" onclick="closeScriptEditor()">FECHAR</button>
+                </div>
+            </div>
+            
+            <div style="background: rgba(0, 243, 255, 0.05); border: 1px solid var(--border); padding: 15px; border-radius: 4px; margin-bottom: 30px; display: flex; align-items: center; gap: 15px;">
+                <span style="font-size: 1.5rem;">💡</span>
+                <p style="margin: 0; font-size: 0.75rem; color: #fff; line-height: 1.6; opacity: 0.9;">
+                    <strong>Dica de Produção:</strong> Mude o orador (dropdown) de qualquer linha que o PyAnnote tenha confundido. Ao clicar em <strong>Salvar e Reconstruir</strong>, o Nexus reorganizará fisicamente os arquivos de áudio de referência nas pastas para que a clonagem da voz fique 100% perfeita e pura, sem contaminações!
+                </p>
+            </div>
+
+            <div style="overflow-x: auto; background: rgba(5,10,30,0.6); border: 1px solid rgba(0,243,255,0.1); border-radius: 4px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; color: #fff;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid rgba(0,243,255,0.2); background: rgba(0,243,255,0.05);">
+                            <th style="padding: 15px; font-weight: 900; letter-spacing: 2px; font-size: 0.65rem; color: var(--accent); text-transform: uppercase; width: 80px;">ID</th>
+                            <th style="padding: 15px; font-weight: 900; letter-spacing: 2px; font-size: 0.65rem; color: var(--accent); text-transform: uppercase; width: 120px;">Tempo</th>
+                            <th style="padding: 15px; font-weight: 900; letter-spacing: 2px; font-size: 0.65rem; color: var(--accent); text-transform: uppercase;">Texto Original (Inglês/Russo)</th>
+                            <th style="padding: 15px; font-weight: 900; letter-spacing: 2px; font-size: 0.65rem; color: var(--accent); text-transform: uppercase; width: 220px;">Atribuição da Voz</th>
+                        </tr>
+                    </thead>
+                    <tbody id="script-editor-rows">
+                        <!-- Gerado Dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

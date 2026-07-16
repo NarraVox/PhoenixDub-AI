@@ -1,0 +1,194 @@
+:root {
+            --bg: #00020a;
+            --accent: #00f3ff;
+            --violet: #8a2be2;
+            --glass: rgba(5, 10, 30, 0.95);
+            --border: rgba(0, 243, 255, 0.2);
+            --text: #ffffff;
+        }
+
+        body, html { 
+            margin: 0; padding: 0; 
+            font-family: 'Outfit', sans-serif; 
+            background: var(--bg); color: var(--text); 
+            height: 100vh; overflow: hidden;
+            perspective: 1000px;
+        }
+
+        /* NEURAL NEBULA BACKGROUND */
+        .nebula-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #001a33 0%, #000 100%);
+            z-index: -2;
+        }
+        .nebula-bg::after {
+            content: ""; position: absolute; width: 100%; height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            opacity: 0.05;
+        }
+
+        .neural-world {
+            width: 100vw; height: 100vh;
+            display: grid;
+            grid-template-rows: 80px 1fr;
+            transform-style: preserve-3d;
+        }
+
+        /* HUD HEADER */
+        .hud-header {
+            background: rgba(0,0,0,0.9); border-bottom: 2px solid var(--accent);
+            display: flex; align-items: center; padding: 0 40px; justify-content: space-between;
+            z-index: 1000; backdrop-filter: blur(20px);
+        }
+
+        .back-btn { 
+            text-decoration: none; color: var(--accent); font-weight: 900; font-size: 0.7rem; 
+            letter-spacing: 2px; text-transform: uppercase; transition: 0.3s;
+            border: 1px solid var(--accent); padding: 8px 25px; border-radius: 2px;
+        }
+        .back-btn:hover { background: var(--accent); color: #000; box-shadow: 0 0 30px var(--accent); }
+
+        /* RADIAL ORBITAL LAYOUT */
+        .projection-table {
+            position: relative; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .quantum-core {
+            position: relative; width: 400px; height: 400px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 10;
+        }
+
+        .orbital-module {
+            position: absolute; width: 320px;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            padding: 25px;
+            backdrop-filter: blur(40px);
+            clip-path: polygon(10% 0%, 90% 0%, 100% 20%, 100% 80%, 90% 100%, 10% 100%, 0% 80%, 0% 20%);
+            transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .module-input { top: 10%; left: 10%; border-left: 4px solid var(--accent); }
+        .module-config { top: 10%; right: 10%; border-right: 4px solid var(--violet); }
+        .module-history { bottom: 10%; right: 10%; border-right: 4px solid var(--accent); }
+        .module-console { bottom: 10%; left: 10%; border-left: 4px solid var(--violet); }
+
+        .orbital-module:hover {
+            transform: scale(1.05) translateZ(50px);
+            border-color: var(--accent);
+            box-shadow: 0 0 40px rgba(0, 243, 255, 0.2);
+            z-index: 100;
+        }
+
+        /* NEURAL LIQUID TANK */
+        .quantum-ring {
+            width: 280px; height: 280px; border-radius: 50%;
+            border: 4px solid rgba(0, 243, 255, 0.1);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 60px rgba(0, 243, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            background: rgba(0,0,0,0.5);
+        }
+        .liquid-fill {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%;
+            height: 0%;
+            background: linear-gradient(180deg, var(--accent), #008fa0);
+            transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+        }
+        .liquid-fill::after {
+            content: "";
+            position: absolute;
+            top: -20px; left: -50%;
+            width: 200%; height: 40px;
+            background: rgba(0, 243, 255, 0.4);
+            border-radius: 45%;
+            animation: waveMotion 4s infinite linear;
+        }
+        @keyframes waveMotion {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .percent-tag { 
+            font-size: 5.5rem; 
+            font-weight: 900; 
+            color: #fff; 
+            z-index: 10; 
+            font-family: 'Outfit', sans-serif;
+            text-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+
+        /* DATA STREAMS */
+        .data-stream {
+            position: absolute; width: 100%; height: 100%;
+            pointer-events: none; z-index: -1;
+        }
+
+        /* UI ELEMENTS */
+        h2 { font-weight: 900; letter-spacing: 4px; color: #fff; text-transform: uppercase; margin: 0 0 15px 0; font-size: 0.9rem; }
+        label { font-size: 0.55rem; color: var(--accent); font-weight: 900; letter-spacing: 2px; margin-bottom: 10px; display: block; }
+        
+        input, select {
+            background: rgba(0,0,0,0.5); border: 1px solid #222; color: #fff;
+            padding: 10px; font-size: 0.8rem; width: 100%; border-radius: 2px;
+            margin-bottom: 15px;
+        }
+        option { background: #050a14; color: #fff; }
+
+        .btn-titan {
+            background: var(--accent); color: #000; border: none;
+            padding: 15px; font-weight: 900; letter-spacing: 4px;
+            cursor: pointer; transition: 0.3s; text-transform: uppercase; width: 100%;
+            clip-path: polygon(5% 0, 100% 0, 95% 100%, 0 100%);
+        }
+        .btn-titan:hover { background: #fff; box-shadow: 0 0 30px #fff; }
+
+        @keyframes ringSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); }
+        /* CONNECTION GUARD OVERLAY */
+        #conn-guard {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999; backdrop-filter: blur(10px);
+        }
+        .guard-spinner {
+            width: 50px; height: 50px;
+            border: 3px solid rgba(0,243,255,0.1);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        .terminal-box {
+            background: rgba(0,0,0,0.7);
+            border: 1px solid var(--border);
+            padding: 25px;
+            height: 520px; /* Ainda maior para acomodar letras gigantes */
+            overflow-y: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 1.4rem; /* Letras SUPER Gigantes */
+            font-weight: 600;
+            color: #00ff41;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+            line-height: 1.8;
+        }
+
+        .status-vortex-text {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 900;
+            color: var(--accent);
+            letter-spacing: 4px;
+            font-size: 1.2rem;
+            margin-top: 25px;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px var(--accent);
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
