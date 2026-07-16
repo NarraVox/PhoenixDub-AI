@@ -10,6 +10,14 @@ if getattr(sys, 'frozen', False):
 else:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Se for apenas um teste de importacoes do CI/CD, verifica e encerra
+if os.environ.get("TEST_IMPORTS") == "1":
+    print("Verificando importacoes do instalador...")
+    import nexus.build_tools.nexus_setup as nexus_setup
+    import webview
+    print("[OK] Importacoes do instalador validadas com sucesso!")
+    sys.exit(0)
+
 import nexus.build_tools.nexus_setup as nexus_setup
 
 if __name__ == '__main__':

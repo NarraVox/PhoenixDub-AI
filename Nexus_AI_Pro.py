@@ -10,6 +10,14 @@ if getattr(sys, 'frozen', False):
 else:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Se for apenas um teste de importacoes do CI/CD, verifica e encerra
+if os.environ.get("TEST_IMPORTS") == "1":
+    print("Verificando importacoes do aplicativo principal...")
+    import nexus.nexus_app as nexus_app
+    import nexus.core.security as security
+    print("[OK] Importacoes do app principal validadas com sucesso!")
+    sys.exit(0)
+
 import nexus.nexus_app as nexus_app
 
 if __name__ == '__main__':
