@@ -70,3 +70,6 @@ usar_qwen_06b.txt
 trabalho_livros_abnt.html
 carta_apresentacao.html
 
+# Ferramentas auxiliares - Ignorar tudo exceto o vgmstream-cli
+tools/*
+!tools/vgmstream-cli/
