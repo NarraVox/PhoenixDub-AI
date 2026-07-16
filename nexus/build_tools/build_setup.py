@@ -3,13 +3,15 @@ import os
 import shutil
 
 def build_setup():
-    # [ORGANIZATION FIX] Sobe para a raiz para garantir caminhos corretos
-    os.chdir("..")
+    # [ORGANIZATION FIX] Sobe para a raiz para garantir caminhos corretos dinamicamente
+    from pathlib import Path
+    root_dir = Path(__file__).parent.parent.parent.resolve()
+    os.chdir(root_dir)
 
     print("Iniciando Build do Instalador Nexus AI (Setup)...")
     
     app_name = "Setup_Nexus"
-    entry_point = os.path.join("nexus", "build_tools", "nexus_setup.py")
+    entry_point = "Setup_Nexus.py"
     
     # Busca o executável gerado pelo Nuitka ou PyInstaller
     nuitka_exe = os.path.join("dist_nuitka", "nexus_app.exe")
@@ -50,6 +52,8 @@ def build_setup():
         '--exclude-module=webview', # Evita o crash de analise
         '--hidden-import=__future__', # CORREÇÃO: Força inclusao do modulo base
         '--hidden-import=clr',        # Necessario para o PythonNet no Windows
+        '--hidden-import=uuid',       # CORREÇÃO: Adiciona uuid exigido pelo webview
+        '--hidden-import=ctypes',     # CORREÇÃO: Adiciona ctypes exigido pelo webview
         # Embutir o programa principal e os codigos com caminhos absolutos para evitar erros de localizacao no PyInstaller
         f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "Nexus_AI_Pro.exe"))};.',
         f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "nexus_app.py"))};.',

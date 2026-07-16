@@ -4,13 +4,14 @@ import shutil
 from pathlib import Path
 
 def build_nexus_pro():
-    # [ORGANIZATION FIX] Sobe para a raiz para garantir caminhos corretos
-    os.chdir("..")
+    # [ORGANIZATION FIX] Sobe para a raiz para garantir caminhos corretos dinamicamente
+    root_dir = Path(__file__).parent.parent.parent.resolve()
+    os.chdir(root_dir)
 
     print("Iniciando Build do Nexus AI Professional (Modo de Compatibilidade)...")
     
     app_name = "Nexus_AI_Pro"
-    entry_point = os.path.join("nexus", "nexus_app.py")
+    entry_point = "Nexus_AI_Pro.py"
     
     # Limpeza profunda
     for folder in ['build', 'dist', '__pycache__']:

@@ -182,7 +182,7 @@ class Api:
         return False
 
 
-if __name__ == '__main__':
+def main():
     print("\n" + "="*20)
     print("  NARRAVOX STUDIOS - JANELA SENTINELA (PORTÁTIL)")
     print("  Monitorando todos os motores na raiz do projeto...")
@@ -219,3 +219,6 @@ if __name__ == '__main__':
     print("\n[OK] Interface lançada. Logs dos motores ativos abaixo:")
     print("-" * 50)
     webview.start()
+
+if __name__ == '__main__':
+    main()
