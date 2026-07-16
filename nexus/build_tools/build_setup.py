@@ -28,7 +28,16 @@ def build_setup():
     os.makedirs(work_dir, exist_ok=True)
     os.makedirs(dist_dir, exist_ok=True)
 
-    site_packages = os.path.join(os.getcwd(), "env", "Lib", "site-packages")
+    # Detecta a pasta do pacote webview dinamicamente para funcionar em qualquer ambiente (local ou nuvem)
+    import importlib.util
+    spec = importlib.util.find_spec("webview")
+    if spec and spec.submodule_search_locations:
+        webview_path = spec.submodule_search_locations[0]
+        print(f"Detectado webview path dinamicamente: {webview_path}")
+    else:
+        site_packages = os.path.join(os.getcwd(), "env", "Lib", "site-packages")
+        webview_path = os.path.join(site_packages, "webview")
+        print(f"Webview nao detectado dinamicamente. Usando fallback: {webview_path}")
     
     params = [
         entry_point,
@@ -47,7 +56,7 @@ def build_setup():
         '--add-data=vpk_manager.py;.',
         '--add-data=nexus/client;client',
         '--add-data=requirements.txt;.',
-        f'--add-data={os.path.join(site_packages, "webview")};webview', # Adiciona webview manualmente
+        f'--add-data={webview_path};webview', # Adiciona webview manualmente
     ]
 
     print("Empacotando Instalador...")
