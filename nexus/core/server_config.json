@@ -1,0 +1,8 @@
+{
+  "model_path": "C:\\IA_dublagem\\_MODELS_\\Qwen3.5-4B-Q4_K_M.gguf",
+  "n_ctx": 20480,
+  "n_gpu_layers": 28,
+  "flash_attn": true,
+  "host": "127.0.0.1",
+  "port": 1234
+}

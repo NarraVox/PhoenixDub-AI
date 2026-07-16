@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WwiseDocument Type="WorkUnit" ID="{55555555-5555-5555-5555-555555555555}" SchemaVersion="110">
+	<ConversionSettings>
+		<WorkUnit Name="Default Work Unit" ID="{55555555-5555-5555-5555-555555555555}" PersistMode="Standalone">
+			<ChildrenList>
+				<Conversion Name="Vorbis_XCom" ID="{66666666-6666-6666-6666-666666666666}">
+					<PropertyList>
+						<Property Name="Channels" Type="int32">
+							<ValueList>
+								<Value>1</Value>
+							</ValueList>
+						</Property>
+						<Property Name="LRMix" Type="Real64" Value="0"/>
+						<Property Name="MaxSampleRate" Type="int32">
+							<ValueList>
+								<Value>44100</Value>
+							</ValueList>
+						</Property>
+						<Property Name="MinSampleRate" Type="int32">
+							<ValueList>
+								<Value>22050</Value>
+							</ValueList>
+						</Property>
+						<Property Name="SampleRate" Type="int32">
+							<ValueList>
+								<Value>0</Value>
+							</ValueList>
+						</Property>
+					</PropertyList>
+					<ConversionDataList>
+						<ConversionData>
+							<PropertyList>
+								<Property Name="Format" Type="string" Value="Vorbis"/>
+								<Property Name="Quality" Type="Real32" Value="4"/>
+							</PropertyList>
+						</ConversionData>
+					</ConversionDataList>
+				</Conversion>
+			</ChildrenList>
+		</WorkUnit>
+	</ConversionSettings>
+</WwiseDocument>

@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Godogen | Neural Command Suite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00d2ff;
+            --primary-glow: rgba(0, 210, 255, 0.4);
+            --secondary: #7000ff;
+            --secondary-glow: rgba(112, 0, 255, 0.4);
+            --matrix-green: #00ff66;
+            --matrix-glow: rgba(0, 255, 102, 0.4);
+            --bg-dark: #07070b;
+            --bg-gradient: radial-gradient(circle at center, #100f1c 0%, #050508 100%);
+            --glass-bg: rgba(14, 13, 22, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --text-color: #e0e0ea;
+            --success: #00ffaa;
+            --success-glow: rgba(0, 255, 170, 0.3);
+            --warning: #ffaa00;
+            --danger: #ff0055;
+            --font-main: 'Inter', sans-serif;
+            --font-logo: 'Orbitron', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            background: var(--bg-gradient);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* SIDEBAR (PAINEL COMPARTILHADO) */
+        aside {
+            width: 320px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+            overflow-y: auto;
+            gap: 20px;
+        }
+
+        .logo-container {
+            text-align: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .logo {
+            font-family: var(--font-logo);
+            font-size: 1.3rem;
+            color: var(--primary);
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px var(--primary-glow);
+            font-weight: 700;
+        }
+
+        .logo-sub {
+            font-size: 0.65rem;
+            letter-spacing: 5px;
+            color: #888;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+
+        .section-title {
+            font-family: var(--font-logo);
+            font-size: 0.7rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .nav-item {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.04);
+            color: #aaa;
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font-logo);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-align: left;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item:hover {
+            color: #fff;
+            border-color: rgba(0, 210, 255, 0.2);
+            background: rgba(0, 210, 255, 0.02);
+        }
+
+        .nav-item.active {
+            color: #fff;
+            background: linear-gradient(135deg, rgba(0, 210, 255, 0.1) 0%, rgba(112, 0, 255, 0.1) 100%);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.15);
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .stat-label { 
+            font-size: 0.65rem; 
+            color: #8f8f9f; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+        }
+
+        .stat-value { 
+            font-family: var(--font-logo); 
+            font-size: 0.85rem; 
+            color: #fff;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            align-self: flex-start;
+            margin-top: 5px;
+        }
+
+        .badge-success { background: rgba(0, 255, 170, 0.1); color: var(--success); border: 1px solid var(--success-glow); }
+        .badge-danger { background: rgba(255, 0, 85, 0.1); color: var(--danger); border: 1px solid rgba(255, 0, 85, 0.2); }
+
+        select {
+            width: 100%;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        select:focus { border-color: var(--primary); }
+
+        /* MAIN CONTENT AREA */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            overflow-y: auto;
+            gap: 25px;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 15px;
+        }
+
+        .header-title {
+            font-family: var(--font-logo);
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            color: #fff;
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 25px;
+            flex: 1;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 25px;
+            flex: 1;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #b5b5c0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            color: #fff;
+            padding: 12px 15px;
+            font-size: 0.85rem;
+            outline: none;
+            transition: 0.3s;
+            font-family: var(--font-main);
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.15);
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-family: var(--font-logo);
+            font-size: 0.8rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .btn:disabled {
+            border-color: #223a22;
+            color: #3f5c3f;
+            cursor: not-allowed;
+        }
+
+        .btn-large {
+            width: 100%;
+            padding: 15px;
+            font-size: 0.95rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 15px rgba(112, 0, 255, 0.2);
+        }
+
+        .btn-large:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(112, 0, 255, 0.4);
+            color: #fff;
+        }
+
+        .btn-success { border-color: var(--success); color: var(--success); }
+        .btn-success:hover:not(:disabled) { background: var(--success); color: #000; box-shadow: 0 0 15px var(--success-glow); }
+        .btn-danger { border-color: var(--danger); color: var(--danger); }
+        .btn-danger:hover:not(:disabled) { background: var(--danger); color: #fff; box-shadow: 0 0 15px rgba(255,0,85,0.3); }
+
+        /* PREVIEW SCREENSHOT */
+        .preview-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .preview-img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        
+        .preview-placeholder {
+            color: #444;
+            font-family: var(--font-logo);
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .preview-placeholder svg { width: 48px; height: 48px; margin: 0 auto; stroke: #333; }
+
+        /* PROGRESS LOGS */
+        .progress-box {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid rgba(255,255,255,0.03);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8rem;
+            color: #666;
+            transition: color 0.3s;
+        }
+
+        .step-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid #555;
+            display: inline-block;
+            position: relative;
+        }
+
+        .step.active { color: var(--primary); }
+        .step.active .step-icon {
+            border-color: var(--primary);
+            box-shadow: 0 0 8px var(--primary-glow);
+            animation: pulse 1.5s infinite;
+        }
+
+        .step.completed { color: var(--success); }
+        .step.completed .step-icon {
+            border-color: var(--success);
+            background: var(--success);
+        }
+
+        /* CONSOLE TERMINAL (AIDER) */
+        .terminal {
+            flex: 1;
+            background: #020304;
+            border: 1px solid rgba(0, 255, 102, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #00ffaa;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .log-box {
+            height: 120px;
+            background: #020304;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #888;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <aside>
+        <div class="logo-container">
+            <div class="logo">NEXUS_GODOGEN</div>
+            <div class="logo-sub">Neural Command Hub</div>
+        </div>
+
+        <div class="nav-menu">
+            <div class="nav-item active" onclick="switchTab('game-tab')">🕹️ Criador de Jogos</div>
+            <div class="nav-item" onclick="switchTab('aider-tab')">⚡ Forja Simples</div>
+            <div class="nav-item" onclick="switchTab('forge-tab')">🛠️ Planejador de Metas (Forge)</div>
+        </div>
+
+        <div>
+            <div class="section-title">Controle Llama GPU (RTX 3050)</div>
+            <div class="stat-card" style="gap: 10px;">
+                <div>
+                    <span class="stat-label">Servidor IA Local</span>
+                    <span id="server-status" class="badge">Consultando...</span>
+                </div>
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <button class="btn btn-success" style="padding: 6px 12px; font-size: 0.65rem;" id="btn-start-server" onclick="startLlamaServer()">Ligar</button>
+                    <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.65rem;" id="btn-stop-server" onclick="stopLlamaServer()" disabled>Desligar</button>
+                </div>
+                <div>
+                    <span class="stat-label">RAM Consumida</span>
+                    <span class="stat-value" id="ram-usage">-- / 16.0GB</span>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="section-title">Logs do Servidor IA</div>
+            <div class="log-box" id="llama-logs" style="height: 100px;">Aguardando inicialização do servidor...</div>
+        </div>
+
+        <div style="margin-top: auto;">
+            <div class="section-title">Jogos Criados</div>
+            <select id="project-selector" onchange="onProjectSelect()">
+                <option value="">-- Selecionar Jogo --</option>
+            </select>
+        </div>
+    </aside>
+
+    <main>
+        <!-- ABA 1: CRIADOR DE JOGOS -->
+        <div class="tab-content active" id="game-tab">
+            <div class="header-bar">
+                <div class="header-title">🕹️ AUTONOMOUS GAME GENERATOR (GODOT)</div>
+                <div style="font-size: 0.7rem; color: #555; font-family: var(--font-logo);">ENGINE_STANDBY</div>
+            </div>
+
+            <div class="grid-container">
+                <div class="glass-panel">
+                    <div class="input-group">
+                        <label for="game-name">Nome do Jogo</label>
+                        <input type="text" id="game-name" placeholder="Apocalipse_Cidade_Zero">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="prompt-area">Descreva seu Jogo dos Sonhos</label>
+                        <textarea id="prompt-area" style="height: 150px;" placeholder="Descreva o cenário, luzes, inimigos e jogador... Ex: 'Um jogo de labirinto futurista 3D com chão de metal, luz solar intensa e névoa azul volumétrica. O jogador controla um cilindro azul por teclas WASD e deve desviar de esferas vermelhas (inimigos) que o perseguem.'"></textarea>
+                    </div>
+
+                    <button class="btn btn-large" id="btn-generate" onclick="generateGame()">GERAR JOGO COMPLETO (GEMMA + QWEN + AIDER)</button>
+
+                    <div class="progress-box">
+                        <div class="section-title" style="margin-bottom: 5px;">Progresso da Geração</div>
+                        <div class="step" id="step-1"><span class="step-icon"></span><span>1. Planejando estrutura de cenas com Gemma...</span></div>
+                        <div class="step" id="step-2"><span class="step-icon"></span><span>2. Escrevendo códigos base com Qwen...</span></div>
+                        <div class="step" id="step-3"><span class="step-icon"></span><span>3. Polindo e refinando scripts com o Aider...</span></div>
+                        <div class="step" id="step-4"><span class="step-icon"></span><span>4. Compilando as cenas (.tscn) na Godot...</span></div>
+                        <div class="step" id="step-5"><span class="step-icon"></span><span>5. Rodando validação visual (screenshot)...</span></div>
+                    </div>
+                </div>
+
+                <div class="glass-panel">
+                    <div class="section-title">Validação Visual (Screenshot)</div>
+                    <div class="preview-container">
+                        <img src="" id="screenshot-img" class="preview-img" alt="Visual do Jogo Gerado">
+                        <div class="preview-placeholder" id="placeholder-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                <circle cx="8.5" cy="8.5" r="1.5" />
+                                <polyline points="21 15 16 10 5 21" />
+                            </svg>
+                            <span>Aguardando Geração do Protótipo...</span>
+                        </div>
+                    </div>
+
+                    <div class="section-title" style="margin-top: 10px;">Comandos do Jogo Selecionado</div>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <button class="btn btn-success" id="btn-open-editor" onclick="openGodotEditor()" disabled>🛠️ Abrir no Editor Godot</button>
+                        <button class="btn" id="btn-play" onclick="playGame()" disabled>🎮 Jogar Protótipo</button>
+                    </div>
+
+                    <div class="section-title" style="margin-top: 20px;">Proteção de Gameplay (Lock GDScript)</div>
+                    <div id="project-files-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
+                        <span style="color: #666; font-size: 0.75rem; text-align: center; font-style: italic;">Nenhum jogo selecionado.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA 2: FORJA GERAL (AIDER) -->
+        <div class="tab-content" id="aider-tab">
+            <div class="header-bar">
+                <div class="header-title">🛠️ FORJA GERAL DE CÓDIGO (AIDER)</div>
+                <div style="font-size: 0.7rem; color: #555; font-family: var(--font-logo);">AIDER_STANDBY</div>
+            </div>
+
+            <div class="grid-container" style="grid-template-columns: 0.8fr 1.2fr;">
+                <div class="glass-panel">
+                    <div class="input-group">
+                        <label for="work-dir">Diretório de Trabalho (Pasta do Programa)</label>
+                        <input type="text" id="work-dir" value="C:\IA_dublagem" placeholder="Ex: C:\IA_dublagem">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="aider-prompt">Instrução de Atualização / Criação</label>
+                        <textarea id="aider-prompt" style="height: 180px;" placeholder="Descreva detalhadamente o que o Aider deve criar ou alterar no código... Ex: 'Otimize a função de conversão de áudio no script vpk_manager.py'"></textarea>
+                    </div>
+
+                    <button class="btn btn-large" style="background: linear-gradient(135deg, var(--secondary) 0%, var(--matrix-green) 100%); color:#000;" id="btn-run-aider" onclick="runAider()">FORJAR ALTERAÇÃO (AIDER)</button>
+                </div>
+
+                <div class="glass-panel" style="overflow: hidden; height: 100%;">
+                    <div class="section-title">Console Terminal do Aider (Live Stream)</div>
+                    <div class="terminal" id="terminal-box">Aguardando comando...</div>
+                </div>
+        </div>
+
+        <!-- ABA 3: PLANEJADOR DE METAS (FORGE) -->
+        <div class="tab-content" id="forge-tab">
+            <div class="header-bar">
+                <div class="header-title">🛠️ PLANEJADOR DE METAS (FORGE)</div>
+                <div style="font-size: 0.7rem; color: #555; font-family: var(--font-logo);">FORGE_STANDBY</div>
+            </div>
+
+            <div class="grid-container" style="grid-template-columns: 0.9fr 1.1fr;">
+                <div class="glass-panel">
+                    <div class="input-group">
+                        <label for="work-dir-forge">Diretório de Trabalho (Pasta do Projeto)</label>
+                        <input type="text" id="work-dir-forge" value="C:\IA_dublagem" placeholder="Ex: C:\IA_dublagem">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="forge-goal">Descreva o Objetivo Geral / Novo Programa</label>
+                        <textarea id="forge-goal" style="height: 100px;" placeholder="Ex: 'Criar um editor de legendas em Python que leia arquivos SRT e mostre na tela'"></textarea>
+                    </div>
+
+                    <button class="btn btn-large" style="background: linear-gradient(135deg, var(--primary) 0%, var(--matrix-green) 100%); color:#000;" id="btn-plan-forge" onclick="planForgeTasks()">PLANEJAR TAREFAS (GEMMA)</button>
+
+                    <div class="progress-box" style="flex: 1; overflow-y: auto; max-height: 300px; display: flex; flex-direction: column; gap: 10px;" id="forge-tasks-container">
+                        <div class="section-title" style="margin-bottom: 5px;">Plano de Tarefas</div>
+                        <div style="color: #666; font-size: 0.8rem; text-align: center; padding: 20px 0;" id="forge-tasks-empty">
+                            Nenhum plano gerado ainda. Descreva seu objetivo e clique em Planejar.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="overflow: hidden; height: 100%; gap: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="section-title">Controles da Execução</div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-success" style="padding: 6px 12px; font-size: 0.7rem;" id="btn-run-next-task" onclick="runNextForgeTask()" disabled>Executar Próxima</button>
+                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.7rem;" id="btn-pause-forge" onclick="pauseForge()" disabled>Pausar</button>
+                        </div>
+                    </div>
+                    
+                    <div class="section-title">Console Terminal do Forge (Tarefa Atual)</div>
+                    <div class="terminal" id="forge-terminal-box" style="flex: 1; color: #00ffaa;">Aguardando planejamento...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentProject = "";
+        let serverLogsInterval = null;
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function updateStatus() {
+            try {
+                const res = await fetch('/api/project/status');
+                const data = await res.json();
+                
+                document.getElementById('ram-usage').innerText = data.ram;
+                
+                const sBadge = document.getElementById('server-status');
+                const btnStart = document.getElementById('btn-start-server');
+                const btnStop = document.getElementById('btn-stop-server');
+                
+                if (data.server_running) {
+                    sBadge.className = "badge badge-success";
+                    sBadge.innerText = "ATIVO";
+                    btnStart.disabled = true;
+                    btnStop.disabled = false;
+                    
+                    if (!serverLogsInterval) {
+                        serverLogsInterval = setInterval(fetchServerLogs, 3000);
+                        fetchServerLogs();
+                    }
+                } else {
+                    sBadge.className = "badge badge-danger";
+                    sBadge.innerText = "INATIVO";
+                    btnStart.disabled = false;
+                    btnStop.disabled = true;
+                    
+                    if (serverLogsInterval) {
+                        clearInterval(serverLogsInterval);
+                        serverLogsInterval = null;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        async function fetchServerLogs() {
+            try {
+                const res = await fetch('/api/server/logs');
+                const data = await res.json();
+                const logBox = document.getElementById('llama-logs');
+                logBox.innerText = data.logs;
+                logBox.scrollTop = logBox.scrollHeight;
+            } catch(e) {}
+        }
+
+        async function startLlamaServer() {
+            try {
+                const res = await fetch('/api/server/start', { method: 'POST' });
+                const data = await res.json();
+                alert(data.status);
+                updateStatus();
+            } catch(e) {
+                alert("Erro ao iniciar: " + e);
+            }
+        }
+
+        async function stopLlamaServer() {
+            try {
+                const res = await fetch('/api/server/stop', { method: 'POST' });
+                const data = await res.json();
+                alert(data.status);
+                updateStatus();
+                document.getElementById('llama-logs').innerText = "Servidor parado.";
+            } catch(e) {
+                alert("Erro ao parar: " + e);
+            }
+        }
+
+        async function loadProjects() {
+            try {
+                const res = await fetch('/api/projects/list');
+                const data = await res.json();
+                const selector = document.getElementById('project-selector');
+                const prev = selector.value;
+                
+                selector.innerHTML = '<option value="">-- Selecionar Jogo --</option>';
+                data.projects.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p; opt.innerText = p.replace(/_/g, ' ');
+                    selector.appendChild(opt);
+                });
+                
+                if (prev && data.projects.includes(prev)) {
+                    selector.value = prev;
+                }
+            } catch(e) {}
+        }
+
+        function onProjectSelect() {
+            const name = document.getElementById('project-selector').value;
+            if (!name) {
+                disableProjectButtons();
+                return;
+            }
+            currentProject = name;
+            enableProjectButtons();
+            
+            const img = document.getElementById('screenshot-img');
+            const placeholder = document.getElementById('placeholder-box');
+            
+            img.src = `/api/project/screenshot/${name}?t=${Date.now()}`;
+            img.onload = () => {
+                img.style.display = "block";
+                placeholder.style.display = "none";
+            };
+            img.onerror = () => {
+                img.style.display = "none";
+                placeholder.style.display = "flex";
+                placeholder.querySelector('span').innerText = "Sem screenshot.";
+            };
+
+            loadProjectFiles(name);
+        }
+
+        function enableProjectButtons() {
+            document.getElementById('btn-open-editor').disabled = false;
+            document.getElementById('btn-play').disabled = false;
+        }
+
+        function disableProjectButtons() {
+            document.getElementById('btn-open-editor').disabled = true;
+            document.getElementById('btn-play').disabled = true;
+            document.getElementById('project-files-list').innerHTML = '<span style="color: #666; font-size: 0.75rem; text-align: center; font-style: italic;">Nenhum jogo selecionado.</span>';
+        }
+
+        async function loadProjectFiles(gameName) {
+            const container = document.getElementById('project-files-list');
+            try {
+                const response = await fetch(`/api/project/lock_status?name=${gameName}`);
+                const data = await response.json();
+                
+                if (data.files && data.files.length > 0) {
+                    container.innerHTML = "";
+                    data.files.forEach(f => {
+                        const fileRow = document.createElement('div');
+                        fileRow.style.display = "flex";
+                        fileRow.style.justify = "space-between";
+                        fileRow.style.alignItems = "center";
+                        fileRow.style.fontSize = "0.75rem";
+                        fileRow.style.padding = "4px 0";
+                        fileRow.style.borderBottom = "1px solid rgba(255,255,255,0.02)";
+                        
+                        const fileNameSpan = document.createElement('span');
+                        fileNameSpan.innerText = f.path;
+                        fileNameSpan.style.color = f.locked ? "var(--warning)" : "#aaa";
+                        fileNameSpan.style.fontFamily = "monospace";
+                        fileNameSpan.style.textOverflow = "ellipsis";
+                        fileNameSpan.style.overflow = "hidden";
+                        fileNameSpan.style.whiteSpace = "nowrap";
+                        fileNameSpan.style.maxWidth = "160px";
+                        fileNameSpan.title = f.path;
+                        
+                        const lockBtn = document.createElement('button');
+                        lockBtn.className = f.locked ? "btn btn-success" : "btn";
+                        lockBtn.style.padding = "4px 8px";
+                        lockBtn.style.fontSize = "0.65rem";
+                        lockBtn.style.minWidth = "105px";
+                        lockBtn.style.borderColor = f.locked ? "var(--warning)" : "rgba(255,255,255,0.1)";
+                        lockBtn.style.color = f.locked ? "var(--warning)" : "#888";
+                        lockBtn.innerHTML = f.locked ? "🔒 Bloqueado" : "🔓 Liberado";
+                        lockBtn.onclick = () => toggleFileLock(gameName, f.path);
+                        
+                        fileRow.appendChild(fileNameSpan);
+                        fileRow.appendChild(lockBtn);
+                        container.appendChild(fileRow);
+                    });
+                } else {
+                    container.innerHTML = '<span style="color: #666; font-size: 0.75rem; text-align: center; font-style: italic;">Nenhum script GDScript encontrado.</span>';
+                }
+            } catch(e) {
+                container.innerHTML = '<span style="color: var(--danger); font-size: 0.75rem; text-align: center;">Erro ao carregar arquivos.</span>';
+            }
+        }
+
+        async function toggleFileLock(gameName, filePath) {
+            try {
+                const response = await fetch('/api/project/toggle_lock', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: gameName, file_path: filePath })
+                });
+                if (response.ok) {
+                    loadProjectFiles(gameName);
+                }
+            } catch(e) {
+                alert("Erro ao alterar bloqueio do arquivo.");
+            }
+        }
+
+        async function generateGame() {
+            const nameInput = document.getElementById('game-name').value.trim();
+            const promptInput = document.getElementById('prompt-area').value.trim();
+
+            if (!nameInput) return alert("Digite o nome do jogo.");
+            if (!promptInput) return alert("Descreva o seu jogo.");
+
+            const btn = document.getElementById('btn-generate');
+            btn.disabled = true;
+            btn.innerText = "GERANDO...";
+
+            resetProgress();
+            setActiveStep(1);
+
+            try {
+                // Simulador visual do progresso
+                setTimeout(() => { setActiveStep(2); }, 3000);
+                setTimeout(() => { setActiveStep(3); }, 8000);
+                setTimeout(() => { setActiveStep(4); }, 15000);
+                setTimeout(() => { setActiveStep(5); }, 22000);
+
+                const response = await fetch('/api/project/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: nameInput, prompt: promptInput })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.status === "Sucesso") {
+                    setCompletedStep(1);
+                    setCompletedStep(2);
+                    setCompletedStep(3);
+                    setCompletedStep(4);
+                    setCompletedStep(5);
+
+                    currentProject = data.game_name;
+                    await loadProjects();
+                    document.getElementById('project-selector').value = currentProject;
+                    onProjectSelect();
+                    alert("Sucesso! Jogo criado e polido com o Aider!");
+                } else {
+                    alert(`Erro: ${data.detail || 'Falha na geração'}`);
+                    resetProgress();
+                }
+            } catch(e) {
+                alert(`Erro de conexão: ${e}`);
+                resetProgress();
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "GERAR JOGO COMPLETO (GEMMA + QWEN + AIDER)";
+            }
+        }
+
+        function resetProgress() {
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById(`step-${i}`).className = "step";
+            }
+        }
+
+        function setActiveStep(num) {
+            resetProgress();
+            for (let i = 1; i < num; i++) {
+                document.getElementById(`step-${i}`).className = "step completed";
+            }
+            document.getElementById(`step-${num}`).className = "step active";
+        }
+
+        function setCompletedStep(num) {
+            document.getElementById(`step-${num}`).className = "step completed";
+        }
+
+        async function runAider() {
+            const cwd = document.getElementById('work-dir').value.trim();
+            const prompt = document.getElementById('aider-prompt').value.trim();
+            const terminal = document.getElementById('terminal-box');
+            const btn = document.getElementById('btn-run-aider');
+
+            if (!cwd) return alert("Digite a pasta de trabalho.");
+            if (!prompt) return alert("Descreva o comando.");
+
+            terminal.innerText = "Iniciando Aider e conectando stream...\n";
+            btn.disabled = true;
+            btn.innerText = "FORJANDO...";
+
+            try {
+                const response = await fetch('/api/aider/run', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cwd: cwd, prompt: prompt })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    terminal.innerText += `\n❌ Erro: ${err.detail || 'Falha ao rodar Aider'}`;
+                    btn.disabled = false;
+                    btn.innerText = "FORJAR ALTERAÇÃO (AIDER)";
+                    return;
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            terminal.innerText += line.substring(6) + '\n';
+                            terminal.scrollTop = terminal.scrollHeight;
+                        }
+                    }
+                }
+            } catch(e) {
+                terminal.innerText += `\n❌ Erro de conexão: ${e}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "FORJAR ALTERAÇÃO (AIDER)";
+            }
+        }
+
+        // ==========================================
+        // SISTEMA DO LOCAL FORGE (ORQUESTRADOR)
+        // ==========================================
+        let forgeTasks = [];
+        let currentTaskIndex = 0;
+        let isForgePaused = false;
+
+        async function planForgeTasks() {
+            const cwd = document.getElementById('work-dir-forge').value.trim();
+            const goal = document.getElementById('forge-goal').value.trim();
+            const btn = document.getElementById('btn-plan-forge');
+            const container = document.getElementById('forge-tasks-container');
+
+            if (!cwd) return alert("Digite a pasta de trabalho do Forge.");
+            if (!goal) return alert("Descreva o seu objetivo geral.");
+
+            btn.disabled = true;
+            btn.innerText = "PLANEJANDO...";
+            container.innerHTML = '<div class="section-title">Plano de Tarefas</div><div style="color: var(--primary); font-size: 0.8rem; text-align: center; padding: 20px 0;">Calculando plano de baixo contexto via Gemma local...</div>';
+            document.getElementById('forge-terminal-box').innerText = "Iniciando fase de planejamento...\n";
+
+            try {
+                const response = await fetch('/api/forge/plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cwd: cwd, goal: goal })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    alert(`Erro de planejamento: ${err.detail || 'Falha na IA local'}`);
+                    resetForgeUI();
+                    return;
+                }
+
+                const data = await response.json();
+                if (data && data.tasks) {
+                    forgeTasks = data.tasks;
+                    currentTaskIndex = 0;
+                    isForgePaused = false;
+                    renderForgeTasks();
+                    document.getElementById('btn-run-next-task').disabled = false;
+                    document.getElementById('forge-terminal-box').innerText = `Plano de ${forgeTasks.length} tarefas gerado com sucesso. Pressione 'Executar Próxima' para iniciar.\n`;
+                } else {
+                    alert("A IA local não retornou um formato de plano válido.");
+                    resetForgeUI();
+                }
+            } catch(e) {
+                alert(`Erro de conexão: ${e}`);
+                resetForgeUI();
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "PLANEJAR TAREFAS (GEMMA)";
+            }
+        }
+
+        function resetForgeUI() {
+            const container = document.getElementById('forge-tasks-container');
+            container.innerHTML = '<div class="section-title">Plano de Tarefas</div><div style="color: #666; font-size: 0.8rem; text-align: center; padding: 20px 0;" id="forge-tasks-empty">Nenhum plano gerado ainda. Descreva seu objetivo e clique em Planejar.</div>';
+            document.getElementById('btn-run-next-task').disabled = true;
+            document.getElementById('btn-pause-forge').disabled = true;
+            forgeTasks = [];
+            currentTaskIndex = 0;
+        }
+
+        function renderForgeTasks() {
+            const container = document.getElementById('forge-tasks-container');
+            container.innerHTML = '<div class="section-title">Plano de Tarefas</div>';
+            
+            forgeTasks.forEach((task, idx) => {
+                const card = document.createElement('div');
+                card.className = 'stat-card';
+                card.style.gap = '5px';
+                card.style.background = 'rgba(255, 255, 255, 0.01)';
+                card.style.border = '1px solid rgba(255,255,255,0.03)';
+                
+                if (idx === currentTaskIndex) {
+                    card.style.borderColor = 'var(--primary)';
+                    card.style.background = 'rgba(0, 210, 255, 0.03)';
+                } else if (idx < currentTaskIndex) {
+                    card.style.borderColor = 'var(--success-glow)';
+                    card.style.background = 'rgba(0, 255, 170, 0.01)';
+                }
+
+                const header = document.createElement('div');
+                header.style.display = 'flex';
+                header.style.justify = 'space-between';
+                header.style.alignItems = 'center';
+
+                const title = document.createElement('span');
+                title.style.fontWeight = 'bold';
+                title.style.fontSize = '0.8rem';
+                title.style.color = idx === currentTaskIndex ? 'var(--primary)' : (idx < currentTaskIndex ? 'var(--success)' : '#888');
+                title.innerText = `T${task.id}: ${task.title}`;
+                header.appendChild(title);
+
+                const badge = document.createElement('span');
+                badge.className = 'badge';
+                if (idx < currentTaskIndex) {
+                    badge.className += ' badge-success';
+                    badge.innerText = 'OK';
+                } else if (idx === currentTaskIndex) {
+                    badge.className += ' badge-success';
+                    badge.style.color = 'var(--primary)';
+                    badge.style.borderColor = 'var(--primary)';
+                    badge.innerText = 'EXECUTANDO';
+                } else {
+                    badge.style.color = '#666';
+                    badge.style.borderColor = '#333';
+                    badge.innerText = 'PENDENTE';
+                }
+                header.appendChild(badge);
+                card.appendChild(header);
+
+                const desc = document.createElement('div');
+                desc.style.fontSize = '0.7rem';
+                desc.style.color = idx === currentTaskIndex ? '#fff' : '#888';
+                desc.innerText = task.description;
+                card.appendChild(desc);
+
+                const files = document.createElement('div');
+                files.style.fontSize = '0.65rem';
+                files.style.color = 'var(--matrix-green)';
+                files.style.fontFamily = 'monospace';
+                files.innerText = `Módulos: ${task.files.join(', ')}`;
+                card.appendChild(files);
+
+                container.appendChild(card);
+            });
+        }
+
+        async function runNextForgeTask() {
+            if (currentTaskIndex >= forgeTasks.length) {
+                alert("Todas as tarefas do plano foram concluídas com sucesso!");
+                return;
+            }
+
+            const cwd = document.getElementById('work-dir-forge').value.trim();
+            const task = forgeTasks[currentTaskIndex];
+            const terminal = document.getElementById('forge-terminal-box');
+            const btnRun = document.getElementById('btn-run-next-task');
+            const btnPause = document.getElementById('btn-pause-forge');
+
+            btnRun.disabled = true;
+            btnPause.disabled = false;
+            isForgePaused = false;
+            
+            renderForgeTasks();
+            terminal.innerText = `[Forge Hub] Conectando ao Aider para executar tarefa ${task.id}...\n`;
+
+            try {
+                const response = await fetch('/api/forge/run_task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        cwd: cwd,
+                        title: task.title,
+                        description: task.description,
+                        files: task.files
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    terminal.innerText += `\n❌ Erro ao iniciar tarefa: ${err.detail || 'Falha de conexão'}`;
+                    btnRun.disabled = false;
+                    btnPause.disabled = true;
+                    return;
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            terminal.innerText += line.substring(6) + '\n';
+                            terminal.scrollTop = terminal.scrollHeight;
+                        }
+                    }
+                }
+
+                if (terminal.innerText.includes("✅ [Forge] Tarefa concluída com sucesso!")) {
+                    currentTaskIndex++;
+                    renderForgeTasks();
+                    if (currentTaskIndex < forgeTasks.length) {
+                        if (!isForgePaused) {
+                            terminal.innerText += `\n[Forge Hub] Aguardando 2 segundos para avançar à próxima tarefa...\n`;
+                            setTimeout(runNextForgeTask, 2000);
+                        } else {
+                            terminal.innerText += `\n[Forge Hub] Execução pausada pelo usuário. Clique em 'Executar Próxima' para retomar.\n`;
+                            btnRun.disabled = false;
+                            btnPause.disabled = true;
+                        }
+                    } else {
+                        terminal.innerText += `\n🎉 [Forge Hub] Todas as tarefas concluídas!\n`;
+                        btnRun.disabled = true;
+                        btnPause.disabled = true;
+                        alert("Parabéns! Desenvolvimento concluído!");
+                    }
+                } else {
+                    terminal.innerText += `\n❌ [Forge Hub] A execução da tarefa falhou. Corrija o código se necessário e clique em 'Executar Próxima' para re-tentar.\n`;
+                    btnRun.disabled = false;
+                    btnPause.disabled = true;
+                }
+
+            } catch(e) {
+                terminal.innerText += `\n❌ Erro crítico: ${e}\n`;
+                btnRun.disabled = false;
+                btnPause.disabled = true;
+            }
+        }
+
+        function pauseForge() {
+            isForgePaused = true;
+            document.getElementById('btn-pause-forge').disabled = true;
+            document.getElementById('forge-terminal-box').innerText += `\n[Forge Hub] Pausa solicitada. Aguarde a tarefa atual terminar...\n`;
+        }
+
+        async function openGodotEditor() {
+            if (!currentProject) return;
+            await fetch(`/api/project/open_editor?name=${encodeURIComponent(currentProject)}`, { method: 'POST' });
+        }
+
+        async function playGame() {
+            if (!currentProject) return;
+            await fetch(`/api/project/play?name=${encodeURIComponent(currentProject)}`, { method: 'POST' });
+        }
+
+        // Setup
+        updateStatus();
+        loadProjects();
+        setInterval(updateStatus, 5000);
+        setInterval(loadProjects, 10000);
+    </script>
+</body>
+</html>
