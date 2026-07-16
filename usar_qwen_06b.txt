@@ -1,1 +1,0 @@
-Este arquivo força o NarraVox a usar o modelo Qwen3-TTS 0.6B (ultra-leve) para economizar VRAM e rodar muito mais rápido em GPUs de 6GB. Delete este arquivo para voltar a usar o modelo de 1.7B.
