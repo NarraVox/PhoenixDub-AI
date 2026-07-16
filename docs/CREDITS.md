@@ -32,11 +32,13 @@ Este projeto é construído sobre ombros de gigantes do código aberto:
 
 *   **Linguagem & Servidor:**
     *   **Python:** O coração de todo o pipeline.
-    *   **Flask:** Interface e API de comunicação web.
+    *   **Flask:** Interface e API de comunicação web (Licença BSD).
+    *   **PyWebView:** Janela nativa e motor gráfico desktop (Licença BSD).
 *   **Motores de Inteligência Artificial:**
-    *   **Faster-Whisper:** Transcrição ultra-rápida.
+    *   **Faster-Whisper & WhisperX:** Transcrição ultra-rápida e alinhamento fonético para sincronia labial (Licença MIT/BSD).
     *   **Pyannote.audio:** Diarização e identificação de falantes.
-    *   **Qwen3-TTS (Alibaba):** Motor de voz e fala naturalista avançada.
+    *   **Qwen3-TTS (Alibaba):** Motor de voz e fala naturalista de alta fidelidade (Licença Apache 2.0).
+    *   **Llama-CPP (llama-cpp-python):** Motor de inferência local ultrarrápido para LLMs (Licença MIT).
     *   **TangoFlux:** Geração ágil de efeitos sonoros (SFX) e mini trilhas sonoras.
     *   **LivePortrait:** Sincronia labial e controle de atuação facial ( TensorRT / C++ ).
     *   **FLUX.2-klein (Black Forest Labs / Unsloth):** Geração de imagens fotorrealistas base.
@@ -48,10 +50,14 @@ Este projeto é construído sobre ombros de gigantes do código aberto:
     *   **FFmpeg (Gyan.dev):** Conversão, sincronia e mixagem final de áudio/vídeo.
     *   **Pydub:** Manipulação de segmentos e ajuste de velocidade.
     *   **OpenUnmix:** Separação de trilha sonora e voz (estilo Karaoke).
+    *   **vgmstream:** Decodificador de formatos de áudio de jogos (Licença ISC).
+    *   **mixingbear:** Motor automatizado de beatmatching para mixagem de batidas (Licença MIT).
     *   **RIFE:** Interpolação temporal para fluidez cinematográfica a 60 FPS (Vulkan).
     *   **Real-ESRGAN (NCNN Vulkan):** Upscale espacial inteligente super otimizado na GPU.
 *   **Modelos de Linguagem (LLM):**
-    *   **Google Gemma 4 (via LM Studio):** Inteligência agêntica para tradução e adaptação.
+    *   **Qwen 3.5 (Alibaba):** Inteligência agêntica local para tradução e adaptação de roteiros (Licença Apache 2.0).
+*   **OCR & Documentação:**
+    *   **EasyOCR & pdfplumber:** Extração de texto de PDFs e imagens para suporte a roteiros (Licença Apache 2.0 / MIT).
 
 ---
 *Seja um apoiador do projeto, entre em contato!* 🚀🎙️
@@ -84,14 +90,16 @@ This project is built on the shoulders of open-source giants:
 
 *   **Language & Server:**
     *   **Python:** The core of the entire pipeline.
-    *   **Flask:** Web interface and communication API.
+    *   **Flask:** Web interface and communication API (BSD License).
+    *   **PyWebView:** Native window and desktop graphics engine (BSD License).
 *   **AI Engines:**
-    *   **Faster-Whisper:** Ultra-fast transcription.
+    *   **Faster-Whisper & WhisperX:** Ultra-fast transcription and phonetic alignment for speech synchronization (MIT/BSD License).
     *   **Pyannote.audio:** Diarization and speaker identification.
-    *   **Qwen3-TTS (Alibaba):** Advanced natural speech and text-to-speech engine.
-    *   **TangoFlux:** Fast sound effects (SFX) and mini soundtracks generation.
-    *   **LivePortrait:** Face-lock lipsync and expression control (TensorRT / C++).
-    *   **FLUX.2-klein (Black Forest Labs / Unsloth):** Photorealistic image generation base.
+    *   **Qwen3-TTS (Alibaba):** High-fidelity natural speech synthesis engine (Apache 2.0 License).
+    *   **Llama-CPP (llama-cpp-python):** High-speed local LLM inference engine (MIT License).
+    *   **TangoFlux:** Agile sound effects (SFX) and mini soundtrack generation.
+    *   **LivePortrait:** Lip-sync facial control and expression adjustment (TensorRT / C++).
+    *   **FLUX.2-klein (Black Forest Labs / Unsloth):** Photorealistic base image generation.
     *   **Wan v2.2 (Wan-AI):** 3D video movement and physics generation engine.
     *   **DeepFilterNet:** Intelligent noise removal and audio cleaning.
     *   **PyTorch / Cuda:** GPU acceleration.
@@ -100,10 +108,14 @@ This project is built on the shoulders of open-source giants:
     *   **FFmpeg (Gyan.dev):** Conversion, sync, and final audio/video mixing.
     *   **Pydub:** Segment manipulation and speed adjustment.
     *   **OpenUnmix:** Background track and voice separation.
-    *   **RIFE:** Temporal video frame interpolation for 60 FPS cinematic smoothness (Vulkan).
+    *   **vgmstream:** Audio decoder for video game formats (ISC License).
+    *   **mixingbear:** Automated beatmatching and track mixing engine (MIT License).
+    *   **RIFE:** Video frame interpolation for 60 FPS cinematic smoothness (Vulkan).
     *   **Real-ESRGAN (NCNN Vulkan):** High-speed spatial upscaling on GPU.
 *   **Language Models (LLM):**
-    *   **Google Gemma 4 (via LM Studio):** Agentic intelligence for translation and adaptation.
+    *   **Qwen 3.5 (Alibaba):** Local agentic intelligence for translation and script localization (Apache 2.0 License).
+*   **OCR & Documentation:**
+    *   **EasyOCR & pdfplumber:** PDF and image text extraction for script support (Apache 2.0 / MIT License).
 
 ---
 

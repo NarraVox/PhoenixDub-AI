@@ -32,11 +32,13 @@ Este projeto é construído sobre ombros de gigantes do código aberto:
 
 *   **Linguagem & Servidor:**
     *   **Python:** O coração de todo o pipeline.
-    *   **Flask:** Interface e API de comunicação web.
+    *   **Flask:** Interface e API de comunicação web (Licença BSD).
+    *   **PyWebView:** Janela nativa e motor gráfico desktop (Licença BSD).
 *   **Motores de Inteligência Artificial:**
-    *   **Faster-Whisper:** Transcrição ultra-rápida.
+    *   **Faster-Whisper & WhisperX:** Transcrição ultra-rápida e alinhamento fonético para sincronia labial (Licença MIT/BSD).
     *   **Pyannote.audio:** Diarização e identificação de falantes.
-    *   **Qwen3-TTS (Alibaba):** Motor de voz e fala naturalista avançada.
+    *   **Qwen3-TTS (Alibaba):** Motor de voz e fala naturalista de alta fidelidade (Licença Apache 2.0).
+    *   **Llama-CPP (llama-cpp-python):** Motor de inferência local ultrarrápido para LLMs (Licença MIT).
     *   **TangoFlux:** Geração ágil de efeitos sonoros (SFX) e mini trilhas sonoras.
     *   **LivePortrait:** Sincronia labial e controle de atuação facial ( TensorRT / C++ ).
     *   **FLUX.2-klein (Black Forest Labs / Unsloth):** Geração de imagens fotorrealistas base.
@@ -48,10 +50,14 @@ Este projeto é construído sobre ombros de gigantes do código aberto:
     *   **FFmpeg (Gyan.dev):** Conversão, sincronia e mixagem final de áudio/vídeo.
     *   **Pydub:** Manipulação de segmentos e ajuste de velocidade.
     *   **OpenUnmix:** Separação de trilha sonora e voz (estilo Karaoke).
+    *   **vgmstream:** Decodificador de formatos de áudio de jogos (Licença ISC).
+    *   **mixingbear:** Motor automatizado de beatmatching para mixagem de batidas (Licença MIT).
     *   **RIFE:** Interpolação temporal para fluidez cinematográfica a 60 FPS (Vulkan).
     *   **Real-ESRGAN (NCNN Vulkan):** Upscale espacial inteligente super otimizado na GPU.
 *   **Modelos de Linguagem (LLM):**
-    *   **Google Gemma 4 (via LM Studio):** Inteligência agêntica para tradução e adaptação.
+    *   **Qwen 3.5 (Alibaba):** Inteligência agêntica local para tradução e adaptação de roteiros (Licença Apache 2.0).
+*   **OCR & Documentação:**
+    *   **EasyOCR & pdfplumber:** Extração de texto de PDFs e imagens para suporte a roteiros (Licença Apache 2.0 / MIT).
 
 ---
 *Gostaria de aparecer aqui? Entre em contato e ajude a dublar o mundo dos games!* 🚀🎙️
