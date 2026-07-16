@@ -430,8 +430,9 @@ class NexusServer(BaseHTTPRequestHandler):
 
     def log_message(self, format, *args): return
 
-if __name__ == '__main__':
+def main():
     port = 5899
+    global api
     api = SetupAPI(NexusServer.ui_logs)
     server = HTTPServer(("127.0.0.1", port), NexusServer)
     threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -440,3 +441,6 @@ if __name__ == '__main__':
                                    width=1280, height=800, background_color='#050505')
     window.events.shown += lambda: window.maximize()
     webview.start()
+
+if __name__ == '__main__':
+    main()
