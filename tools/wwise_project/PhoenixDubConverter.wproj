@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WwiseDocument>
+	<ProjectInfo>
+		<Project Name="PhoenixDubConverter" ID="{A6E0340E-94FE-4E46-80ED-03AC2CD0E321}">
+			<Platforms>
+				<Platform Name="Windows" Company="Audiokinetic" ID="{11111111-1111-1111-1111-111111111111}"/>
+			</Platforms>
+		</Project>
+	</ProjectInfo>
+</WwiseDocument>

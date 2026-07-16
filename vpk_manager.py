@@ -56,6 +56,34 @@ except ImportError as e_fsb:
     fsb5 = None
     rebuild_sample = None
 
+def ajustar_propriedades_audio(caminho_wav, target_channels, target_frequency):
+    """
+    Garante que o WAV modificado tenha a mesma quantidade de canais e frequência do original.
+    Previne erros de silêncio e travamento de scripts (softlocks) na Unreal Engine.
+    """
+    try:
+        from pydub import AudioSegment
+        sound = AudioSegment.from_wav(caminho_wav)
+        modificado = False
+        
+        # Ajusta canais (Mono/Stereo)
+        if sound.channels != target_channels:
+            sound = sound.set_channels(target_channels)
+            modificado = True
+            
+        # Ajusta taxa de amostragem (Frequency)
+        if sound.frame_rate != target_frequency:
+            sound = sound.set_frame_rate(target_frequency)
+            modificado = True
+            
+        if modificado:
+            sound.export(caminho_wav, format="wav")
+            print(f"[AUTO-ALIGN] '{os.path.basename(caminho_wav)}' ajustado para {target_channels}ch, {target_frequency}Hz.")
+            return True
+    except Exception as e:
+        print(f"[AUTO-ALIGN AVISO] Falha ao alinhar propriedades de '{os.path.basename(caminho_wav)}': {e}")
+    return False
+
 # --- Constantes ---
 BACKUP_DIR = "arch_manager_backups"
 MODS_FINALIZADOS_DIR = 'mods_finalizados'
@@ -499,6 +527,49 @@ def descompactar_arch_logic(project_id, files_to_extract=None):
             except Exception as e:
                 return False, f"Erro Fatal ao abrir FSB: {e}"
 
+        # --- BRANCH: BIK EXTRACTION (CALL OF DUTY) ---
+        elif tipo_projeto == 'bik':
+            caminho_original = info_backup['caminho_original']
+            
+            for entry in entries_to_process:
+                safe_name = entry.get('safe_name')
+                
+                # Se o caminho original for um arquivo único ou pasta
+                if os.path.isfile(caminho_original):
+                    infile = caminho_original
+                else:
+                    infile = os.path.join(caminho_original, safe_name)
+                    
+                if not os.path.exists(infile):
+                    logging.warning(f"Vídeo original não encontrado: {infile}")
+                    pulados += 1
+                    continue
+                    
+                caminho_completo_saida = os.path.join(pasta_destino_final, safe_name)
+                try:
+                    # Copia o vídeo original para a pasta _MOD
+                    shutil.copy2(infile, caminho_completo_saida)
+                    arquivos_extraidos_nesta_sessao.append(caminho_completo_saida)
+                    extruidos += 1
+                    
+                    # Se tiver vgmstream, tenta extrair a trilha sonora original em WAV
+                    if os.path.exists(VGMSTREAM_PATH):
+                        wav_out = os.path.join(pasta_destino_final, os.path.splitext(safe_name)[0] + '.wav')
+                        cmd = [VGMSTREAM_PATH, "-o", wav_out, infile]
+                        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        
+                        if os.path.exists(wav_out) and os.path.getsize(wav_out) > 0:
+                            arquivos_extraidos_nesta_sessao.append(wav_out)
+                            extruidos += 1
+                        else:
+                            # Se não gerou áudio ou está vazio (vídeo mudo), remove para não poluir
+                            try:
+                                if os.path.exists(wav_out): os.remove(wav_out)
+                            except: pass
+                except Exception as e:
+                    logging.warning(f"Falha ao processar vídeo BIK '{safe_name}': {e}")
+                    pulados += 1
+
         # --- BRANCH: ARCH EXTRACTION (LEGACY) E PCK (NOVO) ---
         else:
             if tipo_projeto == 'pck':
@@ -663,10 +734,11 @@ HTML_TEMPLATE = """
             <button onclick="toggleTutorial()" style="background-color: #03dac6; color: #121212; padding: 8px 15px; font-size: 0.85em; border-radius: 20px;">📖 Tutorial de Instalação</button>
         </div>
         <div class="step">
-            <h2>Passo 1: Analisar Arquivo (.arch / .vpk / .fsb)</h2>
+            <h2>Passo 1: Analisar Arquivo ou Pasta (.arch / .vpk / .fsb / .bik)</h2>
             <div class="input-group">
-                <input type="text" id="path-analisar" placeholder="Clique em 'Procurar...' para selecionar o arquivo" readonly>
-                <button class="browse-btn" onclick="browseFile('path-analisar')">Procurar...</button>
+                <input type="text" id="path-analisar" placeholder="Selecione um arquivo ou pasta contendo arquivos .bik" readonly>
+                <button class="browse-btn" onclick="browseFile('path-analisar')">Procurar Arquivo...</button>
+                <button class="browse-btn" style="background-color: #ff9800; color: #121212;" onclick="browseFolder('path-analisar')">Procurar Pasta...</button>
             </div>
             <button id="btn-analisar" onclick="executarAcao('analisar')">Analisar e Criar Projeto</button>
         </div>
@@ -700,27 +772,28 @@ HTML_TEMPLATE = """
         </div>
         
         <div class="step">
-            <h2>Passo 4: Reempacotar (Repack FSB / PCK)</h2>
-            <p class="info-text">Reconstroi o arquivo original (.fsb ou .pck) usando os áudios modificados.</p>
+            <h2>Passo 4: Reempacotar (Repack FSB / PCK / BIK)</h2>
+            <p class="info-text">Reconstroi o arquivo original (.fsb, .pck ou .bik) usando os áudios ou vídeos modificados.</p>
             
-            <label>1. Pasta com os Áudios Modificados (WAV/WEM):</label>
+            <label>1. Pasta com os Áudios/Vídeos Modificados (WAV/MP4/AVI):</label>
             <div class="input-group">
                 <input type="text" id="path-repack-input" placeholder="Selecione a pasta ..._MOD criada no Passo 2" readonly>
                 <button class="browse-btn" onclick="browseFolder('path-repack-input')">Procurar Pasta...</button>
             </div>
 
             <br>
-            <label>2. Executável do FMOD (Somente para FSB/BioShock):</label>
+            <label>2. Executável do FMOD ou RAD Video Tools (Opcional):</label>
             <div class="input-group">
-                <input type="text" id="path-fmod-tool" placeholder="C:\Program Files (x86)\...\bin\fsbankcl.exe" value="C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\bin\fsbankcl.exe">
+                <input type="text" id="path-fmod-tool" placeholder="fsbankcl.exe (Bioshock) ou radvideo64.exe (CoD)" value="C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\bin\fsbankcl.exe">
                 <button class="browse-btn" onclick="browseFile('path-fmod-tool', 'exe')">Procurar Tool...</button>
             </div>
-            <p class="info-text">Nota para jogos Wwise (PCK): Deixe o caminho do FMOD acima como está, o script fará o repack de forma nativa e automática!</p>
+            <p class="info-text">Nota para PCK (Wwise) e BIK (CoD/RAD Video Tools): O script detecta automaticamente ou usa o executável selecionado acima!</p>
             
             <div class="alert-box">
                 <strong>Instruções de Reempacotamento:</strong><br>
-                • <b>Modo Pro (Recomendado):</b> Use o <code>fsbankcl.exe</code> (Caminho: <code>C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\bin</code>). O processo é 100% automático (você verá sua CPU trabalhar e depois a mensagem de sucesso).<br>
-                • <b>Modo Legado:</b> Se usar o <code>Fmod_Bank_Tools.exe</code>, você precisará clicar em "Rebuild" manualmente na janela que abrir e depois fechá-la.
+                • <b>FSB (BioShock):</b> Requer o <code>fsbankcl.exe</code>. O processo é 100% automático.<br>
+                • <b>PCK (Wwise):</b> Reempacotamento nativo e 100% automático.<br>
+                • <b>BIK (Call of Duty):</b> Reempacotamento e mixagem 100% automáticos usando o <code>radvideo64.exe</code> ou <code>binkcli.exe</code> detectado.
             </div>
 
             <button id="btn-repack" onclick="executarAcao('repack-fsb')">Reempacotar e Instalar</button>
@@ -1001,7 +1074,6 @@ def reempacotar_fsb_logic(input_folder, tool_path):
     """
     try:
         if not os.path.isdir(input_folder): return False, "Pasta de entrada inválida."
-        if not os.path.isfile(tool_path): return False, "Executável do FMOD Bank Tools não encontrado."
 
         modinfo_path = os.path.join(input_folder, '.modinfo')
         if not os.path.exists(modinfo_path): return False, "Arquivo .modinfo não encontrado na pasta. Extraia o projeto novamente se necessário."
@@ -1011,7 +1083,12 @@ def reempacotar_fsb_logic(input_folder, tool_path):
         if mod_data.get('type') == 'pck':
             return reempacotar_pck_logic(input_folder, mod_data)
             
+        if mod_data.get('type') == 'bik':
+            return reempacotar_bik_logic(input_folder, mod_data, tool_path)
+            
         if mod_data.get('type') != 'fsb': return False, f"Este projeto não é um FSB. O tipo é '{mod_data.get('type')}'. Verifique o formato."
+        
+        if not os.path.isfile(tool_path): return False, "Executável do FMOD Bank Tools não encontrado."
         
         # Localiza o arquivo original para saber o nome do banco
         backup_json = os.path.join(BACKUP_DIR, f"backup_{mod_data['original_hash']}.json")
@@ -1020,6 +1097,33 @@ def reempacotar_fsb_logic(input_folder, tool_path):
         with open(backup_json, 'r') as f: backup_data = json.load(f)
         original_fsb_path = backup_data['caminho_original'] # Caminho completo original
         fsb_filename = backup_data['nome_arquivo'] # Nome do arquivo (streams_1_audio.fsb)
+
+        # =================================================================================
+        # ALINHAMENTO INTELIGENTE DE ÁUDIO (Auto-Resampling e Auto-Channels)
+        # =================================================================================
+        print("[AUTO-ALIGN] Iniciando alinhamento inteligente de canais e frequência...")
+        propriedades_alvo = {}
+        for arq in backup_data.get('arquivos_internos', []):
+            nome_limpo = arq['safe_name'].lower()
+            propriedades_alvo[nome_limpo] = {
+                'frequency': arq.get('frequency', 44100),
+                'channels': arq.get('channels', 2)
+            }
+            
+        aligned_count = 0
+        for filename in os.listdir(input_folder):
+            if filename.lower().endswith('.wav'):
+                nome_wav = filename.lower()
+                if nome_wav in propriedades_alvo:
+                    alvo = propriedades_alvo[nome_wav]
+                    caminho_wav = os.path.join(input_folder, filename)
+                    if ajustar_propriedades_audio(caminho_wav, alvo['channels'], alvo['frequency']):
+                        aligned_count += 1
+                        
+        if aligned_count > 0:
+            print(f"[AUTO-ALIGN] Concluído! {aligned_count} arquivos de áudio foram alinhados com os originais.")
+        else:
+            print("[AUTO-ALIGN] Todos os arquivos já estão de acordo com o formato original.")
 
         # =================================================================================
         # MODO PRO: FMOD OFFICIAL ENGINE (fsbankcl.exe)
@@ -1460,10 +1564,188 @@ def analisar_vpk_logic(caminho_vpk):
             json.dump(info_vpk, tf, indent=4, ensure_ascii=False)
 
         return True, f"Análise VPK Concluída! {files_found} arquivos indexados."
-
     except Exception as e:
         gerar_relatorio_erro("analisar_vpk_logic", e, traceback.format_exc())
         return False, f"Erro ao ler VPK: {e}"
+
+def detectar_bink_tool(tool_path=None):
+    """
+    Busca pelo executável do Bink Compressor (binkcli.exe, bink2cli.exe, radvideo64.exe, radvideo32.exe)
+    no caminho especificado, na pasta local tools ou nas pastas padrão do Windows.
+    """
+    paths_to_check = [
+        tool_path,
+        os.path.join(os.getcwd(), 'tools', 'binkcli.exe'),
+        os.path.join(os.getcwd(), 'tools', 'bink2cli.exe'),
+        os.path.join(os.getcwd(), 'tools', 'radvideo64.exe'),
+        os.path.join(os.getcwd(), 'tools', 'radvideo32.exe'),
+        r"C:\Program Files (x86)\RADVideo\radvideo64.exe",
+        r"C:\Program Files (x86)\RADVideo\radvideo32.exe",
+        r"C:\Program Files (x86)\RADVideo\binkcli.exe",
+        r"C:\Program Files (x86)\RADVideo\bink2cli.exe",
+        r"C:\Program Files\RADVideo\radvideo64.exe",
+        r"C:\Program Files\RADVideo\radvideo32.exe",
+        r"C:\Program Files\RADVideo\binkcli.exe",
+        r"C:\Program Files\RADVideo\bink2cli.exe"
+    ]
+    for p in paths_to_check:
+        if p and os.path.isfile(p):
+            return p
+    return None
+
+def analisar_bik_logic(caminho_bik):
+    """
+    Analisa um arquivo .bik ou uma pasta contendo arquivos .bik e prepara o projeto para extração.
+    """
+    try:
+        is_dir = os.path.isdir(caminho_bik)
+        if not is_dir and not os.path.isfile(caminho_bik):
+            return False, "Erro: Arquivo ou pasta inexistente."
+            
+        hash_original = calcular_hash_sha1(caminho_bik) if not is_dir else hashlib.sha1(caminho_bik.encode('utf-8')).hexdigest()
+        
+        if not os.path.exists(BACKUP_DIR): os.makedirs(BACKUP_DIR)
+        caminho_backup_json = os.path.join(BACKUP_DIR, f"backup_{hash_original}.json")
+        
+        info_bik = {
+            'caminho_original': caminho_bik,
+            'nome_arquivo': os.path.basename(caminho_bik) if not is_dir else f"video_folder_{os.path.basename(caminho_bik)}",
+            'hash_sha1_original': hash_original,
+            'type': 'bik',
+            'status': 'done',
+            'completed_at': datetime.datetime.utcnow().isoformat() + 'Z',
+            'arquivos_internos': []
+        }
+        
+        if not is_dir:
+            info_bik['arquivos_internos'].append({
+                'safe_name': os.path.basename(caminho_bik),
+                'size': os.path.getsize(caminho_bik)
+            })
+            msg_sucesso = "Vídeo Bink (.bik) analisado com sucesso! Pronto para extração."
+        else:
+            files_found = 0
+            for f in os.listdir(caminho_bik):
+                if f.lower().endswith('.bik'):
+                    full_path = os.path.join(caminho_bik, f)
+                    info_bik['arquivos_internos'].append({
+                        'safe_name': f,
+                        'size': os.path.getsize(full_path)
+                    })
+                    files_found += 1
+            if files_found == 0:
+                return False, "Nenhum arquivo .bik encontrado na pasta selecionada."
+            msg_sucesso = f"Pasta com {files_found} vídeos Bink (.bik) analisada com sucesso! Pronta para extração em lote."
+            
+        with open(caminho_backup_json, 'w', encoding='utf-8') as tf:
+            json.dump(info_bik, tf, indent=4, ensure_ascii=False)
+            
+        # Verifica proativamente se o Bink Compressor está instalado
+        if not detectar_bink_tool():
+            msg_sucesso += "\n\n⚠️ AVISO: O compressor Bink (radvideo64.exe ou binkcli.exe) não foi detectado em 'C:\\Program Files (x86)\\RADVideo' nem na pasta 'tools/'. Você poderá extrair os áudios normalmente, mas precisará instalar o RAD Video Tools antes de fazer o Reempacotamento (Etapa 4)."
+            
+        return True, msg_sucesso
+    except Exception as e:
+        return False, f"Erro ao analisar Bink: {e}"
+
+def reempacotar_bik_logic(input_folder, mod_data, tool_path):
+    """
+    Reempacota os vídeos dublados da pasta _MOD de volta para BIK e instala na pasta original.
+    Detecta automaticamente o executável do RAD Video Tools se instalado no sistema.
+    """
+    try:
+        resolved_tool = detectar_bink_tool(tool_path)
+                
+        if not resolved_tool:
+            return False, (
+                "Executável do Bink Compressor (radvideo64.exe ou binkcli.exe) não encontrado.\n"
+                "Instale o RAD Video Tools em 'C:\\Program Files (x86)\\RADVideo' ou coloque o radvideo64.exe na pasta 'tools/'."
+            )
+            
+        backup_json = os.path.join(BACKUP_DIR, f"backup_{mod_data['original_hash']}.json")
+        if not os.path.exists(backup_json): return False, "Backup do projeto original não encontrado."
+        
+        with open(backup_json, 'r') as f: backup_data = json.load(f)
+        caminho_original = backup_data['caminho_original'] # Arquivo original ou pasta original
+        
+        # Mapeia todos os BIKs originais para saber onde reinstalar
+        biks_originais = {}
+        if os.path.isfile(caminho_original):
+            biks_originais[os.path.basename(caminho_original).lower()] = caminho_original
+        else:
+            for entry in backup_data.get('arquivos_internos', []):
+                nome_bik = entry['safe_name']
+                biks_originais[nome_bik.lower()] = os.path.join(caminho_original, nome_bik)
+                
+        # Varre a pasta de entrada (_MOD) procurando por arquivos dublados (.wav ou .mp4/.avi)
+        arquivos_dublados = []
+        for f_in in os.listdir(input_folder):
+            ext = os.path.splitext(f_in)[1].lower()
+            if ext in ['.mp4', '.avi', '.wav'] and not f_in.lower().startswith('original_'):
+                nome_base = os.path.splitext(f_in)[0].lower()
+                nome_bik_alvo = nome_base + ".bik"
+                if nome_bik_alvo in biks_originais:
+                    arquivos_dublados.append({
+                        'caminho_entrada': os.path.join(input_folder, f_in),
+                        'nome_bik': nome_bik_alvo,
+                        'caminho_saida_original': biks_originais[nome_bik_alvo]
+                    })
+                    
+        if not arquivos_dublados:
+            return False, f"Nenhum arquivo de áudio (.wav) ou vídeo (.mp4/.avi) com nome correspondente aos BIKs originais foi encontrado em {input_folder}."
+            
+        print(f"[BIK-REPACK] Utilizando compressor: {resolved_tool}")
+        print(f"[BIK-REPACK] Encontrados {len(arquivos_dublados)} arquivos para reempacotar.")
+        
+        temp_dir = os.path.join(input_folder, "temp_build_bik")
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        repacked_count = 0
+        for item in arquivos_dublados:
+            entrada = item['caminho_entrada']
+            saida_bik = os.path.join(temp_dir, item['nome_bik'])
+            destino_original = item['caminho_saida_original']
+            
+            tool_basename = os.path.basename(resolved_tool).lower()
+            
+            if "radvideo" in tool_basename:
+                if entrada.lower().endswith('.wav'):
+                    # Processo em 2 etapas para substituir o áudio original:
+                    # 1. Remove o áudio original do BIK salvando na pasta temporária
+                    cmd_strip = [resolved_tool, "binkmix", destino_original, "-", saida_bik, "/t0", "/#"]
+                    subprocess.run(cmd_strip, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=os.path.dirname(resolved_tool))
+                    
+                    # 2. Mixa o novo áudio dublado por cima do BIK limpo
+                    cmd = [resolved_tool, "binkmix", saida_bik, entrada, saida_bik, "/t0", "/#"]
+                else:
+                    # Se for arquivo de vídeo (.mp4, .avi)
+                    cmd = [resolved_tool, "binkc", entrada, saida_bik, "/#"]
+            else:
+                # Comportamento usando binkcli.exe legado
+                cmd = [resolved_tool, entrada, saida_bik]
+                if "bink2" not in tool_basename:
+                    cmd.append("/v1")
+                
+            print(f"[BIK-REPACK] Compilando/Mixando: {os.path.basename(entrada)} -> {item['nome_bik']}...")
+            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=os.path.dirname(resolved_tool))
+            
+            if os.path.exists(saida_bik):
+                # Realiza backup de segurança no jogo antes de sobrescrever
+                backup_game_file = destino_original + ".bak_auto"
+                if not os.path.exists(backup_game_file) and os.path.exists(destino_original):
+                    shutil.copy2(destino_original, backup_game_file)
+                
+                shutil.copy2(saida_bik, destino_original)
+                repacked_count += 1
+            else:
+                print(f"[BIK-REPACK ERRO] Falha ao compilar/mixar {item['nome_bik']}: {res.stdout} | {res.stderr}")
+                
+        if repacked_count == 0:
+            return False, "Falha ao compilar os vídeos .bik. Verifique o log do console."
+            
+        return True, f"SUCESSO TOTAL! {repacked_count} vídeos BIK foram reempacotados e instalados nas pastas corretas do jogo!"
+    except Exception as e:
+        return False, f"Erro estrutural no reempacotamento de BIK em lote: {e}"
 
 @app.route('/api/analisar', methods=['POST'])
 def api_analisar():
@@ -1472,7 +1754,9 @@ def api_analisar():
     if not path: return jsonify({'success': False, 'message': 'O caminho não pode ser vazio.'})
     
     # [DISPATCHER INTELIGENTE]
-    if path.lower().endswith('.vpk'):
+    if os.path.isdir(path):
+        success, message = analisar_bik_logic(path)
+    elif path.lower().endswith('.vpk'):
         # Aceita tanto _dir.vpk (Jogo Base) quanto .vpk (Addons/Mods)
         success, message = analisar_vpk_logic(path)
     elif path.lower().endswith('.fsb') or path.lower().endswith('.fsb5'): # [NOVO] Suporte Bioshock
@@ -1481,9 +1765,11 @@ def api_analisar():
         success, message = analisar_pck_logic(path)
     elif path.lower().endswith('.arch') or path.lower().endswith('.iwd'): # Suporte FEAR
         success, message = analisar_arch_logic(path)
+    elif path.lower().endswith('.bik'): # [NOVO] Suporte Bink Video / Call of Duty
+        success, message = analisar_bik_logic(path)
     else:
         # Tenta adivinhar ou falha
-        success, message = False, "Formato não suportado. Use .arch (F.E.A.R.), .vpk (Source/L4D2) ou .fsb (Bioshock)."
+        success, message = False, "Formato não suportado. Use .arch (F.E.A.R.), .vpk (Source/L4D2), .fsb (Bioshock), .bik (Bink Video) ou selecione uma pasta de vídeos BIK."
         
     return jsonify({'success': success, 'message': message})
 

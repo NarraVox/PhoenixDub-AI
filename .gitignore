@@ -34,3 +34,29 @@ narravox_logo.png
 *.jpg
 *.jpeg
 
+# Nexus Godogen (O motor base e os projetos gerados não devem ir para o Git)
+nexus_godogen/godogen/
+nexus_godogen/projects/
+
+# Segurança e Credenciais (CRÍTICO)
+token_hf.txt
+
+# Documentos Pessoais e Temporários
+Contrato de Aluguel*
+contrato_editor.html
+carta_apresentacao*
+curriculo.html
+trabalho*
+roteiro_consultoria*
+roteiro_diario*
+codebase_structure.txt
+ace_help.txt
+ace_help_err.txt
+temp_video_pipeline.txt
+
+# Pastas de Rascunho e Testes de Voz
+scratch/
+voz1
+voz3
+Rubbish/
+
