@@ -5,7 +5,14 @@
 ---
 
 ### 🗨️ Participe da nossa Comunidade! / Join our Community!
-**Queremos ouvir você!** Se você baixou o projeto, por favor, deixe seu feedback, sugestões ou poste seus resultados na nossa aba de [**Discussões (Discussions)**](https://github.com/rick60496/PhoenixDub-AI/discussions). Sua opinião é fundamental para a evolução do PhoenixDub!
+**Queremos ouvir você!** Se você baixou o projeto, por favor, deixe seu feedback, sugestões ou poste seus resultados na nossa aba de [**Discussões (Discussions)**](https://github.com/NarraVox/PhoenixDub-AI/discussions). Sua opinião é fundamental para a evolução do PhoenixDub!
+
+---
+
+> [!WARNING]
+> ### ⚠️ Aviso de Versão Beta (v0.5) / Beta Version Notice (v0.5)
+> - **PT-BR**: Esta versão **v0.5 (The Sentinel Update)** é um lançamento Beta resultante de uma reescrita completa do software. Por conta disso, **o instalador e o executável podem apresentar instabilidades, erros ou bugs inesperados**. Pedimos a sua **paciência e compreensão** durante este período de testes! Caso encontre problemas, por favor reporte na nossa aba de [Issues](https://github.com/NarraVox/PhoenixDub-AI/issues) ou interaja na comunidade.
+> - **EN**: This version **v0.5 (The Sentinel Update)** is a Beta release resulting from a complete rewrite of the software. Because of this, **the installer and executable may present instabilities, errors, or unexpected bugs**. We kindly ask for your **patience and understanding** during this testing phase! If you find any issues, please report them in our [Issues](https://github.com/NarraVox/PhoenixDub-AI/issues) tab or interact in the community.
 
 ---
 
