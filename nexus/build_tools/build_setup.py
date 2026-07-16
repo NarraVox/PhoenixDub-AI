@@ -70,12 +70,12 @@ def build_setup():
     
     if os.path.exists(final_exe_src):
         shutil.copy2(final_exe_src, final_exe_dest)
-        print(f"\n[COPIA] Executável copiado com sucesso para: {final_exe_dest}")
+        print(f"\n[COPIA] Executavel copiado com sucesso para: {final_exe_dest}")
     else:
-        print(f"\n❌ ERRO: O executável {final_exe_src} não foi gerado.")
+        print(f"\n[ERRO] O executavel {final_exe_src} nao foi gerado.")
 
     print("\n" + "="*50)
-    print(f"SUCESSO! O Instalador final está em: dist/{app_name}.exe")
+    print(f"SUCESSO! O Instalador final esta em: dist/{app_name}.exe")
     print("="*50)
 
 if __name__ == "__main__":
