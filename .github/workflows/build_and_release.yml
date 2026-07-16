@@ -28,14 +28,30 @@ jobs:
         pip install pyinstaller pywebview psutil flask flask-cors pythonnet clr-loader requests tqdm
 
     - name: Gerar Executável do Aplicativo Principal (Nexus AI Pro)
-      run: |
-        python build_tools/build_main_app.py
-      working-directory: nexus
+      run: python nexus/build_tools/build_main_app.py
 
     - name: Gerar Executável do Instalador (Setup Nexus)
+      run: python nexus/build_tools/build_setup.py
+
+    - name: Testar Executável Nexus AI Pro (Verificar Importações)
+      shell: pwsh
       run: |
-        python build_tools/build_setup.py
-      working-directory: nexus
+        $env:TEST_IMPORTS="1"
+        $proc = Start-Process -FilePath "dist/Nexus_AI_Pro.exe" -NoNewWindow -PassThru -Wait
+        Write-Host "Nexus_AI_Pro.exe finalizado com codigo de saida: $($proc.ExitCode)"
+        if ($proc.ExitCode -ne 0) {
+          throw "Falha critica no executavel Nexus_AI_Pro.exe: codigo de saida $($proc.ExitCode)"
+        }
+
+    - name: Testar Executável Setup (Verificar Importações)
+      shell: pwsh
+      run: |
+        $env:TEST_IMPORTS="1"
+        $proc = Start-Process -FilePath "dist/Setup_Nexus.exe" -NoNewWindow -PassThru -Wait
+        Write-Host "Setup_Nexus.exe finalizado com codigo de saida: $($proc.ExitCode)"
+        if ($proc.ExitCode -ne 0) {
+          throw "Falha critica no executavel Setup_Nexus.exe: codigo de saida $($proc.ExitCode)"
+        }
 
     - name: Criar Release e Upload dos Executáveis
       uses: softprops/action-gh-release@v2
