@@ -6,7 +6,9 @@ import nexus.core.security
 
 # 2. IMPORTAÇÃO DOS MÓDULOS REFATORADOS (FACADE)
 from nexus.core.utils_sys import *
-from nexus.core.utils_audio import *
+import sys
+if not getattr(sys, 'frozen', False):
+    from nexus.core.utils_audio import *
 
 import os
 import sys
