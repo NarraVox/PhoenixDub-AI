@@ -1,0 +1,252 @@
+:root {
+            --bg: #03060c;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --neon-pink: #ff00ff;
+            --neon-cyan: #00f3ff;
+            --neon-orange: #ffaa00;
+            --neon-red: #ff3c3c;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 0, 255, 0.02) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 243, 255, 0.02) 0%, transparent 40%);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: 80px 0 40px 0;
+        }
+
+        /* UTILITY HUD (TOP RIGHT) */
+        .utility-hud {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .btn-utility {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--border);
+            color: var(--neon-cyan);
+            padding: 8px 15px;
+            font-size: 0.75rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        .btn-utility:hover {
+            background: var(--neon-cyan);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-cyan);
+        }
+        .btn-restart:hover {
+            background: var(--neon-red);
+            color: #fff;
+            border-color: var(--neon-red);
+            box-shadow: 0 0 20px var(--neon-red);
+        }
+
+        /* HEADER COMMAND */
+        .header-command {
+            text-align: center;
+            margin-bottom: 30px; /* Reduzido para caber */
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .header-command h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem; /* Reduzido de 4.5rem */
+            font-weight: 900;
+            letter-spacing: 12px;
+            background: linear-gradient(90deg, #ff00ff, #00f3ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .header-command p {
+            color: var(--neon-cyan);
+            letter-spacing: 5px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            opacity: 0.85;
+        }
+
+        /* TRINITY GRID */
+        .nexus-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            width: 95%;
+            max-width: 1400px;
+            height: auto;
+            perspective: 1500px;
+            margin-bottom: 50px;
+        }
+
+        .card-nexus {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            backdrop-filter: blur(25px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            position: relative;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            transform-style: preserve-3d;
+            overflow: hidden;
+        }
+
+        .card-nexus:hover {
+            transform: translateY(-10px) rotateX(5deg);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.7);
+        }
+
+        /* ICON SYSTEM */
+        .icon-vibe {
+            font-size: 4rem; /* Reduzido de 6rem */
+            margin-bottom: 20px;
+            transition: 0.5s;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* GLOWS */
+        .glow-aura {
+            position: absolute;
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            filter: blur(35px);
+            opacity: 0.3;
+            z-index: 1;
+            transition: 0.5s;
+        }
+        .video .glow-aura { background: var(--neon-cyan); }
+        .vortex .glow-aura { background: var(--neon-orange); }
+        .games .glow-aura { background: var(--neon-red); }
+
+        .card-nexus:hover .glow-aura {
+            opacity: 0.6;
+            transform: scale(1.4);
+        }
+
+        h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem; /* Reduzido */
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .desc {
+            font-size: 0.7rem; /* Reduzido */
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.5;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            max-width: 220px;
+            margin-bottom: 60px; /* Espaço para telemetria */
+        }
+
+        /* TELEMETRY BOX */
+        .telemetry-box {
+            position: absolute;
+            bottom: 20px;
+            left: 20px; right: 20px;
+            background: rgba(0, 243, 255, 0.05);
+            border: 1px solid rgba(0, 243, 255, 0.15);
+            padding: 12px;
+            text-align: left;
+            border-radius: 4px;
+            transition: 0.4s;
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            cursor: text;
+        }
+        .vortex .telemetry-box { background: rgba(255, 170, 0, 0.08); border-color: rgba(255, 170, 0, 0.2); }
+        .games .telemetry-box { background: rgba(255, 60, 60, 0.05); border-color: rgba(255, 60, 60, 0.15); }
+
+        .tele-title {
+            font-size: 0.55rem;
+            font-weight: 900;
+            color: var(--neon-cyan);
+            letter-spacing: 2px;
+            margin-bottom: 3px;
+        }
+        .vortex .tele-title { color: var(--neon-orange); }
+        .games .tele-title { color: var(--neon-red); }
+
+        .tele-status {
+            font-size: 0.5rem;
+            color: #fff;
+            opacity: 0.6;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .mouse-follow {
+            position: fixed;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(0, 243, 255, 0.03) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: -1;
+            transform: translate(-50%, -50%);
+        }
+
+        /* CONNECTION GUARD OVERLAY */
+        #conn-guard {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999; backdrop-filter: blur(10px);
+        }
+        .guard-spinner {
+            width: 50px; height: 50px;
+            border: 3px solid rgba(0,243,255,0.1);
+            border-top: 3px solid var(--neon-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }

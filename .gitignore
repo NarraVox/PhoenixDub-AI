@@ -89,7 +89,9 @@ _MODELS_/
 uploads/
 logs/
 dj_sets/
-client/
+# client/ (Comentado para permitir que o frontend da pasta nexus/client vá para o Git)
+!nexus/client/
+!nexus/client/**
 call of duty/
 vpk_manager/
 narravox_logo.png

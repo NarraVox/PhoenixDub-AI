@@ -1,0 +1,132 @@
+:root {
+            --bg: #030005;
+            --accent: #ff3c3c;
+            --accent-glow: rgba(255, 60, 60, 0.3);
+            --metal: #0d0d0f;
+            --glass: rgba(12, 4, 15, 0.95);
+            --border: rgba(255, 60, 60, 0.2);
+            --text: #ffffff;
+        }
+
+        body, html { 
+            margin: 0; padding: 0; 
+            font-family: 'Outfit', sans-serif; 
+            background: var(--bg); color: var(--text); 
+            height: 100vh; overflow: hidden;
+            perspective: 1200px;
+        }
+
+        .rig-background {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 30% 50%, #1a0005 0%, #000 100%);
+            z-index: -2; pointer-events: none;
+        }
+
+        .crimson-world {
+            width: 100vw; height: 100vh;
+            display: grid;
+            grid-template-columns: 450px 1fr;
+            grid-template-rows: 80px 1fr;
+            transform-style: preserve-3d;
+        }
+
+        /* HEADER HUD */
+        .hud-header {
+            grid-column: 1 / span 2;
+            background: rgba(0,0,0,0.9); border-bottom: 2px solid var(--accent);
+            display: flex; align-items: center; padding: 0 40px; justify-content: space-between;
+            z-index: 1000; backdrop-filter: blur(20px);
+        }
+
+        .back-btn { 
+            text-decoration: none; color: var(--accent); font-weight: 900; font-size: 0.7rem; 
+            letter-spacing: 2px; text-transform: uppercase; transition: 0.3s;
+            border: 1px solid var(--accent); padding: 8px 25px; border-radius: 2px;
+        }
+        .back-btn:hover { background: var(--accent); color: #000; box-shadow: 0 0 30px var(--accent); }
+
+        /* THE RACK (LEFT SIDEBAR) */
+        .tactical-rack {
+            grid-column: 1; grid-row: 2;
+            background: var(--metal); border-right: 2px solid var(--border);
+            padding: 30px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 25px;
+            transform: translateZ(50px);
+        }
+
+        .rig-module {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            padding: 25px;
+            clip-path: polygon(0 0, 95% 0, 100% 15%, 100% 100%, 5% 100%, 0 85%);
+            transition: 0.4s;
+        }
+        .rig-module:hover { border-color: var(--accent); transform: translateX(5px); }
+
+        /* THE MONITOR (MAIN DISPLAY) */
+        .tactical-monitor {
+            grid-column: 2; grid-row: 2;
+            padding: 20px 40px; display: flex; flex-direction: column; gap: 15px;
+            transform: translateZ(20px);
+            overflow: hidden; /* [v2026.FIX] Impede scroll na tela principal */
+        }
+    
+        .monitor-core {
+            flex: 1; /* Ocupa o espaço disponível */
+            background: rgba(0,0,0,0.6);
+            border: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px; position: relative;
+            box-shadow: inset 0 0 100px rgba(255, 18, 79, 0.05);
+        }
+    
+        .telemetry-console {
+            height: 250px; background: #000; border: 1px solid var(--border);
+            padding: 15px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.85rem;
+            color: var(--accent); overflow-y: auto;
+            border-left: 4px solid var(--accent);
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            cursor: text;
+            line-height: 1.6;
+        }
+    
+        /* UI ELEMENTS */
+        h2 { font-weight: 900; letter-spacing: 4px; color: #fff; text-transform: uppercase; margin: 0 0 10px 0; font-size: 0.9rem; }
+        label { font-size: 0.5rem; color: var(--accent); font-weight: 900; letter-spacing: 2px; margin-bottom: 5px; display: block; }
+        
+        input, select {
+            background: rgba(255,255,255,0.05); border: 1px solid #333; color: #fff;
+            padding: 10px; font-size: 0.75rem; width: 100%; border-radius: 2px;
+            margin-bottom: 10px; box-sizing: border-box;
+        }
+        option { background: #111; color: #fff; }
+    
+        .btn-rig {
+            background: var(--accent); color: #000; border: none;
+            padding: 12px; font-weight: 900; letter-spacing: 4px;
+            cursor: pointer; transition: 0.3s; text-transform: uppercase; width: 100%;
+            clip-path: polygon(5% 0, 100% 0, 95% 100%, 0 100%);
+            font-size: 0.7rem;
+        }
+        .btn-rig:hover { background: #fff; box-shadow: 0 0 30px #fff; }
+    
+        .progress-circle {
+            width: 160px; height: 160px; border-radius: 50%;
+            border: 4px solid #111; border-top-color: var(--accent);
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 15px; box-shadow: 0 0 50px var(--accent-glow);
+        }
+        .percent-tag { font-size: 3.5rem; font-weight: 900; color: #fff; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spinning-circle {
+            animation: spin 1.5s linear infinite;
+        }

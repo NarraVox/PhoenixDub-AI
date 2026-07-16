@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus AI - Setup Professional</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@300;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/installer_ui.css">
+</head>
+<body>
+    <div class="container">
+        <div class="loader"></div>
+        <div class="header">
+            <div style="font-size: 0.7rem; color: var(--primary); font-weight: 800; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 5px; opacity: 0.7;">NARRAVOX PRESENTA</div>
+            <div class="logo" style="font-size: 2.5rem; letter-spacing: -1px;">NEXUS <span style="font-weight: 300; opacity: 0.8;">AI</span></div>
+            <div class="version">v2026.PRO</div>
+        </div>
+
+        <div class="content" id="main-content">
+            <h2>Central de Instalação NarraVox Studios</h2>
+            <p>Configure o ecossistema de Inteligência Artificial local no seu computador com aceleração de hardware (NVIDIA GPU) de forma automatizada.</p>
+
+            <div class="system-check" style="border: 1px solid rgba(0, 242, 255, 0.1); background: rgba(0, 242, 255, 0.02);">
+                <div style="padding: 15px; width: 100%; text-align: center;">
+                    <div style="font-size: 0.8rem; color: var(--primary); font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px;">Requisitos Mínimos Recomendados</div>
+                    <div style="font-size: 0.9rem; color: #fff; opacity: 0.8;">
+                        🖥️ <b>16GB RAM</b> (Sistema) &nbsp; | &nbsp; 🎮 <b>6GB VRAM</b> (Placa de Vídeo)
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-grid" style="margin-bottom: 25px;">
+                <button class="btn mode-btn" onclick="showSelectionScreen()" style="width:100%; padding: 20px; border: 1px solid #76b900; background: rgba(118, 185, 0, 0.05); color: white; text-align: left; display: block; margin-bottom: 12px;">
+                    <div style="font-size: 2rem; float: left; margin-right: 20px;">🚀</div>
+                    <div style="overflow: hidden;">
+                        <div style="font-size: 1.1rem; font-weight: 800; color: #76b900;">INICIAR INSTALAÇÃO CUSTOMIZADA (NVIDIA GPU)</div>
+                        <div style="font-size: 0.7rem; opacity: 0.7;">Selecione os módulos de áudio, texto e vídeo desejados para economizar espaço no HD.</div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- CARD DE APOIO / CROWDFUNDING PREMIUM -->
+            <div class="donation-card" style="margin-bottom: 25px; background: linear-gradient(135deg, rgba(255, 0, 128, 0.08) 0%, rgba(112, 0, 255, 0.08) 100%); border: 1px solid rgba(255, 0, 128, 0.2); padding: 18px 22px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(255, 0, 128, 0.05); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='rgba(255, 0, 128, 0.4)'; this.style.boxShadow='0 15px 35px rgba(255, 0, 128, 0.1)';" onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='rgba(255, 0, 128, 0.2)'; this.style.boxShadow='0 10px 30px rgba(255, 0, 128, 0.05)';">
+                <div style="flex: 1; padding-right: 20px;">
+                    <div style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1rem; color: #ff0080; margin-bottom: 4px; text-shadow: 0 0 10px rgba(255, 0, 128, 0.2); display: flex; align-items: center; gap: 8px;">
+                        💖 Apoie o Projeto NarraVox!
+                    </div>
+                    <div style="font-size: 0.78rem; color: #ddd; line-height: 1.4;">
+                        Ajude a manter o desenvolvimento ativo e independente. Nossa meta comunitária é de <b>R$ 1.500/mês</b> para manter os motores livres e offline!
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; flex-shrink: 0;">
+                    <a href="https://apoia.se/narravox" target="_blank" style="background: #ff0080; color: white; border: none; padding: 11px 18px; border-radius: 10px; font-weight: 800; font-size: 0.8rem; font-family: 'Outfit', sans-serif; text-decoration: none; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 15px rgba(255, 0, 128, 0.3); text-transform: uppercase; display: inline-block;" onmouseover="this.style.boxShadow='0 0 20px rgba(255, 0, 128, 0.6)'; this.style.transform='scale(1.03)';" onmouseout="this.style.boxShadow='0 0 15px rgba(255, 0, 128, 0.3)'; this.style.transform='scale(1)';">Apoia.se</a>
+                    <a href="https://polar.sh/narravox" target="_blank" style="background: rgba(255, 255, 255, 0.05); color: white; border: 1px solid rgba(255,255,255,0.15); padding: 11px 18px; border-radius: 10px; font-weight: 800; font-size: 0.8rem; font-family: 'Outfit', sans-serif; text-decoration: none; cursor: pointer; transition: all 0.3s; text-transform: uppercase; display: inline-block;" onmouseover="this.style.background='rgba(255,255,255,0.12)';" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)';">Polar.sh</a>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <button class="btn" onclick="startSetup('test')" style="width:100%; background: #00f2ff; color: #000; border: none; box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);">
+                    🔍 TESTAR SETUP
+                </button>
+                <button class="btn" onclick="startSetup('repair')" style="width:100%; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #aaa;">
+                    🔧 REPARAR
+                </button>
+            </div>
+
+            <div id="warning-box" style="background: rgba(255, 200, 0, 0.1); border: 1px solid rgba(255, 200, 0, 0.3); padding: 15px; border-radius: 12px; margin-bottom: 20px; color: #ffcc00; font-size: 0.8rem; line-height: 1.4;">
+                ⚠️ <b>ATENÇÃO:</b> A instalação via <b>Placa de Vídeo</b> só deve ser feita se você possuir uma NVIDIA compatível (Série 10, 20, 30 ou 40) com no mínimo 4GB de VRAM e drivers atualizados.
+            </div>
+            
+            <div style="margin-top: 10px; font-size: 0.75rem; color: rgba(255,255,255,0.4); text-align: center;">
+                <a href="#" onclick="showCredits()" style="color: var(--primary); text-decoration: none; opacity: 0.8;">Créditos & Licenças</a>
+                <a href="#" onclick="openLogs()" style="color: var(--primary); text-decoration: none; opacity: 0.8; margin-left: 20px;">Ver Logs</a>
+            </div>
+        </div>
+
+        <!-- Tela de Seleção de Módulos (Modular) -->
+        <div class="content" id="selection-content" style="display:none;">
+            <h2 style="color: var(--primary);">Personalizar Instalação</h2>
+            <p style="margin-bottom: 20px;">Escolha os recursos que deseja utilizar. Os tamanhos estimados em disco são mostrados ao lado.</p>
+
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px;">
+                <!-- Módulo Base -->
+                <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px 20px; border-radius: 14px; cursor: not-allowed; opacity: 0.8;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <input type="checkbox" checked disabled style="width: 18px; height: 18px; accent-color: var(--primary);">
+                        <div>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: #fff;">📦 Módulo Base & Aceleração GPU (Obrigatório)</div>
+                            <div style="font-size: 0.75rem; color: #888;">Interface web, gerenciador de tarefas, bibliotecas core e aceleração Llama-CPP CUDA.</div>
+                        </div>
+                    </div>
+                    <span style="font-weight: 800; font-size: 0.9rem; color: var(--primary);">~2.10 GB</span>
+                </label>
+
+                <!-- Módulo Dublagem -->
+                <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px 20px; border-radius: 14px; cursor: pointer; transition: all 0.3s;" class="module-label" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <input type="checkbox" id="mod-voice" checked onchange="calcTotalSize()" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
+                        <div>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: #fff;">🎙️ Módulo Dublagem (Áudio, Voz & Sincronia)</div>
+                            <div style="font-size: 0.75rem; color: #888;">CustomVoice TTS, transcrição Whisper, diarização, LivePortrait e modelos Gemma-4 & Qwen3-Base.</div>
+                        </div>
+                    </div>
+                    <span style="font-weight: 800; font-size: 0.9rem; color: var(--primary);">~9.00 GB</span>
+                </label>
+
+                <!-- Módulo Vídeo -->
+                <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px 20px; border-radius: 14px; cursor: pointer; transition: all 0.3s;" class="module-label" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <input type="checkbox" id="mod-video" checked onchange="calcTotalSize()" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
+                        <div>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: #fff;">🎬 Módulo Vídeo Generativo (PyTorch + Diffusers)</div>
+                            <div style="font-size: 0.75rem; color: #888;">Motores de imagem/vídeo (FLUX-klein, Wan v2.2) e modelos de voz Qwen3-CustomVoice.</div>
+                        </div>
+                    </div>
+                    <span style="font-weight: 800; font-size: 0.9rem; color: var(--primary);">~13.50 GB</span>
+                </label>
+            </div>
+
+            <!-- Calculador de tamanho total -->
+            <div style="background: rgba(0, 242, 255, 0.05); border: 1px solid rgba(0, 242, 255, 0.2); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.85rem; color: #aaa;">Tamanho estimado de download e instalação:</span>
+                <span id="total-size-label" style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 900; color: var(--primary);">~24.60 GB</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px;">
+                <button class="btn" onclick="hideSelectionScreen()" style="width:100%; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #aaa;">
+                    ⬅️ VOLTAR
+                </button>
+                <button class="btn" onclick="confirmAndInstall()" style="width:100%; background: #76b900; color: #fff; border: none; box-shadow: 0 0 15px rgba(118, 185, 0, 0.3);">
+                    🔥 INICIAR INSTALAÇÃO SELECIONADA
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal de Créditos -->
+        <div id="credits-modal" style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+            <div style="background: #050505; border: 1px solid var(--primary); padding: 35px; border-radius: 24px; max-width: 650px; width: 90%; position: relative; box-shadow: 0 0 50px rgba(0, 243, 255, 0.15); border-top: 4px solid var(--primary);">
+                <h2 style="color: var(--primary); margin-top: 0; font-family: 'Outfit', sans-serif; display: flex; align-items: center; gap: 10px;">
+                    🧩 Créditos e Agradecimentos
+                </h2>
+                
+                <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem; max-height: 400px; overflow-y: auto; line-height: 1.6; padding-right: 15px;" id="credits-content">
+                    
+                    <!-- FUNDADORES -->
+                    <h3 style="color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;">🎖️ Membros Fundadores & Pioneiros</h3>
+                    <div style="margin-bottom: 20px;">
+                        <b style="color: var(--primary);">Paulo Henrik</b> (Arquiteto & Dev Principal)<br>
+                        <span style="font-size: 0.8rem; opacity: 0.7;">1 ano de desenvolvimento contínuo da infraestrutura agêntica.</span><br>
+                        <a href="https://www.youtube.com/@narravoxstudios.oficial" target="_blank" style="color: #00f3ff; text-decoration: none; font-size: 0.8rem;">[NarraVox Studios]</a> 
+                        <a href="https://www.youtube.com/@PauloDubsStudio100" target="_blank" style="color: #00f3ff; text-decoration: none; font-size: 0.8rem; margin-left: 10px;">[Paulo Dubs Studio]</a>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <b style="color: var(--primary);">Alexandre</b> (Beta Tester Pioneiro)<br>
+                        <span style="font-size: 0.8rem; opacity: 0.7;">Primeiro usuário a validar a estabilidade e parceiro de testes.</span><br>
+                        <a href="https://www.youtube.com/@lisao10" target="_blank" style="color: #00f3ff; text-decoration: none; font-size: 0.8rem;">[Canal Lisao10]</a>
+                    </div>
+
+                    <!-- TECNOLOGIAS -->
+                    <h3 style="color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;">💻 Tecnologias de Apoio</h3>
+                    <ul style="list-style: none; padding: 0; font-size: 0.85rem;">
+                        <li>🚀 <b>Python & Flask:</b> Engine e API Web</li>
+                        <li>🎙️ <b>Faster-Whisper & Chatterbox:</b> Transcrição e Clonagem Vocal</li>
+                        <li>🎬 <b>FFmpeg:</b> Processamento de Mídia Profissional</li>
+                        <li>🧠 <b>Google Gemma 4:</b> Inteligência Agêntica (via LM Studio)</li>
+                        <li>✨ <b>DeepFilterNet:</b> Limpeza e Restauração de Áudio</li>
+                    </ul>
+
+                    <!-- APOIO -->
+                    <h3 style="color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;">🤝 Como Apoiar</h3>
+                    <p style="font-size: 0.85rem;">Gostou do projeto? Ajude a manter o desenvolvimento ativo!</p>
+                    <a href="https://apoia.se" target="_blank" style="display: block; background: var(--primary); color: #000; text-align: center; padding: 10px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 10px;">Apoiar no APOIA.SE</a>
+                </div>
+
+                <button class="btn" onclick="hideCredits()" style="margin-top: 25px; width: 100%; border: 1px solid rgba(255,255,255,0.2); background: transparent;">Voltar ao Instalador</button>
+            </div>
+        </div>
+
+        <!-- Modal do Token Hugging Face -->
+        <div id="token-modal" style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+            <div style="background: #050505; border: 1px solid var(--primary); padding: 35px; border-radius: 24px; max-width: 500px; width: 90%; position: relative; box-shadow: 0 0 50px rgba(0, 242, 255, 0.15); border-top: 4px solid var(--primary);">
+                <h2 style="color: var(--primary); margin-top: 0; font-family: 'Outfit', sans-serif;">🔑 Autenticação Hugging Face</h2>
+                <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 15px; max-width: 100%;">
+                    O modelo <b id="gated-repo-name" style="color: #fff;"></b> requer autorização.
+                </p>
+                
+                <div style="background: rgba(255, 200, 0, 0.05); border: 1px solid rgba(255, 200, 0, 0.2); padding: 12px; border-radius: 8px; margin-bottom: 20px; color: #ffcc00; font-size: 0.8rem; line-height: 1.4;">
+                    <b>Instruções:</b><br>
+                    1. Acesse o repositório em <a id="gated-repo-link" href="#" target="_blank" style="color: var(--primary); text-decoration: underline;">Hugging Face Link</a> e aceite os termos da licença.<br>
+                    2. Obtenha seu token de acesso em <a href="https://huggingface.co/settings/tokens" target="_blank" style="color: var(--primary); text-decoration: underline;">hf.co/settings/tokens</a>.<br>
+                    3. Cole o token abaixo para continuar.
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-size: 0.75rem; color: #aaa; margin-bottom: 5px; text-transform: uppercase;">Token do Hugging Face (hf_...)</label>
+                    <input type="text" id="hf-token-input" placeholder="Cole seu token aqui" style="width: 100%; padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; font-family: monospace; font-size: 0.9rem;">
+                </div>
+                
+                <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin-bottom: 20px; font-size: 0.8rem; color: #aaa; user-select: none;">
+                    <input type="checkbox" id="hf-terms-checkbox" style="margin-top: 3px; width: 16px; height: 16px; accent-color: var(--primary);">
+                    <span>Eu confirmo que já aceitei os termos do modelo no site do Hugging Face.</span>
+                </label>
+                
+                <button class="btn" id="submit-token-btn" onclick="submitToken()" style="width: 100%; background: var(--primary); color: #000; border: none;">
+                    Confirmar e Continuar
+                </button>
+            </div>
+        </div>
+
+        <div class="progress-container" id="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="status-text">
+                <span id="status-label">Preparando arquivos...</span>
+                <span id="progress-percent">0%</span>
+            </div>
+
+            <!-- [v2026.80] CONSOLE DE LOGS EM TEMPO REAL -->
+            <div id="log-console" style="margin-top: 15px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; height: 150px; overflow-y: auto; padding: 10px; font-family: 'Consolas', monospace; font-size: 0.75rem; color: #888; scroll-behavior: smooth; user-select: text; -webkit-user-select: text;">
+                <div style="color: var(--primary);">[SISTEMA] Aguardando inicio...</div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <button class="btn btn-copy" onclick="copyLogs()" style="width:100%; padding: 10px; font-size: 0.8rem; background: rgba(0, 242, 255, 0.1); border: 1px solid var(--primary);">📋 COPIAR LOGS DE INSTALAÇÃO</button>
+            </div>
+        </div>
+        
+        <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.75rem; color: rgba(255, 255, 255, 0.4); line-height: 1.4; text-align: center;">
+            ℹ️ Este software é uma interface de código aberto. Os modelos de IA (Gemma, Qwen, Wan, Flux) são de propriedade de seus respectivos criadores e são baixados diretamente de seus repositórios públicos sob suas respectivas licenças.
+        </div>
+    </div>
+
+    <script src="js/installer_ui.js"></script>
+</body>
+</html>
