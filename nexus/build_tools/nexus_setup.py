@@ -231,6 +231,16 @@ class SetupAPI:
             except:
                 self._log("Aviso: Nao foi possivel completar a auditoria automatica.", "warn")
 
+            # Extrai o executável principal do painel para a pasta local do usuário
+            if getattr(sys, 'frozen', False):
+                bundle_exe = os.path.join(sys._MEIPASS, "Nexus_AI_Pro.exe")
+                dest_exe = os.path.join(os.getcwd(), "Nexus_AI_Pro.exe")
+                if os.path.exists(bundle_exe):
+                    self._log("Extraindo painel principal (Nexus_AI_Pro.exe) para o diretório...", "info")
+                    import shutil
+                    shutil.copy2(bundle_exe, dest_exe)
+                    self._log("✅ Executável do painel extraído com sucesso!", "success")
+
             self._update(100, "Instalacao Concluida!")
             self._log("PROCESSO FINALIZADO!", "success")
             
