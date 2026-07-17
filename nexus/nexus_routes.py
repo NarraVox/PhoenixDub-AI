@@ -139,7 +139,7 @@ def api_engine_status():
 
 @nexus_blueprint.route('/')
 def serve_hub():
-    from nexus_app import switch_active_engine
+    from nexus.nexus_app import switch_active_engine
     import threading
     threading.Thread(target=switch_active_engine, args=("hub",), daemon=True).start()
     return send_from_directory(CLIENT_DIR, 'nexus_premium.html')
@@ -237,7 +237,7 @@ def serve_pages(filename):
 
     target_engine = page_to_engine.get(filename)
     if target_engine:
-        from nexus_app import switch_active_engine
+        from nexus.nexus_app import switch_active_engine
         import threading
         threading.Thread(target=switch_active_engine, args=(target_engine,), daemon=True).start()
 
