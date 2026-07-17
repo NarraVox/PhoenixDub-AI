@@ -16,6 +16,8 @@ if os.environ.get("TEST_IMPORTS") == "1":
     import nexus.build_tools.nexus_setup as nexus_setup
     import webview
     print("[OK] Importacoes do instalador validadas com sucesso!")
+    with open("import_test_setup_ok.txt", "w") as f:
+        f.write("OK")
     sys.exit(0)
 
 import nexus.build_tools.nexus_setup as nexus_setup

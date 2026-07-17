@@ -37,21 +37,35 @@ jobs:
       shell: pwsh
       run: |
         $env:TEST_IMPORTS="1"
-        $proc = Start-Process -FilePath "dist/Nexus_AI_Pro.exe" -NoNewWindow -PassThru -Wait
-        Write-Host "Nexus_AI_Pro.exe finalizado com codigo de saida: $($proc.ExitCode)"
-        if ($proc.ExitCode -ne 0) {
-          throw "Falha critica no executavel Nexus_AI_Pro.exe: codigo de saida $($proc.ExitCode)"
+        $proc = Start-Process -FilePath "dist/Nexus_AI_Pro.exe" -NoNewWindow -PassThru
+        # Aguarda até 15 segundos para inicialização e teste de importações
+        Start-Sleep -Seconds 15
+        if (!$proc.HasExited) {
+          Write-Host "Executavel ainda em execucao. Forcando encerramento (normal em Session 0)..."
+          $proc.Kill()
         }
+        # Verifica se o arquivo de sucesso foi criado
+        if (!(Test-Path "import_test_main_ok.txt")) {
+          throw "Falha critica: O executavel principal Nexus_AI_Pro.exe falhou ao validar as importacoes (arquivo nao gerado)."
+        }
+        Write-Host "[OK] Nexus_AI_Pro.exe passou no teste de importacao!"
 
     - name: Testar Executável Setup (Verificar Importações)
       shell: pwsh
       run: |
         $env:TEST_IMPORTS="1"
-        $proc = Start-Process -FilePath "dist/Setup_Nexus.exe" -NoNewWindow -PassThru -Wait
-        Write-Host "Setup_Nexus.exe finalizado com codigo de saida: $($proc.ExitCode)"
-        if ($proc.ExitCode -ne 0) {
-          throw "Falha critica no executavel Setup_Nexus.exe: codigo de saida $($proc.ExitCode)"
+        $proc = Start-Process -FilePath "dist/Setup_Nexus.exe" -NoNewWindow -PassThru
+        # Aguarda até 15 segundos para inicialização e teste de importações
+        Start-Sleep -Seconds 15
+        if (!$proc.HasExited) {
+          Write-Host "Executavel ainda em execucao. Forcando encerramento (normal em Session 0)..."
+          $proc.Kill()
         }
+        # Verifica se o arquivo de sucesso foi criado
+        if (!(Test-Path "import_test_setup_ok.txt")) {
+          throw "Falha critica: O instalador Setup_Nexus.exe falhou ao validar as importacoes (arquivo nao gerado)."
+        }
+        Write-Host "[OK] Setup_Nexus.exe passou no teste de importacao!"
 
     - name: Criar Release e Upload dos Executáveis
       uses: softprops/action-gh-release@v2
