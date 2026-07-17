@@ -18,6 +18,7 @@ from nexus.core.utils import safe_json_read, safe_json_write
 # Configurações de Diretório vindas do Core de Segurança
 UPLOAD_FOLDER = security.UPLOAD_FOLDER
 TEMP_DIR = security.BASE_DIR / "uploads" / "_NEXUS_TEMP_"
+CLIENT_DIR = str((security.BASE_DIR / "client").resolve())
 
 nexus_blueprint = Blueprint('nexus_routes', __name__)
 
@@ -141,7 +142,7 @@ def serve_hub():
     from nexus_app import switch_active_engine
     import threading
     threading.Thread(target=switch_active_engine, args=("hub",), daemon=True).start()
-    return send_from_directory('client', 'nexus_premium.html')
+    return send_from_directory(CLIENT_DIR, 'nexus_premium.html')
 
 @nexus_blueprint.route('/api/restart_motors')
 @nexus_blueprint.route('/api/restart_server', methods=['GET', 'POST'])
@@ -223,7 +224,7 @@ def list_project_files():
 @nexus_blueprint.route('/<path:filename>')
 def serve_pages(filename):
     if not filename.endswith('.html'):
-        if os.path.exists(os.path.join('client', filename + '.html')):
+        if os.path.exists(os.path.join(CLIENT_DIR, filename + '.html')):
             filename += '.html'
 
     page_to_engine = {
@@ -240,7 +241,7 @@ def serve_pages(filename):
         import threading
         threading.Thread(target=switch_active_engine, args=(target_engine,), daemon=True).start()
 
-    return send_from_directory('client', filename)
+    return send_from_directory(CLIENT_DIR, filename)
 
 @nexus_blueprint.route('/api/list_vortex_projects')
 def list_vortex_projects():
