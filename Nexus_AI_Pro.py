@@ -16,6 +16,8 @@ if os.environ.get("TEST_IMPORTS") == "1":
     import nexus.nexus_app as nexus_app
     import nexus.core.security as security
     print("[OK] Importacoes do app principal validadas com sucesso!")
+    with open("import_test_main_ok.txt", "w") as f:
+        f.write("OK")
     sys.exit(0)
 
 import nexus.nexus_app as nexus_app
