@@ -69,6 +69,10 @@ env/
 venv/
 .env
 
+# Scripts de testes locais
+TESTAR_AGORA.bat
+TESTAR_SETUP.bat
+
 # Arquivos Binários Grandes
 *.exe
 *.msi
