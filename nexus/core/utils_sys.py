@@ -160,8 +160,10 @@ if not script_name or script_name in ["-m", "nexus_generic"]:
 if not script_name or script_name.strip() in ["-m", ""]:
     script_name = "nexus_generic"
 
-log_path = Path("c:/IA_dublagem/logs")
-log_path.mkdir(exist_ok=True)
+# Resolve o diretório raiz dinamicamente relativo a este arquivo (nexus/core/utils_sys.py)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+log_path = BASE_DIR / "logs"
+log_path.mkdir(parents=True, exist_ok=True)
 current_log_file = log_path / f"{script_name}.log"
 
 stream_handler = logging.StreamHandler(sys.stdout)
