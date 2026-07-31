@@ -1,5 +1,11 @@
 # PhoenixDub AI 🚀🔥
 
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v0.5%20Beta-ff124f?style=for-the-badge)
+![VRAM](https://img.shields.io/badge/GPU-RTX%203050%206GB%20Target-00f3ff?style=for-the-badge)
+![Licença](https://img.shields.io/badge/Licen%C3%A7a-Apache%202.0-00ff41?style=for-the-badge)
+[![Apoia.se](https://img.shields.io/badge/Apoia.se-NarraVox%20Studios-ff424d?style=for-the-badge&logo=patreon)](https://apoia.se/narravox_studios)
+[![Baixar v0.5 Setup](https://img.shields.io/badge/%F0%9F%93%A5_Baixar_Instalador-v0.5_Setup.exe-00f3ff?style=for-the-badge)](https://github.com/NarraVox/PhoenixDub-AI/releases)
+
 [Português](#português) | [English](#english)
 
 ---
@@ -20,8 +26,8 @@
 
 **PhoenixDub AI** é uma solução completa de **edição de vídeo e dublagem automatizada** de nível profissional. Projetado para alta precisão, fluxo natural e extrema resiliência, o PhoenixDub utiliza IAs de última geração para processar, editar e sincronizar vídeos e jogos em Português (PT-BR) de forma inteligente.
 
-Meu site que tem todos os projetos que fiz até o momento
-https://narravox.github.io/bio/
+Meu site que tem todos os projetos que fiz até o momento:  
+👉 **[https://narravox.github.io/bio/](https://narravox.github.io/bio/)**
 
 > [!IMPORTANT]
 > ### 💖 Ajude a Financiar a Versão 1.0 e o Cine Gen! (Apoia.se)
@@ -46,7 +52,7 @@ https://narravox.github.io/bio/
 > *   🎵 **Gerador de Músicas (Vortex Beta)**: Primeira versão experimental do gerador de trilhas e sets musicais assistidos por IA.
 > *   ⚡ **Performance RTX Otimizada**: Motores atualizados para extrair o máximo poder de processamento e VRAM de placas como a RTX 3050 com agendamento inteligente.
 
-> [!IMPORTANTE]
+> [!IMPORTANT]
 > ### 🖥️ Requisitos do Sistema (Atualizado)
 > * **Processador**: Compatível com Intel (6ª geração ou superior) ou equivalente AMD
 > * **Placa de Vídeo (OBRIGATÓRIA)**: GPU dedicada com suporte a CUDA
