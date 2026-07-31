@@ -1,10 +1,10 @@
 # PhoenixDub AI 🚀🔥
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v0.5%20Beta-ff124f?style=for-the-badge)
-![VRAM](https://img.shields.io/badge/GPU-RTX%203050%206GB%20Target-00f3ff?style=for-the-badge)
-![Licença](https://img.shields.io/badge/Licen%C3%A7a-Apache%202.0-00ff41?style=for-the-badge)
-[![Apoia.se](https://img.shields.io/badge/Apoia.se-NarraVox%20Studios-ff424d?style=for-the-badge&logo=patreon)](https://apoia.se/narravox_studios)
-[![Baixar v0.5 Setup](https://img.shields.io/badge/%F0%9F%93%A5_Baixar_Instalador-v0.5_Setup.exe-00f3ff?style=for-the-badge)](https://github.com/NarraVox/PhoenixDub-AI/releases)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v0.5--Beta-E11D48?style=flat-square&labelColor=1E293B)
+![GPU Target](https://img.shields.io/badge/GPU_Target-RTX_3050_6GB-0284C7?style=flat-square&labelColor=1E293B)
+![Licença](https://img.shields.io/badge/Licen%C3%A7a-Apache_2.0-16A34A?style=flat-square&labelColor=1E293B)
+[![Apoia.se](https://img.shields.io/badge/Apoia.se-NarraVox_Studios-E11D48?style=flat-square&labelColor=1E293B&logo=patreon)](https://apoia.se/narravox_studios)
+[![Baixar Setup](https://img.shields.io/badge/%F0%9F%93%A5_Instalador-v0.5_Setup.exe-0284C7?style=flat-square&labelColor=1E293B)](https://github.com/NarraVox/PhoenixDub-AI/releases)
 
 [Português](#português) | [English](#english)
 
