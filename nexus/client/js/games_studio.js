@@ -53,15 +53,16 @@ let statusInterval = null;
                             const previewArea = document.getElementById('folder-preview-info');
                             previewArea.style.display = 'block';
                             previewArea.innerHTML = `
-                                <div style="color: #00ff41; font-size: 0.6rem; font-weight: 900; margin-top: 10px; border-left: 2px solid #00ff41; padding-left: 10px;">
-                                    ✅ CONFIRMADO: ${folderPaths.length} PASTA(S) (${previewData.count} ARQUIVOS DETECTADOS)<br>
-                                    <span style="opacity: 0.8; font-size: 0.5rem; color: #00f3ff;">AMOSTRA: ${folderNames.join(', ')}</span>
+                                <div style="color: #00ff41; font-size: 0.65rem; font-weight: 900; margin-top: 10px; border-left: 3px solid #00ff41; padding-left: 10px; background: rgba(0, 255, 65, 0.05); padding-top: 6px; padding-bottom: 6px;">
+                                    ✅ CONFIRMADO: ${previewData.folder_count || folderPaths.length} PASTA(S) NO LOTE<br>
+                                    <span style="color: #00f3ff; font-size: 0.7rem; font-weight: bold;">📊 TOTAL ACUMULADO: ${previewData.count} ARQUIVOS DE ÁUDIO</span><br>
+                                    <span style="opacity: 0.8; font-size: 0.55rem; color: #a0a0a0;">PASTAS: ${folderNames.join(', ')}</span>
                                 </div>
                             `;
                             document.getElementById('project-progress-area').style.display = 'block';
                             document.getElementById('segment-counter').textContent = `000 / ${String(previewData.count).padStart(3, '0')}`;
                             document.getElementById('segment-counter').style.opacity = '1';
-                            logToTerminal(`SCANNER: ${folderPaths.length} pasta(s) e ${previewData.count} áudios validados.`, 'success');
+                            logToTerminal(`SCANNER: ${previewData.folder_count || folderPaths.length} pasta(s) e TOTAL de ${previewData.count} áudios validados no lote.`, 'success');
                         }
                     } catch(e_prev) { console.log("Erro no preview:", e_prev); }
                 }

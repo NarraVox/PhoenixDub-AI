@@ -1161,18 +1161,40 @@ def games_api_descompactar():
 @app_games.route('/api/preview-folder', methods=['POST'])
 def games_preview_folder():
     try:
-        data = request.json
-        folder_path = data.get('path')
-        if not folder_path or not os.path.exists(folder_path):
-            return jsonify({"success": False, "message": "Pasta não encontrada."}), 404
+        data = request.json or {}
+        raw_paths = data.get('all_paths') or []
+        primary_path = data.get('path')
+        
+        if not raw_paths and primary_path:
+            raw_paths = [p.strip() for p in str(primary_path).split(';') if p.strip()]
+            
+        valid_paths = [Path(p) for p in raw_paths if p and os.path.exists(p)]
+        if not valid_paths:
+            return jsonify({"success": False, "message": "Nenhuma pasta válida encontrada."}), 404
+            
         valid_exts = ('.wav', '.mp3', '.ogg', '.flac', '.m4a')
         all_files = []
-        for root, dirs, files in os.walk(folder_path):
-            for f in files:
-                if f.lower().endswith(valid_exts):
-                    all_files.append(f)
+        folder_counts = {}
+        
+        for p_path in valid_paths:
+            f_count = 0
+            if p_path.is_dir():
+                for root, dirs, files in os.walk(p_path):
+                    for f in files:
+                        if f.lower().endswith(valid_exts):
+                            all_files.append(f)
+                            f_count += 1
+            folder_counts[p_path.name] = f_count
+            
         count = len(all_files)
-        return jsonify({"success": True, "count": count, "sample": all_files[:5], "message": f"{count} arquivos."})
+        return jsonify({
+            "success": True, 
+            "count": count, 
+            "folder_count": len(valid_paths),
+            "sample": all_files[:5], 
+            "folder_counts": folder_counts,
+            "message": f"{count} arquivos encontrados em {len(valid_paths)} pasta(s)."
+        })
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
