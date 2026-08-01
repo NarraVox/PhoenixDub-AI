@@ -458,7 +458,11 @@ async function buscarDialogosGlobais() {
     }
 }
 
-async function redublarSegmentoUnico(folder, filename, inputId, btnId, statusId) {
+// --- FILA DE REDUBLAGEM ASSÍNCRONA EM SEGUNDO PLANO (ETAPA 5) ---
+const redubQueue = [];
+let isProcessingRedubQueue = false;
+
+function redublarSegmentoUnico(folder, filename, inputId, btnId, statusId) {
     const input = document.getElementById(inputId);
     const btn = document.getElementById(btnId);
     const status = document.getElementById(statusId);
@@ -466,8 +470,56 @@ async function redublarSegmentoUnico(folder, filename, inputId, btnId, statusId)
     const newText = input ? input.value.trim() : '';
     if (!newText) return;
 
-    if (btn) { btn.disabled = true; btn.innerText = "⏳ GRAVANDO..."; }
-    if (status) { status.style.display = "block"; status.style.color = "#ffaa00"; status.innerText = "Sintetizando novo áudio com o motor GPU Qwen3..."; }
+    // Enfileira a tarefa sem travar a interface
+    const task = { folder, filename, inputId, btnId, statusId, newText };
+    redubQueue.push(task);
+
+    const position = redubQueue.length;
+    if (btn) { 
+        btn.disabled = true; 
+        btn.style.background = '#ffaa00';
+        btn.innerText = `⏳ #${position} NA FILA`; 
+    }
+    if (status) { 
+        status.style.display = "block"; 
+        status.style.color = "#ffaa00"; 
+        status.innerText = `Adicionado à fila de correção (Posição #${position})...`; 
+    }
+
+    if (!isProcessingRedubQueue) {
+        processRedubQueue();
+    }
+}
+
+async function processRedubQueue() {
+    if (redubQueue.length === 0) {
+        isProcessingRedubQueue = false;
+        return;
+    }
+
+    isProcessingRedubQueue = true;
+    const task = redubQueue.shift();
+    const { folder, filename, inputId, btnId, statusId, newText } = task;
+
+    const btn = document.getElementById(btnId);
+    const status = document.getElementById(statusId);
+
+    if (btn) {
+        btn.style.background = '#00f3ff';
+        btn.innerText = "⚡ GRAVANDO...";
+    }
+    if (status) {
+        status.style.color = "#00f3ff";
+        status.innerText = "Sintetizando áudio GPU Qwen3 em segundo plano...";
+    }
+
+    // Atualiza as posições visuais dos itens restantes na fila
+    redubQueue.forEach((t, idx) => {
+        const b = document.getElementById(t.btnId);
+        const s = document.getElementById(t.statusId);
+        if (b) b.innerText = `⏳ #${idx + 1} NA FILA`;
+        if (s) s.innerText = `Aguardando fila de correção (Posição #${idx + 1})...`;
+    });
 
     try {
         const res = await fetch('/api/redub_single_segment', {
@@ -478,7 +530,7 @@ async function redublarSegmentoUnico(folder, filename, inputId, btnId, statusId)
         const data = await res.json();
 
         if (data.status === 'success') {
-            if (btn) { btn.style.background = "#00ff41"; btn.innerText = "✅ CONCLUÍDO"; }
+            if (btn) { btn.disabled = false; btn.style.background = "#00ff41"; btn.innerText = "✅ CONCLUÍDO"; }
             if (status) { status.style.color = "#00ff41"; status.innerText = "✨ Áudio re-dublado e atualizado no jogo com sucesso!"; }
             if (typeof logToTerminal === 'function') logToTerminal(`✅ [REDUBLAGEM OK] ${folder}/${filename}: "${newText}"`, 'success');
         } else {
@@ -486,7 +538,10 @@ async function redublarSegmentoUnico(folder, filename, inputId, btnId, statusId)
             if (status) { status.style.color = "#ff4444"; status.innerText = `Erro: ${data.message}`; }
         }
     } catch(e) {
-        if (btn) { btn.disabled = false; btn.innerText = "⚡ REDUBLAR"; }
+        if (btn) { btn.disabled = false; btn.style.background = "#ff4444"; btn.innerText = "⚡ REDUBLAR"; }
         if (status) { status.style.color = "#ff4444"; status.innerText = `Erro de conexão: ${e}`; }
     }
+
+    // Processa a próxima correção da fila automaticamente
+    setTimeout(processRedubQueue, 200);
 }
