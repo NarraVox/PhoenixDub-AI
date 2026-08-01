@@ -13,6 +13,7 @@ Esta atualização traz recursos monumentais focados em **produtividade em lote 
 #### ⚡ 1. Fila de Dublagem por Estágios de IA (Stage Batch Queue)
 - **Otimização de VRAM:** Execute múltiplas pastas de áudio em lote! O sistema roda o Whisper em todas as pastas (Estágio 1), depois a Tradução LLM (Estágio 2), depois o Qwen3-TTS (Estágio 3) e finaliza na Masterização (Estágio 4).
 - **Economia de Tempo:** Cada modelo de IA é carregado na VRAM apenas **1 vez por lote**, economizando memória e acelerando o processamento em GPUs modestas (RTX 3050 6GB Target).
+- ⚠️ **Nota Experimental (Beta):** Recurso implementado recentemente! Como é um motor recém-lançado nesta versão v0.6.0, ainda está em fase de validação e pode apresentar instabilidades em cenários específicos. Pedimos a ajuda da comunidade para testar e reportar eventuais bugs na nossa aba de Issues!
 
 #### 📂 2. Múltipla Seleção de Pastas Sem Alterar Estrutura de Modding
 - **Suporte a Ctrl/Shift:** Escolha várias pastas simultaneamente no seletor nativo do Windows.
