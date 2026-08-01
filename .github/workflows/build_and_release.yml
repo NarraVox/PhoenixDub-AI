@@ -71,6 +71,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
+        name: ⚡ PhoenixDub AI v0.6.0 - "The Stage Batch & Security Update" 🛡️
         draft: false
         prerelease: false
         body_path: RELEASE_NOTES.md
