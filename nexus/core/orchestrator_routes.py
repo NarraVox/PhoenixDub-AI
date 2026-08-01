@@ -434,14 +434,28 @@ def dublar_lote_jogos():
 # --- O HUB PREMIUN (HTML) JÁ ESTÁ APONTANDO PARA O LUGAR CORRETO ---
 
 @app.route('/progress/<job_id>')
+@app.route('/api/job-status/<job_id>')
 def progress(job_id):
     with progress_lock:
-        if job_id in progress_dict: return jsonify(progress_dict[job_id])
+        if job_id in progress_dict: 
+            p_data = dict(progress_dict[job_id])
+            status_path = Path(app.config['UPLOAD_FOLDER']) / job_id / "job_status.json"
+            if status_data := safe_json_read(status_path):
+                p_data.update(status_data)
+            return jsonify(p_data)
+            
         status_path = Path(app.config['UPLOAD_FOLDER']) / job_id / "job_status.json"
         if status_data := safe_json_read(status_path):
-             return jsonify({ 'progress': status_data.get('progress', 0), 'etapa': status_data.get('etapa', 'Pronto'),
-                              'subetapa': status_data.get('subetapa'), 'tempo_decorrido': status_data.get('tempo_decorrido', '0:00:00') })
-    return jsonify({})
+             return jsonify({ 
+                 'progress': status_data.get('progress', 0), 
+                 'status': status_data.get('status', 'processando'),
+                 'etapa': status_data.get('etapa', 'Pronto'),
+                 'subetapa': status_data.get('subetapa'), 
+                 'tempo_decorrido': status_data.get('tempo_decorrido', '0:00:00'),
+                 'total_seg': status_data.get('total_seg', 0),
+                 'current_seg': status_data.get('current_seg', 0)
+             })
+    return jsonify({'progress': 0, 'status': 'iniciando', 'message': 'Aguardando início...'})
 
 @app.errorhandler(Exception)
 def handle_exception(e):
