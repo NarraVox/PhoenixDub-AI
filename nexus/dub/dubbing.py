@@ -979,6 +979,17 @@ HTML_TEMPLATE = """
 def games_home():
     return render_template_string(HTML_TEMPLATE)
 
+from nexus.core.orchestrator_routes import dublar_lote_jogos, progress
+
+@app_games.route('/dublar_lote_jogos', methods=['POST'])
+def games_dublar_lote_jogos():
+    return dublar_lote_jogos()
+
+@app_games.route('/progress/<job_id>')
+@app_games.route('/api/job-status/<job_id>')
+def games_job_progress(job_id):
+    return progress(job_id)
+
 @app_games.route('/api/health')
 def games_health_check():
     return jsonify({"status": "online", "engine": "Titan Games"})
