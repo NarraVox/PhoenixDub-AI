@@ -27,7 +27,8 @@ os.environ["HF_HUB_DISABLE_SYMLINKS"] = "1"
 logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
 # Inicialização do Flask (Herdado via SecuredFlask pelo import do security)
-app = Flask(__name__, static_folder='client')
+CLIENT_DIR = str((security.BASE_DIR / "nexus" / "client").resolve())
+app = Flask(__name__, static_folder=CLIENT_DIR)
 
 # --- CONFIGURAÇÃO E GERENCIAMENTO DINÂMICO DE MOTORES ---
 active_engines = {
@@ -83,7 +84,7 @@ def start_engine(name):
     if engine["process"] is not None and engine["process"].poll() is None:
         return
 
-    python_exe = os.path.join(os.getcwd(), 'env', 'Scripts', 'python.exe')
+    python_exe = str(BASE_DIR / 'env' / 'Scripts' / 'python.exe')
     if not os.path.exists(python_exe):
         python_exe = sys.executable
 
@@ -99,8 +100,12 @@ def start_engine(name):
 
     print(f"\n[DINÂMICO] Ativando motor {name} na porta {engine['port']}...")
     try:
+        env_vars = os.environ.copy()
+        env_vars["PYTHONPATH"] = str(BASE_DIR) + os.pathsep + env_vars.get("PYTHONPATH", "")
         p = subprocess.Popen(
             [python_exe, "-u", "-m", engine["module"], str(engine["port"])],
+            cwd=str(BASE_DIR),
+            env=env_vars,
             bufsize=1,
             universal_newlines=True
         )
@@ -148,10 +153,23 @@ def start_hub_server():
 
 # --- API JAVASCRIPT DO PYWEBVIEW ---
 class Api:
+    def __init__(self):
+        self.window = None
+
+    def _get_window(self):
+        if self.window:
+            return self.window
+        if webview.windows:
+            return webview.windows[0]
+        return None
+
     def open_file_dialog(self, file_filter="Todos os arquivos (*.*)", allow_multiple=False):
         """Abre o seletor de arquivos do Windows."""
+        win = self._get_window()
+        if not win:
+            return None
         clean_filter = file_filter.split('|')[0]
-        result = window.create_file_dialog(webview.FileDialog.OPEN, allow_multiple=allow_multiple, file_types=(clean_filter,))
+        result = win.create_file_dialog(webview.FileDialog.OPEN, allow_multiple=allow_multiple, file_types=(clean_filter,))
         if result:
             # Garante que paths seja uma lista de strings, seja result string ou tupla
             if isinstance(result, str):
@@ -163,13 +181,21 @@ class Api:
             return result if allow_multiple else paths[0]
         return None
 
-    def open_folder_dialog(self):
-        """Abre o seletor de pastas do Windows."""
-        result = window.create_file_dialog(webview.FOLDER_DIALOG)
+    def open_folder_dialog(self, allow_multiple=True):
+        """Abre o seletor de pastas do Windows (suporta múltipla seleção)."""
+        win = self._get_window()
+        if not win:
+            return None
+        folder_flag = getattr(webview, 'FileDialog', None).FOLDER if hasattr(webview, 'FileDialog') else getattr(webview, 'FOLDER_DIALOG', 2)
+        try:
+            result = win.create_file_dialog(folder_flag, allow_multiple=allow_multiple)
+        except Exception:
+            result = win.create_file_dialog(folder_flag)
         if result:
-            folder_path = result if isinstance(result, str) else result[0]
-            security.register_allowed_path(folder_path)
-            return folder_path
+            paths = [result] if isinstance(result, str) else list(result)
+            for p in paths:
+                security.register_allowed_path(p)
+            return paths if allow_multiple else paths[0]
         return None
 
     def open_folder_explorer(self, folder_path):
@@ -200,6 +226,25 @@ def main():
         background_color='#050505',
         js_api=api
     )
+    api.window = window
+
+    def on_loaded():
+        try:
+            window.evaluate_js("""
+                (function() {
+                    try {
+                        Object.defineProperty(window, 'native', {
+                            get: function() { return undefined; },
+                            set: function() {},
+                            configurable: true
+                        });
+                    } catch(e) {}
+                })();
+            """)
+        except Exception:
+            pass
+
+    window.events.loaded += on_loaded
 
     def on_closed():
         print("\n[ENCERRANDO] Finalizando motores e fechando CMD...")
@@ -218,7 +263,7 @@ def main():
     window.events.closed += on_closed
     print("\n[OK] Interface lançada. Logs dos motores ativos abaixo:")
     print("-" * 50)
-    webview.start()
+    webview.start(gui='edgechromium')
 
 if __name__ == '__main__':
     main()

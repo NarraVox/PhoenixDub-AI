@@ -18,7 +18,7 @@ from nexus.core.utils import safe_json_read, safe_json_write
 # Configurações de Diretório vindas do Core de Segurança
 UPLOAD_FOLDER = security.UPLOAD_FOLDER
 TEMP_DIR = security.BASE_DIR / "uploads" / "_NEXUS_TEMP_"
-CLIENT_DIR = str((security.BASE_DIR / "client").resolve())
+CLIENT_DIR = str((security.BASE_DIR / "nexus" / "client").resolve())
 
 nexus_blueprint = Blueprint('nexus_routes', __name__)
 
@@ -340,3 +340,114 @@ def recent_jobs():
         print(f"[ERRO LISTAGEM] {e}")
 
     return jsonify(jobs)
+
+# --- [v2026.GLOBAL_SEARCH_REPAIR_ENGINE] MODO CORREÇÃO GLOBAL AVANÇADO ---
+@nexus_blueprint.route('/api/global_search_dialogues')
+def global_search_dialogues():
+    q = request.args.get('q', '').strip().lower()
+    if not q or len(q) < 2:
+        return jsonify([])
+
+    results = []
+    base_dialog_dir = security.BASE_DIR / "call of duty" / "dialog" / "class3"
+    
+    if base_dialog_dir.exists():
+        for char_dir in base_dialog_dir.iterdir():
+            if char_dir.is_dir():
+                pdata_file = char_dir / "project_data.json"
+                if pdata_file.exists():
+                    try:
+                        with open(pdata_file, 'r', encoding='utf-8') as f:
+                            pdata = json.load(f)
+                        for fname, info in pdata.items():
+                            orig = info.get('original', '')
+                            trans = info.get('translated', '')
+                            
+                            # Busca insensível a maiúsculas/minúsculas no texto original, traduzido ou nome do arquivo
+                            if q in orig.lower() or q in trans.lower() or q in fname.lower():
+                                results.append({
+                                    "folder": char_dir.name,
+                                    "filename": fname,
+                                    "original": orig,
+                                    "translated": trans,
+                                    "full_audio_path": str(char_dir / fname)
+                                })
+                                if len(results) >= 100: break # Limite de 100 resultados por busca para ser ultra rápido
+                    except Exception as e:
+                        logging.error(f"Erro ao ler pdata de {char_dir.name}: {e}")
+
+    return jsonify(results)
+
+@nexus_blueprint.route('/api/redub_single_segment', methods=['POST'])
+def redub_single_segment():
+    try:
+        data = request.json or {}
+        folder = data.get('folder', '').strip()
+        filename = data.get('filename', '').strip()
+        new_text = data.get('new_text', '').strip()
+
+        if not folder or not filename or not new_text:
+            return jsonify({"status": "error", "message": "Parâmetros incompletos."}), 400
+
+        target_file = security.BASE_DIR / "call of duty" / "dialog" / "class3" / folder / filename
+        pdata_file = security.BASE_DIR / "call of duty" / "dialog" / "class3" / folder / "project_data.json"
+        temp_dir = security.BASE_DIR / f"temp_{folder}_dub"
+
+        if not target_file.exists():
+            return jsonify({"status": "error", "message": f"Arquivo não encontrado: {target_file}"}), 404
+
+        # Determina a referência de áudio
+        ref_wav = temp_dir / f"{target_file.stem}_ref.wav"
+        if "lil" in folder.lower():
+            female_ref = temp_dir / f"{target_file.stem}_female_ref.wav"
+            if female_ref.exists(): ref_wav = female_ref
+
+        if not ref_wav.exists():
+            # Converte o MP3 original para WAV de referência
+            ref_wav.parent.mkdir(parents=True, exist_ok=True)
+            if "lil" in folder.lower():
+                cmd_ref = ["ffmpeg", "-y", "-i", str(target_file), "-af", "asetrate=24000*1.22,aresample=24000", str(ref_wav)]
+            else:
+                cmd_ref = ["ffmpeg", "-y", "-i", str(target_file), "-ar", "24000", "-ac", "1", str(ref_wav)]
+            subprocess.run(cmd_ref, capture_output=True, check=True)
+
+        dub_wav = temp_dir / f"{target_file.stem}_dub.wav"
+
+        from nexus.core.tts import gerar_audio_qwen3
+        res = gerar_audio_qwen3(
+            text=new_text,
+            ref_audio_path=str(ref_wav),
+            output_path=str(dub_wav),
+            language="Portuguese",
+            emotion="NORMAL"
+        )
+
+        if not res or not dub_wav.exists():
+            return jsonify({"status": "error", "message": "Falha ao gerar o novo áudio na GPU."}), 500
+
+        # Aplica volume equilibrado (-2.5dB / 0.78) e salva no arquivo do jogo
+        cmd_mp3 = ["ffmpeg", "-y", "-i", str(dub_wav), "-af", "volume=0.78", "-b:a", "192k", str(target_file)]
+        subprocess.run(cmd_mp3, capture_output=True, check=True)
+
+        # Atualiza o project_data.json do personagem
+        if pdata_file.exists():
+            try:
+                with open(pdata_file, 'r', encoding='utf-8') as f:
+                    pdata = json.load(f)
+                if filename in pdata:
+                    pdata[filename]['translated'] = new_text
+                    pdata[filename]['timestamp'] = time.time()
+                with open(pdata_file, 'w', encoding='utf-8') as f:
+                    json.dump(pdata, f, ensure_ascii=False, indent=2)
+            except Exception as e:
+                logging.error(f"Erro ao salvar pdata: {e}")
+
+        return jsonify({
+            "status": "success",
+            "message": f"Áudio {filename} re-dublado e atualizado com sucesso!",
+            "new_text": new_text
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Erro na re-dublagem: {str(e)}"}), 500
+

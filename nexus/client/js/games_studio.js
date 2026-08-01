@@ -1,5 +1,13 @@
+try {
+    Object.defineProperty(window, 'native', {
+        get: function() { return undefined; },
+        set: function() {},
+        configurable: true
+    });
+} catch(e) {}
+
 let activeJobId = null;
-        let statusInterval = null;
+let statusInterval = null;
 
         function logToTerminal(msg, type = 'info') {
             const manualLogs = document.getElementById('manual-logs');
@@ -23,37 +31,42 @@ let activeJobId = null;
 
         async function selecionarPasta(targetId) {
             try {
-                const result = await window.pywebview.api.open_folder_dialog();
-                if (result) {
-                    document.getElementById(targetId).value = result;
-                    logToTerminal(`REPOSITÓRIO SELECIONADO: ${result.split(/[\\\\/]/).pop()}`, 'success');
+                const rawResult = await window.pywebview.api.open_folder_dialog(true);
+                if (rawResult) {
+                    let folderPaths = Array.isArray(rawResult) ? rawResult : [rawResult];
+                    const formattedValue = folderPaths.join(';');
+                    document.getElementById(targetId).value = formattedValue;
                     
-                    // [v2026.PREVIEW] Busca confirmação visual dos arquivos na pasta
+                    const folderNames = folderPaths.map(p => p.split(/[\\/]/).pop());
+                    logToTerminal(`PASTA(S) SELECIONADA(S): ${folderNames.join(', ')}`, 'success');
+                    
                     try {
                         const previewRes = await fetch('http://127.0.0.1:5002/api/preview-folder', {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({ path: result })
+                            body: JSON.stringify({ path: folderPaths[0], all_paths: folderPaths })
                         });
                         const previewData = await previewRes.json();
                         
                         if (previewData.success) {
+                            window._lastPreviewCount = previewData.count;
                             const previewArea = document.getElementById('folder-preview-info');
                             previewArea.style.display = 'block';
                             previewArea.innerHTML = `
                                 <div style="color: #00ff41; font-size: 0.6rem; font-weight: 900; margin-top: 10px; border-left: 2px solid #00ff41; padding-left: 10px;">
-                                    ✅ CONFIRMADO: ${previewData.count} ARQUIVOS DETECTADOS<br>
-                                    <span style="opacity: 0.6; font-size: 0.5rem;">AMOSTRA: ${previewData.sample.join(', ')}...</span>
+                                    ✅ CONFIRMADO: ${folderPaths.length} PASTA(S) (${previewData.count} ARQUIVOS DETECTADOS)<br>
+                                    <span style="opacity: 0.8; font-size: 0.5rem; color: #00f3ff;">AMOSTRA: ${folderNames.join(', ')}</span>
                                 </div>
                             `;
-                            logToTerminal(`SCANNER: ${previewData.count} arquivos de áudio validados na pasta.`, 'success');
+                            document.getElementById('project-progress-area').style.display = 'block';
+                            document.getElementById('segment-counter').textContent = `000 / ${String(previewData.count).padStart(3, '0')}`;
+                            document.getElementById('segment-counter').style.opacity = '1';
+                            logToTerminal(`SCANNER: ${folderPaths.length} pasta(s) e ${previewData.count} áudios validados.`, 'success');
                         }
                     } catch(e_prev) { console.log("Erro no preview:", e_prev); }
                 }
             } catch (e) { logToTerminal("ERRO AO ACESSAR DIRETÓRIO.", 'error'); }
         }
-
-
 
         async function loadProjectStatus(jobId) {
             try {
@@ -65,25 +78,58 @@ let activeJobId = null;
                     document.getElementById('dynamic-progress-bar').style.width = data.progress + '%';
                     document.getElementById('percent-text').textContent = Math.round(data.progress) + '%';
                     
+                    const circle = document.querySelector('.progress-circle:not(.spinning-circle)');
+                    if (circle) {
+                        circle.style.background = `conic-gradient(var(--accent) ${data.progress}%, rgba(255,255,255,0.05) 0deg)`;
+                    }
+
                     const stepText = (data.status === 'completed') ? 'OPERAÇÃO CONCLUÍDA' : (data.etapa ? data.etapa.toUpperCase() : 'PROCESSANDO');
                     document.getElementById('current-step-text').textContent = "STATUS: " + stepText;
                     document.getElementById('status-msg-detail').textContent = data.subetapa || data.message || "SINCRONIZANDO...";
                     
-                    // NOVA TELEMETRIA MONUMENTAL
                     if (data.tool_name) {
                         document.getElementById('active-tool-badge').textContent = data.tool_name.toUpperCase();
                         document.getElementById('active-tool-badge').style.background = 'var(--accent)';
                     }
-                    if (data.current_seg && data.total_seg) {
-                        document.getElementById('segment-counter').textContent = `${String(data.current_seg).padStart(3, '0')} / ${String(data.total_seg).padStart(3, '0')}`;
+
+                    const curr = (data.current_seg !== undefined && data.current_seg !== null) ? data.current_seg : 0;
+                    const tot = (data.total_seg !== undefined && data.total_seg !== null && data.total_seg > 0) ? data.total_seg : (window._lastPreviewCount || 0);
+                    if (tot > 0) {
+                        document.getElementById('segment-counter').textContent = `${String(curr).padStart(3, '0')} / ${String(tot).padStart(3, '0')}`;
                         document.getElementById('segment-counter').style.opacity = '1';
                     }
+
                     if (data.tempo_decorrido) {
-                        document.getElementById('titan-timer').textContent = data.tempo_decorrido;
+                        const formatted = formatDigitalTime(data.tempo_decorrido);
+                        document.getElementById('titan-timer').textContent = formatted;
                         document.getElementById('titan-timer').style.color = "#00ff41"; // Verde quando ativo
                     }
                 }
             } catch(e) { console.error("Erro status:", e); }
+        }
+
+        function formatDigitalTime(val) {
+            if (!val) return "00:00";
+            if (typeof val === 'string') {
+                if (val.includes('h') || val.includes('m') || val.includes('s')) {
+                    const h = (val.match(/(\d+)h/) || [])[1] || 0;
+                    const m = (val.match(/(\d+)m/) || [])[1] || 0;
+                    const s = (val.match(/(\d+)s/) || [])[1] || 0;
+                    if (parseInt(h) > 0) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                }
+                if (val.includes(':')) {
+                    const parts = val.split(':');
+                    return parts.map(p => p.padStart(2, '0')).join(':');
+                }
+            }
+            const secs = parseInt(val, 10);
+            if (isNaN(secs)) return "00:00";
+            const hrs = Math.floor(secs / 3600);
+            const mins = Math.floor((secs % 3600) / 60);
+            const s = secs % 60;
+            if (hrs > 0) return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            return `${String(mins).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }
 
         function startStatusPolling() {
@@ -118,6 +164,11 @@ let activeJobId = null;
                 const dubbedFolder = document.getElementById('dubbed-folder').value;
                 url = 'http://127.0.0.1:5002/api/fmod_repack';
                 body = { project_id: projectId, fmod_tool_path: fmodTool, dubbed_folder: dubbedFolder };
+            } else if (action === 'dublar_lote') {
+                const selector = document.getElementById('project-selector');
+                const selectedJobs = Array.from(selector.selectedOptions).map(opt => opt.value).filter(v => v && v !== "");
+                await startBatchDubbing(selectedJobs);
+                return;
             } else if (action === 'dublar') {
                 const srcLang = document.getElementById('src-lang').value;
                 const targetLang = document.getElementById('target-lang').value;
@@ -157,6 +208,39 @@ let activeJobId = null;
             } catch(e) { logToTerminal("Erro na comunicação com o servidor.", 'error'); }
         }
 
+        async function startBatchDubbing(jobIdArray) {
+            const manualWav = document.getElementById('manual-wav-path') ? document.getElementById('manual-wav-path').value : '';
+            const payload = {};
+            if (jobIdArray && jobIdArray.length > 0) payload.job_ids = jobIdArray;
+            if (manualWav) payload.parent_folder = manualWav;
+
+            if (!payload.job_ids && !payload.parent_folder) {
+                logToTerminal("Nenhum projeto ou pasta selecionada para o lote.", 'error');
+                return;
+            }
+            
+            logToTerminal(`🚀 INICIANDO FILA POR ESTÁGIOS EM LOTE...`, 'info');
+            try {
+                const res = await fetch('http://127.0.0.1:5002/dublar_lote_jogos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.status === 'enqueued') {
+                    logToTerminal(`✅ FILA EM LOTE ATIVADA! ${data.message}`, 'success');
+                    if (data.enqueued_jobs && data.enqueued_jobs.length > 0) {
+                        activeJobId = data.enqueued_jobs[0];
+                        startStatusPolling();
+                    }
+                } else {
+                    logToTerminal(`⚠️ FALHA AO INICIAR LOTE: ${data.error || data.message}`, 'error');
+                }
+            } catch(e) {
+                logToTerminal("Erro ao se comunicar com o motor de lote.", 'error');
+            }
+        }
+
         async function loadProjects(retries) {
             if (typeof retries !== 'number') retries = 120;
             try {
@@ -168,7 +252,9 @@ let activeJobId = null;
                 if (overlay) overlay.style.display = 'none';
                 
                 const res = await fetch('http://127.0.0.1:5002/api/get-projects');
-                const projects = await res.json();
+                let projects = await res.json();
+                // [FIX] Filtra apenas projetos reais do usuário, ignorando pastas de personagens
+                projects = projects.filter(p => p.name && !p.name.includes('PERSONAGEM:'));
                 const selector = document.getElementById('project-selector');
                 selector.innerHTML = '<option value="">SELECIONE O PROJETO...</option>' + projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
                 
@@ -269,3 +355,87 @@ let activeJobId = null;
                 }, 2000);
             }
         });
+
+// [v2026.GLOBAL_CORRECTION_ENGINE] MODO CORREÇÃO GLOBAL AVANÇADO
+async function buscarDialogosGlobais() {
+    const input = document.getElementById('global-search-input');
+    const q = input ? input.value.trim() : '';
+    const container = document.getElementById('correction-results-list');
+    if (!q || q.length < 2) {
+        if (container) container.innerHTML = '<div style="color:#ffaa00; font-size:0.6rem; text-align:center;">Digite pelo menos 2 caracteres para buscar.</div>';
+        return;
+    }
+
+    if (container) container.innerHTML = '<div style="color:#00f3ff; font-size:0.6rem; text-align:center;">🔍 Varendo todos os projetos...</div>';
+
+    try {
+        const res = await fetch(`/api/global_search_dialogues?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        
+        if (!data || data.length === 0) {
+            container.innerHTML = `<div style="color:#ff4444; font-size:0.6rem; text-align:center;">Nenhum diálogo encontrado para "${q}".</div>`;
+            return;
+        }
+
+        let html = '';
+        data.forEach((item, idx) => {
+            const inputId = `edit-input-${idx}`;
+            const btnId = `btn-redub-${idx}`;
+            const statusId = `status-${idx}`;
+            const audioUrl = `/stream_media?path=${encodeURIComponent(item.full_audio_path)}`;
+
+            html += `
+                <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(0,243,255,0.2); padding: 10px; border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.6rem; margin-bottom: 5px;">
+                        <span style="color: #00f3ff; font-weight: 900;">📁 [${item.folder.toUpperCase()}] ${item.filename}</span>
+                        <audio controls src="${audioUrl}" style="height: 24px; width: 150px;"></audio>
+                    </div>
+                    <div style="font-size: 0.55rem; color: #888; margin-bottom: 5px;">Original (EN): <i style="color:#ccc;">"${item.original}"</i></div>
+                    
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="text" id="${inputId}" value="${item.translated}" style="margin-bottom: 0; font-size: 0.7rem; flex: 1; border: 1px solid #00f3ff; background: rgba(0,0,0,0.8); color: #fff; padding: 4px 8px;">
+                        <button id="${btnId}" onclick="redublarSegmentoUnico('${item.folder}', '${item.filename}', '${inputId}', '${btnId}', '${statusId}')" style="background: #00f3ff; color: #000; font-weight: 900; font-size: 0.6rem; border: none; padding: 6px 12px; cursor: pointer; border-radius: 2px;">⚡ REDUBLAR</button>
+                    </div>
+                    <div id="${statusId}" style="font-size: 0.55rem; margin-top: 4px; display: none;"></div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    } catch(e) {
+        if (container) container.innerHTML = `<div style="color:#ff4444; font-size:0.6rem; text-align:center;">Erro ao conectar com o motor de busca: ${e}</div>`;
+    }
+}
+
+async function redublarSegmentoUnico(folder, filename, inputId, btnId, statusId) {
+    const input = document.getElementById(inputId);
+    const btn = document.getElementById(btnId);
+    const status = document.getElementById(statusId);
+    
+    const newText = input ? input.value.trim() : '';
+    if (!newText) return;
+
+    if (btn) { btn.disabled = true; btn.innerText = "⏳ GRAVANDO..."; }
+    if (status) { status.style.display = "block"; status.style.color = "#ffaa00"; status.innerText = "Sintetizando novo áudio com o motor GPU Qwen3..."; }
+
+    try {
+        const res = await fetch('/api/redub_single_segment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ folder: folder, filename: filename, new_text: newText })
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+            if (btn) { btn.style.background = "#00ff41"; btn.innerText = "✅ CONCLUÍDO"; }
+            if (status) { status.style.color = "#00ff41"; status.innerText = "✨ Áudio re-dublado e atualizado no jogo com sucesso!"; }
+            if (typeof logToTerminal === 'function') logToTerminal(`✅ [REDUBLAGEM OK] ${folder}/${filename}: "${newText}"`, 'success');
+        } else {
+            if (btn) { btn.disabled = false; btn.style.background = "#ff4444"; btn.innerText = "❌ ERRO"; }
+            if (status) { status.style.color = "#ff4444"; status.innerText = `Erro: ${data.message}`; }
+        }
+    } catch(e) {
+        if (btn) { btn.disabled = false; btn.innerText = "⚡ REDUBLAR"; }
+        if (status) { status.style.color = "#ff4444"; status.innerText = `Erro de conexão: ${e}`; }
+    }
+}

@@ -111,6 +111,14 @@ var pollInterval = null;
                 });
         }
 
+        function openTokenModal(repoId, termsUrl) {
+            repoId = repoId || 'pyannote/speaker-diarization-3.1';
+            termsUrl = termsUrl || 'https://huggingface.co/pyannote/speaker-diarization-3.1';
+            document.getElementById('gated-repo-name').innerText = repoId;
+            document.getElementById('gated-repo-link').href = termsUrl;
+            document.getElementById('token-modal').style.display = 'flex';
+        }
+
         function updateProgress(percent, label) {
             if (label.indexOf("[NEED_TOKEN]") !== -1) {
                 var parts = label.replace("[NEED_TOKEN]", "").split("|");

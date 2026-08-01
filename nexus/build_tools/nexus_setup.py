@@ -433,6 +433,15 @@ class NexusServer(BaseHTTPRequestHandler):
             content_length = int(self.headers['Content-Length'])
             data = json.loads(self.rfile.read(content_length))
             current_token = data.get("token")
+            if current_token:
+                try:
+                    token_str = str(current_token).strip()
+                    token_file = Path("token_hf.txt")
+                    token_file.write_text(token_str, encoding="utf-8")
+                    os.environ["HF_TOKEN"] = token_str
+                    os.environ["HUGGING_FACE_HUB_TOKEN"] = token_str
+                except Exception as e:
+                    print(f"[INSTALADOR] Erro ao gravar token_hf.txt: {e}")
             token_submitted_event.set()
             self.send_response(200)
             self.end_headers()
