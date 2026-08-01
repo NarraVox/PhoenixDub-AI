@@ -82,6 +82,9 @@ TESTAR_SETUP.bat
 # Pastas de Trabalho e Temporários
 uploads/
 logs/
+build/
+import_test_main_ok.txt
+store_builder_demo.html
 __pycache__/
 *.pyc
 

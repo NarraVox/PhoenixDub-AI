@@ -178,6 +178,7 @@ def gerar_audio_qwen3(text, ref_audio_path, output_path, language="Portuguese", 
         "URGENTE": "Fast, anxious and breathless",
         "SUSPENSE": "Soft and low voice, slow tempo",
         "DRAMATICO": "Dramatic, emotional and intense",
+        "FEMININO": "Clear female voice, young adult woman",
         "NORMAL": ""
     }
     instruction = EMOTION_MAP.get(emotion.upper(), "")
@@ -370,8 +371,8 @@ def gerar_audio_qwen3(text, ref_audio_path, output_path, language="Portuguese", 
             import numpy as np
             max_val = np.max(np.abs(audio_data))
             if max_val > 0:
-                # [v2026.AUDIO_NORM] Normaliza matematicamente a amplitude do sinal, preservando 100% da dinâmica da voz
-                audio_data = (audio_data / max_val) * 0.95
+                # [v2026.AUDIO_NORM] Normalização equilibrada para mix de jogos (0.75 / -2.5dB) para não ficar alto no jogo
+                audio_data = (audio_data / max_val) * 0.75
                 
             sf.write(output_path, audio_data, sr)
             return True

@@ -51,8 +51,9 @@
             <!-- ETAPA 3: CONFIG & DUBLAGEM -->
             <div class="rig-module">
                 <label>ETAPA 3: ESTAÇÃO DOSSIER (CONFIG)</label>
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <select id="project-selector" style="margin-bottom: 0; width: 100%;">
+                <div style="margin-bottom: 15px;">
+                    <div style="color: #00f3ff; font-size: 0.55rem; font-weight: 900; margin-bottom: 5px; letter-spacing: 1px;">💡 DICA LOTE: SEGURE CTRL OU SHIFT PARA SELECIONAR VÁRIOS PROJETOS AO MESMO TEMPO</div>
+                    <select id="project-selector" multiple size="4" style="margin-bottom: 0; width: 100%; height: 110px; background: rgba(0,0,0,0.5); border: 1px solid var(--accent); color: #fff; border-radius: 4px; padding: 5px;">
                         <option value="">SELECIONE O PROJETO...</option>
                     </select>
                 </div>
@@ -102,7 +103,8 @@
                     <option value="xcom">XCOM / SCI-FI (TÁTICO)</option>
                     <option value="the_bureau">XCOM THE BUREAU (VINTAGE/TACTICAL)</option>
                 </select>
-                <button class="btn-rig" onclick="executar('dublar')" id="btn-iniciar">INICIAR DUBLAGEM</button>
+                <button class="btn-rig" onclick="executar('dublar')" id="btn-iniciar">INICIAR DUBLAGEM (SINGLE)</button>
+                <button class="btn-rig" onclick="executar('dublar_lote')" id="btn-lote" style="background: linear-gradient(135deg, #00f3ff, #0066ff); color: #000; font-weight: 900; margin-top: 8px;">⚡ INICIAR FILA EM LOTE (ESTÁGIOS)</button>
                 <button class="btn-rig" onclick="executar('dublar')" id="btn-continuar" style="display: none; background: #ffaa00; margin-top: 10px; box-shadow: 0 0 20px rgba(255, 170, 0, 0.4);">CONTINUAR DUBLAGEM</button>
             </div>
 
@@ -125,6 +127,21 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <button class="btn-rig" onclick="executar('repack')">REPACK VPK/PCK</button>
                     <button class="btn-rig" style="background: #fff; color: #000;" onclick="executar('fmod_repack')">REPACK FMOD</button>
+                </div>
+            </div>
+
+            <!-- ETAPA 5: MODO CORREÇÃO GLOBAL AVANÇADO -->
+            <div class="rig-module" style="border: 1px solid #00f3ff; background: rgba(0,243,255,0.03);">
+                <label style="color: #00f3ff; font-weight: 900;">🎯 ETAPA 5: MODO CORREÇÃO GLOBAL AVANÇADO</label>
+                <div style="font-size: 0.55rem; color: #aaa; margin-bottom: 10px;">Digite qualquer frase/palavra para buscar em TODOS os projetos e corrigir instantaneamente:</div>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" id="global-search-input" placeholder="Buscar frase (ex: 'mochila', 'casa')..." style="margin-bottom: 0;" onkeyup="if(event.key==='Enter') buscarDialogosGlobais()">
+                    <button class="btn-rig" style="padding: 0 15px; width: auto; background: #00f3ff; color: #000; font-weight: 900;" onclick="buscarDialogosGlobais()">🔍 BUSCAR</button>
+                </div>
+
+                <div id="correction-results-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                    <div style="color: #666; font-size: 0.6rem; text-align: center;">Digite um termo e clique em Buscar para localizar diálogos em todos os projetos.</div>
                 </div>
             </div>
 

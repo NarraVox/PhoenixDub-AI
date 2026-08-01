@@ -120,12 +120,29 @@ warnings.filterwarnings("ignore", message="Module 'speechbrain.*' was deprecated
 
 # SpeechBrain Stub logic
 class MockModule(types.ModuleType):
+    def __init__(self, name):
+        super().__init__(name)
+        self.__name__ = name
+        self.__file__ = f"<mock {name}>"
+        self.__loader__ = None
+        self.__spec__ = None
+        self.__path__ = []
+
     def __getattr__(self, name):
-        if name.startswith('__'):
+        if name.startswith('_'):
             raise AttributeError(name)
-        return MockModule(name)
+        if name in ("Empty", "Full"):
+            return Exception
+        return MockModule(f"{self.__name__}.{name}")
+
     def __call__(self, *args, **kwargs):
         return MockModule("dummy")
+
+    def __repr__(self):
+        return f"<MockModule {self.__name__}>"
+
+    def __str__(self):
+        return f"<MockModule {self.__name__}>"
 
 stubs = [
     'speechbrain.integrations.numba', 
@@ -162,6 +179,23 @@ if not script_name or script_name.strip() in ["-m", ""]:
 
 # Resolve o diretório raiz dinamicamente relativo a este arquivo (nexus/core/utils_sys.py)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+# Carrega token do HuggingFace se existir token_hf.txt na raiz
+try:
+    token_path = BASE_DIR / "token_hf.txt"
+    if token_path.exists():
+        hf_tok = token_path.read_text(encoding="utf-8").strip()
+        if hf_tok:
+            os.environ["HF_TOKEN"] = hf_tok
+            os.environ["HUGGING_FACE_HUB_TOKEN"] = hf_tok
+except Exception:
+    pass
+
+# Injeta ThreadPoolExecutor e as_completed globalmente para evitar NameError em módulos gigantes
+import builtins
+from concurrent.futures import ThreadPoolExecutor, as_completed
+builtins.ThreadPoolExecutor = ThreadPoolExecutor
+builtins.as_completed = as_completed
 log_path = BASE_DIR / "logs"
 log_path.mkdir(parents=True, exist_ok=True)
 current_log_file = log_path / f"{script_name}.log"
@@ -209,7 +243,7 @@ def check_ffmpeg():
         os.environ["PATH"] = os.path.dirname(local_full_bin) + os.pathsep + os.environ["PATH"]
         return True
     try:
-        output = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True, shell=True)
+        output = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True)
         if 'libmp3lame' in output.stdout:
             logging.info("FFmpeg (Full c/ MP3) encontrado no PATH.")
             return True
