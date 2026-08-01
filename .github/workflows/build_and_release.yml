@@ -71,6 +71,7 @@ jobs:
       uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
+        body_path: RELEASE_NOTES.md
         files: |
           dist/Setup_Nexus.exe
           dist/Nexus_AI_Pro.exe
