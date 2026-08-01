@@ -100,10 +100,13 @@ let statusInterval = null;
                         document.getElementById('segment-counter').style.opacity = '1';
                     }
 
-                    if (data.tempo_decorrido) {
-                        const formatted = formatDigitalTime(data.tempo_decorrido);
-                        document.getElementById('titan-timer').textContent = formatted;
-                        document.getElementById('titan-timer').style.color = "#00ff41"; // Verde quando ativo
+                    if (data.status === 'completed' || data.status === 'failed') {
+                        const btn = document.getElementById('btn-iniciar');
+                        if (btn && btn.disabled) {
+                            btn.disabled = false;
+                            btn.style.opacity = '1';
+                            btn.innerText = '🚀 INICIAR DUBLAGEM';
+                        }
                     }
                 }
             } catch(e) { console.error("Erro status:", e); }
@@ -165,36 +168,52 @@ let statusInterval = null;
                 const dubbedFolder = document.getElementById('dubbed-folder').value;
                 url = 'http://127.0.0.1:5002/api/fmod_repack';
                 body = { project_id: projectId, fmod_tool_path: fmodTool, dubbed_folder: dubbedFolder };
-            } else if (action === 'dublar_lote') {
+            } else if (action === 'dublar' || action === 'dublar_lote' || action === 'dublar_inteligente') {
+                const btn = document.getElementById('btn-iniciar');
+                if (btn && btn.disabled) {
+                    logToTerminal("⚠️ UMA DUBLAGEM JÁ ESTÁ EM ANDAMENTO. AGUARDE...", 'warning');
+                    return;
+                }
+                
                 const selector = document.getElementById('project-selector');
                 const selectedJobs = Array.from(selector.selectedOptions).map(opt => opt.value).filter(v => v && v !== "");
-                await startBatchDubbing(selectedJobs);
-                return;
-            } else if (action === 'dublar') {
-                const srcLang = document.getElementById('src-lang').value;
-                const targetLang = document.getElementById('target-lang').value;
-                const skipLqa = true;
-                url = 'http://127.0.0.1:5002/dublar_jogos';
-                const fd = new FormData();
-                fd.append('job_id', projectId);
-                fd.append('game_profile', profile);
-                fd.append('source_lang', srcLang);
-                fd.append('target_lang', targetLang);
-                fd.append('skip_lqa', 'true');
-                if (manualWav) fd.append('manual_wav_path', manualWav);
                 
-                try {
-                    const res = await fetch(url, { method: 'POST', body: fd });
-                    const data = await res.json();
-                    if (data.success) {
-                        activeJobId = data.job_id || projectId;
-                        startStatusPolling();
-                        logToTerminal(`PROTOCOLO LANÇADO: DUBLAGEM INICIADA!`, 'success');
-                    } else {
-                        logToTerminal(`FALHA NO MOTOR: ${data.message}`, 'error');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.6';
+                    btn.innerText = '⏳ DUBLAGEM EM ANDAMENTO...';
+                }
+                
+                if ((manualWav && manualWav.length > 0) || (selectedJobs && selectedJobs.length > 0)) {
+                    await startBatchDubbing(selectedJobs);
+                } else {
+                    const srcLang = document.getElementById('src-lang').value;
+                    const targetLang = document.getElementById('target-lang').value;
+                    url = 'http://127.0.0.1:5002/dublar_jogos';
+                    const fd = new FormData();
+                    fd.append('job_id', projectId);
+                    fd.append('game_profile', profile);
+                    fd.append('source_lang', srcLang);
+                    fd.append('target_lang', targetLang);
+                    fd.append('skip_lqa', 'true');
+                    
+                    try {
+                        const res = await fetch(url, { method: 'POST', body: fd });
+                        const data = await res.json();
+                        if (data.success) {
+                            activeJobId = data.job_id || projectId;
+                            startStatusPolling();
+                            logToTerminal(`PROTOCOLO LANÇADO: DUBLAGEM INICIADA!`, 'success');
+                        } else {
+                            logToTerminal(`FALHA NO MOTOR: ${data.message}`, 'error');
+                            if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerText = '🚀 INICIAR DUBLAGEM'; }
+                        }
+                    } catch(e) { 
+                        logToTerminal("Falha ao conectar com o motor de jogos.", 'error'); 
+                        if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerText = '🚀 INICIAR DUBLAGEM'; }
                     }
-                    return;
-                } catch(e) { logToTerminal("Falha ao conectar com o motor de jogos.", 'error'); return; }
+                }
+                return;
             }
 
             try {
