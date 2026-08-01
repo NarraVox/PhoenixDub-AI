@@ -4,9 +4,18 @@
 ![GPU Target](https://img.shields.io/badge/GPU_Target-RTX_3050_6GB-0284C7?style=flat-square&labelColor=1E293B)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-Apache_2.0-16A34A?style=flat-square&labelColor=1E293B)
 [![Apoia.se](https://img.shields.io/badge/Apoia.se-NarraVox_Studios-E11D48?style=flat-square&labelColor=1E293B&logo=patreon)](https://apoia.se/narravox_studios)
-[![Baixar Setup](https://img.shields.io/badge/%F0%9F%93%A5_Instalador-v0.5_Setup.exe-0284C7?style=flat-square&labelColor=1E293B)](https://github.com/NarraVox/PhoenixDub-AI/releases)
+[![Baixar Setup](https://img.shields.io/badge/%F0%9F%93%A5_1._Setup_Nexus.exe-Download-0284C7?style=flat-square&labelColor=1E293B)](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Setup_Nexus.exe)
+[![Baixar Executável](https://img.shields.io/badge/%F0%9F%9A%80_2._Nexus_AI_Pro.exe-Download-16A34A?style=flat-square&labelColor=1E293B)](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Nexus_AI_Pro.exe)
 
 [Português](#português) | [English](#english)
+
+---
+
+> [!TIP]
+> ### 📥 DOWNLOAD DIRETO DOS 2 ARQUIVOS DO PROJETO (1-CLIQUE)
+> Baixe os 2 executáveis da versão v0.5 direto para o seu PC sem precisar procurar no GitHub:  
+> 1. 👉 [**[Passo 1] Baixar Instalador Automático: Setup_Nexus.exe (225 MB)**](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Setup_Nexus.exe)  
+> 2. 👉 [**[Passo 2] Baixar Executável Principal: Nexus_AI_Pro.exe (213 MB)**](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Nexus_AI_Pro.exe)
 
 ---
 
