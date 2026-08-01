@@ -579,10 +579,17 @@ def run_auto_diarization_batch(job_dir, job_id, cb):
     
     marker_path = target_dir / "unification_done.marker"
     project_data_path = job_dir / "project_data.json"
-    if marker_path.exists() and project_data_path.exists():
-        logging.info("Diarização e unificação já concluídas neste projeto. Pulando Fase 1 inteira para acelerar o reinício.")
-        cb(100, 1, "Diarização restaurada do cache.")
-        return
+    
+    # [v2026.RESUME_GUARD] Se project_data.json já existir e contiver diálogos salvos, PULA a Fase 1!
+    if project_data_path.exists():
+        pdata = safe_json_read(project_data_path) or {}
+        if len(pdata) > 0:
+            logging.info(f"✨ [RESUME GUARD] Transcrição e Mapeamento ({len(pdata)} itens) restaurados do cache. Pulando Fase 1!")
+            if not marker_path.exists():
+                try: marker_path.touch(exist_ok=True)
+                except: pass
+            cb(100, 1, "Diarização restaurada do cache.")
+            return
 
     clean_audio_dir.mkdir(parents=True, exist_ok=True)
     segmented_dir.mkdir(parents=True, exist_ok=True)
@@ -599,7 +606,7 @@ def run_auto_diarization_batch(job_dir, job_id, cb):
         source_dir = job_dir / "_0a_SEPARACAO_VOCAL"
         logging.info(f"[OPENUNMIX] Fonte de áudio alterada para: {source_dir}")
 
-    source_files = list(source_dir.rglob("*.wav"))
+    source_files = [f for f in source_dir.rglob("*") if f.suffix.lower() in ('.wav', '.mp3', '.ogg', '.flac', '.m4a')]
     if not source_files:
         logging.info("Nenhum arquivo para processar.")
         return
@@ -617,7 +624,8 @@ def run_auto_diarization_batch(job_dir, job_id, cb):
     except: num_speakers = 0
     source_lang = status_data.get('source_language', 'auto')
 
-    cb(0, 1, "Fase 1: Transcrição e Segmentação...")
+    total_files = len(clean_files)
+    cb(0, 1, f"Fase 1: Transcrição e Segmentação ({total_files} arquivos)...", current_seg=0, total_seg=total_files)
     
     import threading
     from concurrent.futures import ThreadPoolExecutor
@@ -728,30 +736,34 @@ def run_auto_diarization_batch(job_dir, job_id, cb):
 
     cb(40, 1, "Fase 2: Diarização Global...")
     
-    diarizer = PyannoteDiarizer()
     all_segments = sorted(list(segmented_dir.glob("*.wav")))
     
     if not all_segments:
         logging.warning("Fase 2 abortada: Nenhum segmento para diarizar.")
         return
 
-    embeddings_map = {}
-    
-    for i, seg_path in enumerate(all_segments):
-        cb(40 + (i / len(all_segments)) * 30, 1, f"Analisando voz: {seg_path.name}", current_seg=i+1, total_seg=len(all_segments))
-        emb = diarizer.get_file_embedding(str(seg_path))
-        if emb is not None:
-             embeddings_map[seg_path.name] = emb
-             
-    cb(70, 1, "Agrupando Falantes...")
+    # [FIX v2026] Quando há apenas 1 falante, pula o Pyannote completamente.
+    # Instanciar o Pyannote/cuDNN é desnecessário e causa crashes em modo single-speaker.
     if num_speakers == 1:
+        logging.info("🚀 [DIAR_SKIP] num_speakers=1: Pyannote ignorado. Todos os segmentos → 'voz1'.")
+        cb(70, 1, "Agrupando Falantes (modo único)...")
         file_to_voice = {f.name: 'voz1' for f in all_segments}
     else:
+        diarizer = PyannoteDiarizer()
+        embeddings_map = {}
+        
+        for i, seg_path in enumerate(all_segments):
+            cb(40 + (i / len(all_segments)) * 30, 1, f"Analisando voz: {seg_path.name}", current_seg=i+1, total_seg=len(all_segments))
+            emb = diarizer.get_file_embedding(str(seg_path))
+            if emb is not None:
+                 embeddings_map[seg_path.name] = emb
+                 
+        cb(70, 1, "Agrupando Falantes...")
         n_clusters = num_speakers if num_speakers > 1 else None
         file_to_voice = diarizer.cluster_batch_embeddings(embeddings_map, n_clusters)
-        
-    logging.info("🧹 [VRAM_PURGE] Expulsando Pyannote da GPU (Diarização Batch)...")
-    del diarizer
+            
+        logging.info("🧹 [VRAM_PURGE] Expulsando Pyannote da GPU (Diarização Batch)...")
+        del diarizer
     import gc
     import torch
     gc.collect()
@@ -834,6 +846,14 @@ def unify_speaker_files(job_dir, cb):
 
     voice_folders = [d for d in diarization_dir.iterdir() if d.is_dir() and d.name.startswith('voz')]
     if not voice_folders: return
+
+    # [FIX v2026] Se há apenas 1 pasta de voz, não há nada a unificar/mesclar.
+    # Instanciar Pyannote seria desnecessário e causa crashes de cuDNN.
+    if len(voice_folders) == 1:
+        logging.info("🚀 [UNIFY_SKIP] Apenas 1 voz detectada — Pyannote ignorado, nada a mesclar.")
+        cb(100, 1, "Unificação dispensada (falante único).")
+        marker_path.touch()
+        return
 
     cb(0, 1, "Iniciando unificação inteligente de vozes...")
     diarizer = PyannoteDiarizer()

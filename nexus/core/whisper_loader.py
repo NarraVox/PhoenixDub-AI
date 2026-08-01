@@ -19,12 +19,12 @@ def get_whisper_model():
             
             if device.startswith("cuda"):
                 w_threads = min(4, total_threads)
-                logging.info(f"🚀 [HARDWARE] Whisper em CUDA (int8_float16) - MODO ULTRA: {w_threads} threads CPU de suporte.")
-                whisper_model = WhisperModel("small", device="cuda", compute_type="int8_float16", cpu_threads=w_threads)
+                logging.info(f"🚀 [HARDWARE] Whisper em CUDA (int8) large-v3-turbo - MODO ELITE: {w_threads} threads CPU de suporte.")
+                whisper_model = WhisperModel("large-v3-turbo", device="cuda", compute_type="int8", cpu_threads=w_threads)
             else:
                 w_threads = max(1, total_threads // 2)
-                logging.info(f"💻 [HARDWARE] Whisper em CPU (int8) - MODO SEGURO: {w_threads} threads CPU.")
-                whisper_model = WhisperModel("small", device="cpu", compute_type="int8", cpu_threads=w_threads)
+                logging.info(f"💻 [HARDWARE] Whisper em CPU (int8) large-v3-turbo - MODO SEGURO: {w_threads} threads CPU.")
+                whisper_model = WhisperModel("large-v3-turbo", device="cpu", compute_type="int8", cpu_threads=w_threads)
                 
             logging.info("Modelo faster-whisper carregado.")
     return whisper_model

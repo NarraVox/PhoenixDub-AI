@@ -360,6 +360,76 @@ def resume_job(job_id):
 
     return jsonify({'status': 'resumed', 'message': 'Processamento retomado com sucesso.'})
 
+@app.route('/dublar_lote_jogos', methods=['POST'])
+def dublar_lote_jogos():
+    start_time = time.time()
+    data = request.json or {}
+    job_ids = data.get('job_ids', [])
+    parent_folder = data.get('parent_folder', request.form.get('parent_folder'))
+    
+    if not job_ids and 'job_ids' in request.form:
+        raw_jobs = request.form.get('job_ids', '')
+        job_ids = [j.strip() for j in raw_jobs.split(',') if j.strip()]
+        
+    jobs_info_list = []
+
+    # [v2026.MULTI_FOLDER_BATCH] Se forem passadas pastas em parent_folder (separadas por ';')
+    if parent_folder:
+        raw_paths = [p.strip() for p in str(parent_folder).split(';') if p.strip()]
+        for folder_str in raw_paths:
+            p_path = Path(folder_str)
+            if p_path.exists() and p_path.is_dir():
+                valid_exts = ('.wav', '.mp3', '.ogg', '.flac', '.m4a')
+                audio_files = [f for f in p_path.rglob("*") if f.suffix.lower() in valid_exts]
+                if audio_files:
+                    datestamp = datetime.now().strftime('%d.%m.%Y')
+                    timestamp = int(time.time())
+                    safe_sub_name = "".join([c if c.isalnum() else "_" for c in p_path.name])
+                    sub_job_id = f"job_jogos_{datestamp}_{timestamp}_{safe_sub_name}"
+                    sub_job_dir = Path(app.config['UPLOAD_FOLDER']) / sub_job_id
+                    
+                    source_dir = sub_job_dir / "_1_MOVER_OS_FICHEIROS_DAQUI"
+                    (sub_job_dir / "_2_PARA_AS_PASTAS_DE_VOZ").mkdir(parents=True, exist_ok=True)
+                    source_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    file_format_map = {}
+                    for af in audio_files:
+                        file_format_map[af.stem] = af.suffix.lower()
+                        shutil.copy2(af, source_dir / af.name)
+                        
+                    status_data = {
+                        'job_id': sub_job_id, 'status': 'iniciando', 
+                        'file_format_map': file_format_map, 'game_profile': data.get('game_profile', 'padrao'),
+                        'original_folder_name': p_path.name
+                    }
+                    safe_json_write(status_data, sub_job_dir / "job_status.json")
+                    jobs_info_list.append({'job_id': sub_job_id, 'job_dir': sub_job_dir, 'start_time': start_time})
+                    logging.info(f"📁 [MULTI-FOLDER BATCH] Criado sub-job automático para pasta '{p_path.name}': {sub_job_id}")
+
+    if job_ids:
+        for j_id in job_ids:
+            j_dir = Path(app.config['UPLOAD_FOLDER']) / j_id
+            if not j_dir.exists():
+                j_dir = Path("c:/IA_dublagem/jobs") / j_id
+            if j_dir.exists() and not any(j['job_id'] == j_id for j in jobs_info_list):
+                jobs_info_list.append({
+                    'job_id': j_id,
+                    'job_dir': j_dir,
+                    'start_time': start_time
+                })
+            
+    if not jobs_info_list:
+        return jsonify({'error': 'Nenhuma pasta de projeto ou subpasta de áudio encontrada para o lote.'}), 404
+        
+    from nexus.core.batch_orchestrator import enqueue_batch_jobs
+    enqueue_batch_jobs(jobs_info_list)
+    
+    return jsonify({
+        'status': 'enqueued',
+        'message': f'Fila por estágios iniciada com sucesso para {len(jobs_info_list)} pasta(s).',
+        'enqueued_jobs': [j['job_id'] for j in jobs_info_list]
+    })
+
 # --- AS ROTAS DE VÍDEO (DUBLAR, MAGIC CUT, SHORTS) FORAM MOVIDAS PARA A PORTA 5003 ---
 # --- O HUB PREMIUN (HTML) JÁ ESTÁ APONTANDO PARA O LUGAR CORRETO ---
 
@@ -386,6 +456,63 @@ def favicon(): return make_response('', 204)
 
 @app.route('/uploads/<path:path>')
 def send_upload(path): return send_from_directory(app.config['UPLOAD_FOLDER'], path)
+
+CURRENT_APP_VERSION = "v0.5.0"
+
+def get_local_build_hash():
+    """Gera uma impressão digital (Hash SHA256 / Commit SHA) da build local atual."""
+    import subprocess
+    import hashlib
+    try:
+        # Tenta obter o commit SHA do git local
+        git_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.DEVNULL).decode().strip()
+        if git_hash:
+            return git_hash
+    except Exception:
+        pass
+    # Se for build compilada sem .git, calcula hash dos arquivos core
+    try:
+        hasher = hashlib.sha256()
+        routes_path = Path(__file__)
+        if routes_path.exists():
+            hasher.update(routes_path.read_bytes()[:4096])
+        return hasher.hexdigest()[:8]
+    except Exception:
+        return "dev-local"
+
+@app.route('/api/check-update', methods=['GET'])
+def check_update_route():
+    """Verifica no GitHub se há uma nova versão por Hash de Commit ou Release Tag."""
+    import urllib.request
+    import json
+    local_hash = get_local_build_hash()
+    try:
+        url = "https://api.github.com/repos/NarraVox/PhoenixDub-AI/releases/latest"
+        req = urllib.request.Request(url, headers={'User-Agent': 'NarraVox-App'})
+        with urllib.request.urlopen(req, timeout=5) as response:
+            if response.status == 200:
+                data = json.loads(response.read().decode())
+                latest_tag = data.get('tag_name', CURRENT_APP_VERSION)
+                has_update = (latest_tag != CURRENT_APP_VERSION)
+                return jsonify({
+                    'success': True,
+                    'current_version': CURRENT_APP_VERSION,
+                    'latest_version': latest_tag,
+                    'local_hash': local_hash,
+                    'has_update': has_update,
+                    'is_dev_build': not has_update,
+                    'download_url': 'https://github.com/NarraVox/PhoenixDub-AI/releases/latest'
+                })
+    except Exception as e:
+        return jsonify({
+            'success': True,
+            'current_version': CURRENT_APP_VERSION,
+            'latest_version': CURRENT_APP_VERSION,
+            'local_hash': local_hash,
+            'has_update': False,
+            'is_dev_build': True,
+            'note': 'Offline ou limite de API excedido.'
+        })
 
 # --- GERENCIAMENTO DE SISTEMA ---
 @app.route('/system_info')

@@ -48,7 +48,8 @@ try:
 except ImportError:
     HAS_CORS = False
 
-app = Flask(__name__, template_folder='client', static_folder='client')
+CLIENT_DIR = str((Path(__file__).parent.parent / "client").resolve())
+app = Flask(__name__, template_folder=CLIENT_DIR, static_folder=CLIENT_DIR)
 if HAS_CORS:
     CORS(app)
 else:
@@ -143,7 +144,7 @@ def gerar_relatorio_final(job_dir, job_id, project_data, file_format_map):
     durations_cache_path = job_dir / "durations_cache.json"
     durations_cache = safe_json_read(durations_cache_path) or {}
     
-    logging.info(f"Gerando relatório Nexus em: {relatorio_path}")
+    logging.debug(f"Gerando relatório Nexus em: {relatorio_path}")
     
     total_arquivos = len(project_data)
     sucessos_absolutos = 0
@@ -249,50 +250,85 @@ def _print_progress_to_cmd(job_id, progress, etapa, subetapa, tempo_decorrido, c
         sys.stdout.write(f"\r{safe_line.ljust(150)}")
         sys.stdout.flush()
 
+def format_digital_time(seconds):
+    try:
+        secs = int(float(seconds))
+        hrs, r = divmod(secs, 3600)
+        mins, s = divmod(r, 60)
+        if hrs > 0:
+            return f"{hrs:02d}:{mins:02d}:{s:02d}"
+        else:
+            return f"{mins:02d}:{s:02d}"
+    except:
+        return "00:00"
+
 _last_progress_info = {}
+_session_progress_state = {}
 
 def set_progress(job_id, progress, etapa_idx, start_time, etapas_list, subetapa=None, tool_name=None, current_seg=None, total_seg=None, **kwargs):
     if current_seg and total_seg:
-        os.system(f"title NEXUS AI - {progress:.1f}% [{current_seg}/{total_seg}] - {subetapa or ''}")
+        safe_title_sub = re.sub(r'[&|<>^;%]', '', str(subetapa or ''))
+        os.system(f"title NEXUS AI - {progress:.1f}% [{current_seg}/{total_seg}] - {safe_title_sub}")
     now = time.time()
+    if not start_time:
+        start_time = now
+
     last_info = _last_progress_info.get(job_id, {})
     last_time = last_info.get('time', 0)
     last_subetapa = last_info.get('subetapa', "")
     
     force_update = (subetapa != last_subetapa) or (progress >= 100)
     etapa_atual = etapas_list[etapa_idx] if etapa_idx < len(etapas_list) else "Desconhecida"
-    elapsed_time = now - start_time
-    tempo_str = str(timedelta(seconds=int(elapsed_time)))
-
-    if progress < 100 and (now - last_time < 2) and not force_update:
-        _print_progress_to_cmd(job_id, progress, etapa_atual, subetapa, tempo_str, current_seg, total_seg)
-        return
-
+    
     _last_progress_info[job_id] = {'time': now, 'subetapa': subetapa}
     with progress_lock:
-        elapsed_time = now - start_time
-        tempo_str = str(timedelta(seconds=int(elapsed_time)))
+        status_path_video = Path(f"c:/IA_dublagem/uploads/{job_id}/job_status.json")
+        status_path_games = Path(f"c:/IA_dublagem/jobs/{job_id}/job_status.json")
+        status_path = None
+        if status_path_video.exists(): status_path = status_path_video
+        elif status_path_games.exists(): status_path = status_path_games
+        
+        sess_state = _session_progress_state.get(job_id)
+        if not sess_state or abs(sess_state.get('start_time', 0) - start_time) > 1.0:
+            prev_acc = 0
+            if status_path:
+                sdata = safe_json_read(status_path) or {}
+                total_prev = sdata.get('total_elapsed_secs', 0)
+                if total_prev > 0:
+                    session_diff = now - start_time
+                    if abs(session_diff - total_prev) < max(15.0, total_prev * 0.1):
+                        prev_acc = 0
+                    else:
+                        prev_acc = total_prev
+            sess_state = {'start_time': start_time, 'accumulated': prev_acc}
+            _session_progress_state[job_id] = sess_state
+
+        prev_accumulated = sess_state['accumulated']
+        session_elapsed = max(0.0, now - start_time)
+        total_elapsed = prev_accumulated + session_elapsed
+        tempo_str = format_digital_time(total_elapsed)
+
+        if progress < 100 and (now - last_time < 2) and not force_update:
+            _print_progress_to_cmd(job_id, progress, etapa_atual, subetapa, tempo_str, current_seg, total_seg)
+            return
+
         progress_info = {
             'progress': round(progress, 2), 
             'etapa': etapa_atual, 
             'subetapa': subetapa, 
             'tempo_decorrido': tempo_str,
+            'tempo_sessao_atual': format_digital_time(session_elapsed),
             'current_seg': current_seg,
             'total_seg': total_seg,
             'last_update': now,
             'start_time': start_time,
-            'total_elapsed_secs': elapsed_time,
+            'total_elapsed_secs': round(total_elapsed, 2),
+            'accumulated_elapsed_secs': round(prev_accumulated, 2),
+            'session_start_time': start_time,
             'tool_name': tool_name
         }
         progress_info.update(kwargs)
-        
-        status_path_video = Path(f"c:/IA_dublagem/uploads/{job_id}/job_status.json")
-        status_path_games = Path(f"c:/IA_dublagem/jobs/{job_id}/job_status.json")
-        
-        status_path = None
-        if status_path_video.exists(): status_path = status_path_video
-        elif status_path_games.exists(): status_path = status_path_games
-        
+
         if status_path:
             try:
                 sdata = safe_json_read(status_path) or {}
@@ -301,8 +337,11 @@ def set_progress(job_id, progress, etapa_idx, start_time, etapas_list, subetapa=
                 sdata['subetapa'] = progress_info['subetapa']
                 sdata['current_seg'] = current_seg
                 sdata['total_seg'] = total_seg
-                sdata['total_elapsed_secs'] = elapsed_time
-                sdata['tempo_decorrido'] = str(timedelta(seconds=int(elapsed_time)))
+                sdata['total_elapsed_secs'] = round(total_elapsed, 2)
+                sdata['accumulated_elapsed_secs'] = round(prev_accumulated, 2)
+                sdata['session_start_time'] = start_time
+                sdata['tempo_decorrido'] = tempo_str
+                sdata['tempo_sessao_atual'] = format_digital_time(session_elapsed)
                 sdata['tool_name'] = tool_name
                 
                 if 'metrics' not in sdata:

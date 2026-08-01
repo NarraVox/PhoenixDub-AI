@@ -74,6 +74,7 @@ def find_alternative_model(current_path):
     
     # 1. Tenta nomes de arquivos conhecidos
     known_filenames = [
+        "Qwen3.5-4B-Q6_K.gguf",
         "Qwen3.5-4B-Q4_K_M.gguf",
         "gemma-4-E4B-it-qat-UD-Q4_K_XL.gguf",
         "gemma-4-E4B-it-Q4_K_M.gguf"

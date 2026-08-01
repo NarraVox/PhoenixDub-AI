@@ -1,3 +1,11 @@
+try {
+    Object.defineProperty(window, 'native', {
+        get: function() { return undefined; },
+        set: function() {},
+        configurable: true
+    });
+} catch(e) {}
+
 const glow = document.getElementById('mouse-glow');
         document.addEventListener('mousemove', (e) => {
             glow.style.left = e.clientX + 'px';
