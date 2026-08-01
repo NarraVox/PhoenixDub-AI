@@ -1,8 +1,8 @@
 # ⚡ PhoenixDub AI v0.6.0 - "The Stage Batch & Security Update" 🛡️
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v0.6.0-E11D48?style=flat-square&labelColor=1E293B)
-![GPU Target](https://img.shields.io/badge/GPU_Target-RTX_3050_6GB-0284C7?style=flat-square&labelColor=1E293B)
-![Licença](https://img.shields.io/badge/Licen%C3%A7a-Apache_2.0-16A34A?style=flat-square&labelColor=1E293B)
+* 📌 **Versão:** v0.6.0 (Beta)
+* 🎯 **Hardware Alvo:** NVIDIA RTX 3050 (6GB VRAM)
+* 📜 **Licença:** Apache 2.0 (Open-Source Livre)
 
 Esta atualização traz recursos monumentais focados em **produtividade em lote para modders**, **performance extrema de VRAM (6GB)** e **reforço de segurança no ecossistema NarraVox**.
 
