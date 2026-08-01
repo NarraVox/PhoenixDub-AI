@@ -382,10 +382,10 @@ def dublar_lote_jogos():
                 valid_exts = ('.wav', '.mp3', '.ogg', '.flac', '.m4a')
                 audio_files = [f for f in p_path.rglob("*") if f.suffix.lower() in valid_exts]
                 if audio_files:
-                    datestamp = datetime.now().strftime('%d.%m.%Y')
-                    timestamp = int(time.time())
-                    safe_sub_name = "".join([c if c.isalnum() else "_" for c in p_path.name])
-                    sub_job_id = f"job_jogos_{datestamp}_{timestamp}_{safe_sub_name}"
+                    now = datetime.now()
+                    datestr = now.strftime("%d%b_%Hh%M").upper()
+                    safe_sub_name = "".join([c if c.isalnum() else "_" for c in p_path.name.upper()]).strip("_")
+                    sub_job_id = f"PROJETO_{datestr}_{safe_sub_name}"
                     sub_job_dir = Path(app.config['UPLOAD_FOLDER']) / sub_job_id
                     
                     source_dir = sub_job_dir / "_1_MOVER_OS_FICHEIROS_DAQUI"
