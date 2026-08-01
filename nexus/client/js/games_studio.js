@@ -100,9 +100,38 @@ let statusInterval = null;
                         document.getElementById('segment-counter').style.opacity = '1';
                     }
 
-                    if (data.status === 'completed' || data.status === 'failed') {
+                    if (data.status === 'completed') {
+                        document.getElementById('current-step-text').textContent = "STATUS: 🎉 OPERAÇÃO CONCLUÍDA COM SUCESSO!";
+                        document.getElementById('current-step-text').style.color = "#00ff41";
+                        document.getElementById('status-msg-detail').textContent = data.message || "100% dos áudios processados e masterizados.";
+                        document.getElementById('dynamic-progress-bar').style.width = '100%';
+                        document.getElementById('percent-text').textContent = '100%';
+                        
+                        if (!window._completedLogged) {
+                            window._completedLogged = true;
+                            logToTerminal("🎉 PROCESSO CONCLUÍDO COM SUCESSO! Todos os áudios foram gerados e masterizados.", "success");
+                        }
+                        
+                        if (typeof statusInterval !== 'undefined') clearInterval(statusInterval);
                         const btn = document.getElementById('btn-iniciar');
-                        if (btn && btn.disabled) {
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.style.opacity = '1';
+                            btn.innerText = '🚀 INICIAR DUBLAGEM';
+                        }
+                    } else if (data.status === 'failed') {
+                        document.getElementById('current-step-text').textContent = "STATUS: ❌ FALHA NA DUBLAGEM";
+                        document.getElementById('current-step-text').style.color = "#ff0055";
+                        document.getElementById('status-msg-detail').textContent = data.message || "Ocorreu um erro no pipeline.";
+                        
+                        if (!window._failedLogged) {
+                            window._failedLogged = true;
+                            logToTerminal("❌ ERRO NO MOTOR: " + (data.message || "Falha durante o processamento."), "error");
+                        }
+                        
+                        if (typeof statusInterval !== 'undefined') clearInterval(statusInterval);
+                        const btn = document.getElementById('btn-iniciar');
+                        if (btn) {
                             btn.disabled = false;
                             btn.style.opacity = '1';
                             btn.innerText = '🚀 INICIAR DUBLAGEM';
@@ -137,10 +166,12 @@ let statusInterval = null;
         }
 
         function startStatusPolling() {
-            clearInterval(statusInterval);
+            window._completedLogged = false;
+            window._failedLogged = false;
+            if (typeof statusInterval !== 'undefined') clearInterval(statusInterval);
             statusInterval = setInterval(() => {
                 if (activeJobId) loadProjectStatus(activeJobId);
-            }, 2000); // [v2026.REALTIME_SYNC] Sincronizado 2s para resposta imediata UI
+            }, 2000);
         }
 
         async function executar(action) {
