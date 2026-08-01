@@ -201,7 +201,7 @@ log_path.mkdir(parents=True, exist_ok=True)
 current_log_file = log_path / f"{script_name}.log"
 
 stream_handler = logging.StreamHandler(sys.stdout)
-stream_handler.setLevel(logging.WARNING)
+stream_handler.setLevel(logging.INFO)
 
 logging.basicConfig(
     level=logging.INFO,
