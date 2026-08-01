@@ -411,7 +411,8 @@ def dublar_lote_jogos():
                         'job_id': sub_job_id, 'status': 'iniciando', 'progress': 0, 'etapa': 'Iniciando',
                         'subetapa': f'{len(audio_files)} arquivos preparados.', 'total_seg': len(audio_files),
                         'file_format_map': file_format_map, 'game_profile': data.get('game_profile', 'padrao'),
-                        'original_folder_name': p_path.name
+                        'original_folder_name': p_path.name,
+                        'original_folder_path': str(p_path.resolve())
                     }
                     safe_json_write(status_data, sub_job_dir / "job_status.json")
                     jobs_info_list.append({'job_id': sub_job_id, 'job_dir': sub_job_dir, 'start_time': start_time})

@@ -608,6 +608,21 @@ def run_auto_diarization_batch(job_dir, job_id, cb):
 
     source_files = [f for f in source_dir.rglob("*") if f.suffix.lower() in ('.wav', '.mp3', '.ogg', '.flac', '.m4a')]
     if not source_files:
+        orig_path_str = status_data.get('original_folder_path')
+        if orig_path_str and os.path.exists(orig_path_str):
+            orig_p = Path(orig_path_str)
+            raw_audio_files = [f for f in orig_p.rglob("*") if f.suffix.lower() in ('.wav', '.mp3', '.ogg', '.flac', '.m4a')]
+            if raw_audio_files:
+                logging.info(f"📁 [FALLBACK RECOVERY] Copiando {len(raw_audio_files)} arquivos da pasta original '{orig_p.name}' para a pipeline...")
+                for af in raw_audio_files:
+                    try:
+                        target_p = source_dir / af.name
+                        if not target_p.exists():
+                            shutil.copy2(af, target_p)
+                    except: pass
+                source_files = [f for f in source_dir.rglob("*") if f.suffix.lower() in ('.wav', '.mp3', '.ogg', '.flac', '.m4a')]
+
+    if not source_files:
         logging.info("Nenhum arquivo para processar.")
         return
 

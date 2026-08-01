@@ -1056,13 +1056,16 @@ def games_dublar_jogos():
             mover_dir.mkdir(parents=True, exist_ok=True)
             file_format_map = status_data.get('file_format_map', {})
             if manual_wav_path and os.path.exists(manual_wav_path):
-                for item in os.listdir(manual_wav_path):
-                    s = os.path.join(manual_wav_path, item)
-                    d = mover_dir / item
-                    if os.path.isfile(s) and item.lower().endswith(('.wav', '.mp3', '.ogg', '.flac', '.m4a', '.zip')):
-                        shutil.copy2(s, d)
-                        p = Path(item)
-                        file_format_map[p.stem] = p.suffix.lower()
+                mw_path = Path(manual_wav_path)
+                valid_exts = ('.wav', '.mp3', '.ogg', '.flac', '.m4a', '.zip')
+                if mw_path.is_dir():
+                    audio_files = [f for f in mw_path.rglob("*") if f.suffix.lower() in valid_exts]
+                    for af in audio_files:
+                        target = mover_dir / af.name
+                        if not target.exists():
+                            try: shutil.copy2(af, target)
+                            except: pass
+                        file_format_map[af.stem] = af.suffix.lower()
             status_data['file_format_map'] = file_format_map
             core.safe_json_write(status_data, status_path)
 
