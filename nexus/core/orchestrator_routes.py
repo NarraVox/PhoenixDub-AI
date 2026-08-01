@@ -395,16 +395,27 @@ def dublar_lote_jogos():
                     file_format_map = {}
                     for af in audio_files:
                         file_format_map[af.stem] = af.suffix.lower()
-                        shutil.copy2(af, source_dir / af.name)
+                    
+                    # [v2026.FAST_PARALLEL_COPY] Cópia paralela ultra-rápida para 2.000+ arquivos não travar a interface
+                    def _copy_single_file(af):
+                        try:
+                            target_path = source_dir / af.name
+                            if not target_path.exists():
+                                shutil.copy2(af, target_path)
+                        except: pass
+
+                    with ThreadPoolExecutor(max_workers=16) as copy_exec:
+                        list(copy_exec.map(_copy_single_file, audio_files))
                         
                     status_data = {
-                        'job_id': sub_job_id, 'status': 'iniciando', 
+                        'job_id': sub_job_id, 'status': 'iniciando', 'progress': 0, 'etapa': 'Iniciando',
+                        'subetapa': f'{len(audio_files)} arquivos preparados.', 'total_seg': len(audio_files),
                         'file_format_map': file_format_map, 'game_profile': data.get('game_profile', 'padrao'),
                         'original_folder_name': p_path.name
                     }
                     safe_json_write(status_data, sub_job_dir / "job_status.json")
                     jobs_info_list.append({'job_id': sub_job_id, 'job_dir': sub_job_dir, 'start_time': start_time})
-                    logging.info(f"📁 [MULTI-FOLDER BATCH] Criado sub-job automático para pasta '{p_path.name}': {sub_job_id}")
+                    logging.info(f"📁 [MULTI-FOLDER BATCH] Criado sub-job automático acelerado para pasta '{p_path.name}': {sub_job_id} ({len(audio_files)} arquivos)")
 
     if job_ids:
         for j_id in job_ids:
