@@ -44,6 +44,8 @@ def find_gemma_model_path():
     possible_paths = [
         root / "_MODELS_" / "Qwen3.5-4B-Q4_K_M.gguf",
         root / "Qwen3.5-4B-Q4_K_M.gguf",
+        root / "_MODELS_" / "Qwen3.5-4B-Q6_K.gguf",
+        root / "Qwen3.5-4B-Q6_K.gguf",
         root / "_MODELS_" / "gemma-4-E4B-it-qat-UD-Q4_K_XL.gguf",
         root / "gemma-4-E4B-it-qat-UD-Q4_K_XL.gguf",
         root / "_MODELS_" / "gemma-4-E4B-it-Q4_K_M.gguf",
@@ -106,10 +108,11 @@ def get_gemma_model(cb=None):
             gema_instance = Llama(
                 model_path=str(model_path),
                 n_gpu_layers=-1,
-                n_ctx=8192,
-                n_threads=2,
-                f16_kv=True,
+                n_ctx=2048,  # [v2026.SAFETY_VRAM] Reduzido para 2048 para deixar 2GB de VRAM livre para YouTube/Navegador
+                n_threads=os.cpu_count() or 8,
                 flash_attn=True,
+                type_k=8,  # [v2026.KV_COMPRESS] Comprime Key-Cache para Q8_0 (Economiza 50% de VRAM!)
+                type_v=8,  # [v2026.KV_COMPRESS] Comprime Value-Cache para Q8_0 (Economiza 50% de VRAM!)
                 offload_kqv=True,
                 use_mmap=False,
                 main_gpu=0,

@@ -38,7 +38,8 @@ BASE_DIR = Path(__file__).parent.parent.parent.resolve()  # v2026.MODULAR
 UPLOAD_FOLDER = BASE_DIR / "uploads"
 UPLOAD_FOLDER.mkdir(exist_ok=True)
 
-app = Flask(__name__, template_folder='client')
+CLIENT_DIR = str((BASE_DIR / "nexus" / "client").resolve())
+app = Flask(__name__, template_folder=CLIENT_DIR, static_folder=CLIENT_DIR)
 CORS(app)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')

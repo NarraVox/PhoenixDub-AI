@@ -59,7 +59,7 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px;">
                 <button class="btn" onclick="startSetup('test')" style="width:100%; background: #00f2ff; color: #000; border: none; box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);">
                     🔍 TESTAR SETUP
                 </button>
@@ -67,6 +67,10 @@
                     🔧 REPARAR
                 </button>
             </div>
+
+            <button class="btn" onclick="openTokenModal('pyannote/speaker-diarization-3.1', 'https://huggingface.co/pyannote/speaker-diarization-3.1')" style="width:100%; margin-bottom: 20px; background: rgba(255, 200, 0, 0.08); border: 1px solid rgba(255, 200, 0, 0.4); color: #ffcc00; box-shadow: 0 0 15px rgba(255, 200, 0, 0.1); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                🔑 CONFIGURAR TOKEN HUGGING FACE (DIARIZAÇÃO)
+            </button>
 
             <div id="warning-box" style="background: rgba(255, 200, 0, 0.1); border: 1px solid rgba(255, 200, 0, 0.3); padding: 15px; border-radius: 12px; margin-bottom: 20px; color: #ffcc00; font-size: 0.8rem; line-height: 1.4;">
                 ⚠️ <b>ATENÇÃO:</b> A instalação via <b>Placa de Vídeo</b> só deve ser feita se você possuir uma NVIDIA compatível (Série 10, 20, 30 ou 40) com no mínimo 4GB de VRAM e drivers atualizados.

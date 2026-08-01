@@ -1006,8 +1006,15 @@ def games_dublar_jogos():
     skip_lqa = request.form.get('skip_lqa', 'false')
     
     if not job_id:
-        timestamp = int(time.time())
-        job_id = f"manual_job_{timestamp}" if manual_wav_path else f"titan_job_{timestamp}"
+        now = datetime.datetime.now()
+        data_str = now.strftime("%d%b_%Hh%M").upper()
+        nome_pasta = ""
+        if manual_wav_path:
+            nome_pasta = f"_{Path(manual_wav_path).name.upper()}"
+        elif game_profile and game_profile != 'padrao':
+            nome_pasta = f"_{game_profile.upper()}"
+
+        job_id = f"PROJETO_{data_str}{nome_pasta}"
 
     global _active_game_jobs
     if job_id in _active_game_jobs:
@@ -1047,12 +1054,17 @@ def games_dublar_jogos():
 
             mover_dir = project_dir / "_1_MOVER_OS_FICHEIROS_DAQUI"
             mover_dir.mkdir(parents=True, exist_ok=True)
+            file_format_map = status_data.get('file_format_map', {})
             if manual_wav_path and os.path.exists(manual_wav_path):
                 for item in os.listdir(manual_wav_path):
                     s = os.path.join(manual_wav_path, item)
                     d = mover_dir / item
-                    if os.path.isfile(s) and item.lower().endswith(('.wav', '.zip')):
+                    if os.path.isfile(s) and item.lower().endswith(('.wav', '.mp3', '.ogg', '.flac', '.m4a', '.zip')):
                         shutil.copy2(s, d)
+                        p = Path(item)
+                        file_format_map[p.stem] = p.suffix.lower()
+            status_data['file_format_map'] = file_format_map
+            core.safe_json_write(status_data, status_path)
 
             core.processar_dublagem_jogos(project_dir, job_id, start_ts)
         except Exception as e:
@@ -1244,31 +1256,53 @@ def games_api_get_projects():
                             'date': datetime.datetime.fromtimestamp(os.path.getmtime(os.path.join(BACKUP_DIR, f))).strftime('%Y-%m-%d %H:%M:%S')
                         })
                 except: pass
+    upload_projects = []
+    class3_projects = []
+
     UPLOAD_DIR = str(UPLOAD_FOLDER)
     if os.path.exists(UPLOAD_DIR):
         for d_name in os.listdir(UPLOAD_DIR):
-            if d_name.startswith('video_') or d_name in ["arch_manager_backups", "mods_finalizados", "_NEXUS_TEMP_"]:
+            if d_name.startswith('video_') or d_name in ["arch_manager_backups", "mods_finalizados", "_NEXUS_TEMP_", "watchdog_queue"]:
                 continue
             d_path = os.path.join(UPLOAD_DIR, d_name)
             if os.path.isdir(d_path):
                 status_file = os.path.join(d_path, "job_status.json")
-                prog = 0
-                mtime = datetime.datetime.fromtimestamp(os.path.getmtime(d_path)).strftime('%Y-%m-%d %H:%M:%S')
-                if os.path.exists(status_file):
-                    try:
-                        with open(status_file, 'r') as j:
-                            data = json.load(j)
-                            is_game = data.get('game_profile') or d_name.startswith(('job_', 'manual_job_'))
-                            if is_game:
-                                projects.append({
-                                    'id': data.get('job_id', d_name),
-                                    'name': f"🎮 {d_name}",
-                                    'status': data.get('status', 'unknown'),
-                                    'progress': data.get('progress', 0),
-                                    'date': mtime
-                                })
-                    except: pass
-    projects.sort(key=lambda x: x['name'])
+                mtime = datetime.datetime.fromtimestamp(os.path.getmtime(d_path)).strftime('%d/%m/%Y %H:%M')
+                data = core.safe_json_read(status_file) or {}
+                
+                # Qualquer pasta em uploads que seja um job é listada no topo!
+                job_id_val = data.get('job_id', d_name)
+                prog = data.get('progress', 0)
+                st = data.get('status', 'in_progress')
+                
+                upload_projects.append({
+                    'id': job_id_val,
+                    'name': f"🎮 PROJETO: {d_name} ({prog}% - {mtime})",
+                    'status': st,
+                    'progress': prog,
+                    'date': mtime
+                })
+
+    # Varre as pastas de personagens de dialog/class3
+    class3_dir = core.BASE_DIR / "call of duty" / "dialog" / "class3"
+    if class3_dir.exists():
+        for cdir in class3_dir.iterdir():
+            if cdir.is_dir():
+                mp3_count = len(list(cdir.glob("*.mp3"))) + len(list(cdir.glob("*.wav")))
+                if mp3_count > 0:
+                    class3_projects.append({
+                        'id': str(cdir.absolute()),
+                        'name': f"🗣️ PERSONAGEM: {cdir.name.upper()} ({mp3_count} áudios)",
+                        'status': 'ready',
+                        'progress': 100,
+                        'date': datetime.datetime.fromtimestamp(cdir.stat().st_mtime).strftime('%d/%m/%Y %H:%M')
+                    })
+
+    upload_projects.sort(key=lambda x: x['date'], reverse=True)
+    class3_projects.sort(key=lambda x: x['name'])
+    
+    # Jobs ativos do uploads vêm em primeiro lugar no menu!
+    projects = upload_projects + class3_projects
     return jsonify(projects)
 
 

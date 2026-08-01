@@ -144,7 +144,7 @@ def processar_dublagem_jogos(job_dir, job_id, start_time):
         try:
             status_temp = safe_json_read(job_dir / "job_status.json") or {}
             source_dir = job_dir / "_1_MOVER_OS_FICHEIROS_DAQUI"
-            wav_files = list(source_dir.rglob("*.wav"))
+            wav_files = [f for f in source_dir.rglob("*") if f.suffix.lower() in ('.wav', '.mp3', '.ogg', '.flac', '.m4a')]
             if wav_files:
                 if 'duracao_total_secs' in status_temp and status_temp.get('duracao_total_secs', 0) > 0:
                     logging.info(f"⏱️ [TITAN PRE-CALC] Duração total carregada do cache: {status_temp.get('duracao_total_formatada')} ({len(wav_files)} arquivos)")
@@ -154,10 +154,7 @@ def processar_dublagem_jogos(job_dir, job_id, start_time):
                     minutos, segundos = divmod(resto, 60)
                     
                     status_temp['duracao_total_secs'] = total_duration_secs
-                    if horas > 0:
-                        status_temp['duracao_total_formatada'] = f"{horas}h {minutos}m {segundos}s"
-                    else:
-                        status_temp['duracao_total_formatada'] = f"{minutos}m {segundos}s"
+                    status_temp['duracao_total_formatada'] = format_digital_time(total_duration_secs)
                     safe_json_write(status_temp, job_dir / "job_status.json")
                     logging.info(f"⏱️ [TITAN PRE-CALC] Duração total calculada e salva: {status_temp['duracao_total_formatada']} ({len(wav_files)} arquivos)")
         except Exception as e_dur:
@@ -254,25 +251,21 @@ def processar_dublagem_jogos(job_dir, job_id, start_time):
         # wait_for_diarization_manual(job_id, cb) # Desativado
         unify_speaker_files(job_dir, cb)
 
-        all_files_to_process = [f for f in diarization_dir.rglob("*.wav") if not f.name.startswith("_REF_")]
+        all_files_to_process = [f for f in diarization_dir.rglob("*") if f.suffix.lower() in ('.wav', '.mp3', '.ogg', '.flac', '.m4a') and not f.name.startswith("_REF_")]
         
+        # [FORMAT PRESERVATION] Mapeia dinamicamente os formatos originais dos arquivos
+        for f in all_files_to_process:
+            file_format_map[f.stem] = f.suffix.lower()
+        status['file_format_map'] = file_format_map
+
         # [FEATURE] Calculo Dinâmico de Duração Total do Projeto
         try:
-            status = safe_json_read(job_dir / "job_status.json") or {}
             if 'duracao_total_secs' in status and status.get('duracao_total_secs', 0) > 0:
                 logging.info(f"Duração total do projeto carregada do cache: {status.get('duracao_total_formatada')} ({len(all_files_to_process)} arquivos)")
             else:
                 total_duration_secs = sum(get_audio_duration(str(f)) for f in all_files_to_process)
                 status['duracao_total_secs'] = total_duration_secs
-                
-                # Formatação amigável
-                horas, resto = divmod(int(total_duration_secs), 3600)
-                minutos, segundos = divmod(resto, 60)
-                
-                if horas > 0:
-                     status['duracao_total_formatada'] = f"{horas}h {minutos}m {segundos}s"
-                else:
-                     status['duracao_total_formatada'] = f"{minutos}m {segundos}s"
+                status['duracao_total_formatada'] = format_digital_time(total_duration_secs)
                      
                 safe_json_write(status, job_dir / "job_status.json")
                 logging.info(f"Duração total do projeto calculada: {status['duracao_total_formatada']} ({len(all_files_to_process)} arquivos)")
@@ -621,33 +614,32 @@ def processar_dublagem_jogos(job_dir, job_id, start_time):
                 nonlocal completed_atomic
                 start_seg = time.time()
                 try:
-                    # 1. Constrói Janela de Contexto Equilibrada (3 antes, 3 depois - Sprint Mode para i5)
-                    # Reduzido de 10 para 3 para acelerar o 'Prefill' da CPU (menos texto para o i5 ler antes de traduzir).
-                    start_ctx = max(0, idx - 3)
-                    end_ctx = min(total_items, idx + 4)
-                    context_lines = []
-                    for j in range(start_ctx, end_ctx):
-                        f_ctx = unique_files[j]
-                        prio = ">>> ALVO >>>" if j == idx else "            "
-                        speaker = f_ctx.get('speaker', 'Voz')
-                        context_lines.append(f"{prio} {f_ctx['id']} ({speaker}): \"{f_ctx.get('original_text','')}\"")
-                    
-                    ctx_str = "\n".join(context_lines)
+                    # [v20.25] MODO KV-CACHE: Usamos contexto estático por projeto para manter 100% de KV Cache Hit na GPU!
+                    ctx_str = f"Cenário: Dublagem Tática Militar Call of Duty - Projeto {job_id}."
                     
                     # [v20.17] MODO TURBO: Tradução Direta (Sem Chat Completions lento)
                     # Usamos o gema_batch_processor_v2 para rodar no modo de completions direto com stop tokens,
                     # acelerando o processo para ~3 arquivos por segundo igual no do vídeo.
                     # Executa a tradução de forma thread-safe usando o Lock global do gema
-                    from nexus.core.model_loader import gema_lock
-                    with gema_lock:
-                        results_map = gema_batch_processor_v2(
-                            batch=[item_data],
-                            cenario_ctx=ctx_str,
-                            glossary=merged_glossary,
-                            profile_id=game_profile_id,
-                            job_dir=job_dir,
-                            target_lang=status.get('target_language', 'pt')
-                        )
+                    from nexus.core.translation_processors import fast_tactical_translator
+                    orig_txt = item_data.get('original_text', '').strip()
+                    if not orig_txt:
+                        results_map = {str(item_data['id']).lower(): {"text": "", "emotion": "NORMAL"}}
+                    else:
+                        fast_pt, fast_emo = fast_tactical_translator(orig_txt)
+                        if fast_pt:
+                            results_map = {str(item_data['id']).lower(): {"text": fast_pt, "emotion": fast_emo}}
+                        else:
+                            from nexus.core.model_loader import gema_lock
+                            with gema_lock:
+                                results_map = gema_batch_processor_v2(
+                                    batch=[item_data],
+                                    cenario_ctx=ctx_str,
+                                    glossary=merged_glossary,
+                                    profile_id=game_profile_id,
+                                    job_dir=job_dir,
+                                    target_lang=status.get('target_language', 'pt')
+                                )
                     
                     res = results_map.get(str(item_data['id']).lower())
                     if res:
@@ -855,11 +847,20 @@ def processar_dublagem_jogos(job_dir, job_id, start_time):
                     original_duration = seg_data.get('duration', 0)
                     emotion_tag = seg_data.get('emotion', 'NORMAL')
                     
-                    # Busca a voz de referência
-                    ref_path = diarization_dir / seg_data.get('speaker', 'Unknown') / "_REF_VOZ_UNIFICADA.wav"
+                    # Busca a voz de referência com blindagem resiliente
+                    speaker_folder = diarization_dir / seg_data.get('speaker', 'Unknown')
+                    ref_path = speaker_folder / "_REF_VOZ_UNIFICADA.wav"
                     if not ref_path.exists():
-                        ref_path = diarization_dir / seg_data.get('speaker', 'Unknown') / seg_data.get('file_name', '')
-                    if not ref_path.exists(): ref_path = global_fallback
+                        ref_path = speaker_folder / seg_data.get('file_name', '')
+                    if not ref_path.exists() and seg_data.get('source_file'):
+                        ref_path = Path(seg_data['source_file'])
+                    if not ref_path.exists():
+                        # Busca qualquer arquivo de áudio existente na pasta do personagem/orador
+                        any_audios = [f for f in speaker_folder.glob("*") if f.suffix.lower() in ('.wav', '.mp3', '.ogg', '.flac')]
+                        if any_audios:
+                            ref_path = any_audios[0]
+                    if not ref_path.exists():
+                        ref_path = global_fallback
  
                     # [v2026.REACTION_FILTER] Bypass para áudio original se for apenas uma reação, canto ou barulho
                     from nexus.dub import is_reaction_or_noise
@@ -912,9 +913,7 @@ def processar_dublagem_jogos(job_dir, job_id, start_time):
                     completed_gen += 1
                     pct = 5 + (completed_gen / total_gen) * 95
                     cb(pct, 6, f"Vozes: {completed_gen}/{total_gen} concluídas.", tool_name="Qwen3-TTS (Voz)", current_seg=completed_gen, total_seg=total_gen)
-                    # Checkpoint Vivo a cada 10 arquivos
-                    if completed_gen % 10 == 0:
-                        gerar_relatorio_final(job_dir, job_id, project_data, file_format_map)
+                    pass
 
             # [FILA JOGOS] Processamento sequencial leve e limpo na GPU (Sem VRAM OOM)
             logging.info(f"🚀 [QUEUE] Processando {total_gen} tarefas de voz com o Motor Unificado Qwen3-TTS...")
@@ -975,13 +974,11 @@ def processar_dublagem_jogos(job_dir, job_id, start_time):
             seg_data['lqa_raw_details'] = diagnostics
             
             if i % 10 == 0: safe_json_write(project_data, job_dir / "project_data.json")
-            
-            # [v2026.34] Checkpoint Vivo: Atualiza o relatório a cada auditoria
-            gerar_relatorio_final(job_dir, job_id, project_data, file_format_map)
 
         status['nexus_regenerados_count'] = regenerados_sucesso
         cb(100, 7, f"Refinamento concluído. {regenerados_sucesso} áudios foram salvos.")
         safe_json_write(project_data, job_dir / "project_data.json")
+        gerar_relatorio_final(job_dir, job_id, project_data, file_format_map)
 
         # Descarrega o Qwen3-TTS da GPU antes de iniciar a masterização pesada do FFmpeg
         unload_qwen3_model()
@@ -1070,7 +1067,25 @@ def processar_dublagem_jogos(job_dir, job_id, start_time):
         for i, seg_data in enumerate(project_data):
             file_id = seg_data['id']
             file_name = seg_data.get('file_name', f"{file_id}.wav")
-            final_path = final_output_dir / f"{file_id}{file_format_map.get(file_id, '.wav')}"
+            
+            # [PRESERVAÇÃO DO FORMATO E EXTENSÃO ORIGINAL DO JOGO]
+            ext_orig = file_format_map.get(file_id)
+            if not ext_orig or ext_orig == '.wav':
+                if file_name and '.' in file_name:
+                    p_ext = Path(file_name).suffix.lower()
+                    if p_ext in ('.mp3', '.wav', '.ogg', '.flac', '.m4a'):
+                        ext_orig = p_ext
+                if not ext_orig or ext_orig == '.wav':
+                    matches = list(job_dir.rglob(f"{file_id}.*"))
+                    for m in matches:
+                        if m.suffix.lower() in ('.mp3', '.wav', '.ogg', '.flac', '.m4a') and not m.name.endswith('_dubbed.wav'):
+                            ext_orig = m.suffix.lower()
+                            break
+            if not ext_orig:
+                ext_orig = '.wav'
+                
+            file_format_map[file_id] = ext_orig
+            final_path = final_output_dir / f"{file_id}{ext_orig}"
             
             # [RESET] Sempre tenta re-processar para garantir que não fique inglês
             if final_path.exists(): 
@@ -1084,30 +1099,27 @@ def processar_dublagem_jogos(job_dir, job_id, start_time):
             final_peak = -99.0
             original_duration = seg_data.get('duration', 0)
             original_file_path = diarization_dir / speaker_id / file_name
+            if not original_file_path.exists():
+                for ext in ['.mp3', '.wav', '.ogg', '.flac', '.m4a']:
+                    alt_p = diarization_dir / speaker_id / f"{file_id}{ext}"
+                    if alt_p.exists():
+                        original_file_path = alt_p
+                        break
             source_path = None
             is_fallback_copy = False
             dubbed_check_path = dubbed_audio_dir / f"{file_id}_dubbed.wav"
 
             if dubbed_check_path.exists():
                 source_path = dubbed_check_path
-                logging.info(f"Usando áudio dublado encontrado para '{file_id}'.")
             elif seg_data.get('reuse_audio_from_id'):
                 master_id = seg_data['reuse_audio_from_id']
                 source_path = dubbed_audio_dir / f"{master_id}_dubbed.wav"
-                logging.info(f"Reutilizando áudio de '{master_id}' para '{file_id}'.")
-            else: # Realmente não existe dublagem
+            else:
                 source_path = original_file_path
                 is_fallback_copy = True
 
-            # --- LÓGICA DE SELEÇÃO INTELIGENTE (SEM ENROLAÇÃO) ---
-            is_non_verbal = (seg_data.get('processing_status') == 'Copiado Diretamente (Som Não-Verbal)')
-            
-            if is_fallback_copy and not is_non_verbal:
-                # [v2026.FALLBACK_ORIGINAL] Se falhar a geração ou sumir, usa o original em inglês como salvaguarda
-                logging.warning(f"⚠️ [FALLBACK] Áudio dublado NÃO encontrado para '{file_id}' (Deveria estar dublado). Usando áudio original em inglês para evitar silêncio.")
-
-            # Se for não-verbal, 'source_path' já aponta para o original e 'is_fallback_copy' é True. 
-            # Isso é o esperado para gemidos/sons.
+            if not source_path or not source_path.exists():
+                continue
 
             try:
                 # Medimos a duração do source
@@ -1193,7 +1205,7 @@ def processar_dublagem_jogos(job_dir, job_id, start_time):
                     cmd.extend(['-b:a', '192k'])
 
                 cmd.append(str(final_path))
-                logging.info(f"🔊 Masterizando ({codec_final}): {file_id}")
+                logging.debug(f"🔊 Masterizando ({codec_final}): {file_id}")
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 if result.returncode != 0:
                      logging.error(f"❌ FFmpeg falhou para {file_id}: {result.stderr}")
@@ -1204,7 +1216,7 @@ def processar_dublagem_jogos(job_dir, job_id, start_time):
                 final_peak = get_audio_peak_dbfs(final_path)
                 
                 # [v2026.TITAN] Log de Alta Fidelidade para o Usuário
-                logging.info(f"✅ [TITAN] Integrado: {file_id} (Duração: {final_duration:.2f}s | Pico: {final_peak}dB)")
+                logging.debug(f"✅ [TITAN] Integrado: {file_id} (Duração: {final_duration:.2f}s | Pico: {final_peak}dB)")
                 
                 if file_id not in durations_cache: durations_cache[file_id] = {}
                 durations_cache[file_id]['speed_factor'] = speed_factor
