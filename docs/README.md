@@ -1,6 +1,6 @@
 # PhoenixDub AI 🚀🔥
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v0.5--Beta-E11D48?style=flat-square&labelColor=1E293B)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v0.6.0-E11D48?style=flat-square&labelColor=1E293B)
 ![GPU Target](https://img.shields.io/badge/GPU_Target-RTX_3050_6GB-0284C7?style=flat-square&labelColor=1E293B)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-Apache_2.0-16A34A?style=flat-square&labelColor=1E293B)
 [![Apoia.se](https://img.shields.io/badge/Apoia.se-NarraVox_Studios-E11D48?style=flat-square&labelColor=1E293B&logo=patreon)](https://apoia.se/narravox_studios)

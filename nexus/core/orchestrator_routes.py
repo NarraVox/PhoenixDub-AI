@@ -457,7 +457,7 @@ def favicon(): return make_response('', 204)
 @app.route('/uploads/<path:path>')
 def send_upload(path): return send_from_directory(app.config['UPLOAD_FOLDER'], path)
 
-CURRENT_APP_VERSION = "v0.5.0"
+CURRENT_APP_VERSION = "v0.6.0"
 
 def get_local_build_hash():
     """Gera uma impressão digital (Hash SHA256 / Commit SHA) da build local atual."""
