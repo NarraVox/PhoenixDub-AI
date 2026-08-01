@@ -266,8 +266,7 @@ def try_reconstruct_project_from_all_backups(job_dir):
         if data and len(data) > 0:
             return
             
-    logging.warning("=== ALERTA PHOENIX: INICIANDO RECUPERAÇÃO DE PROJETO ===")
-    logging.warning("project_data.json ausente ou corrompido. Tentando reconstrução...")
+    logging.info("=== PHOENIX: INICIALIZANDO PROJETO LIMPO OU RECUPERANDO ===")
     
     recovered_nodes = {}
     
