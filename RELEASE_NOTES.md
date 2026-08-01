@@ -30,7 +30,7 @@
 
 #### 🛡️ 4. BLINDAGEM DE SEGURANÇA E PROTEÇÃO DE DADOS
 * 🔐 **Anti-Command Injection:** Sanitização de títulos no `os.system` para evitar injeção de comandos CMD.
-* 🌐 **Isolamento Local (127.0.0.1):** Binding local protegido, monkeypatch `SecuredFlask` contra CSRF/Path Traversal e travas atômicas de gravação (`safe_json_write`).
+* 🌐 **Isolamento Local (Localhost):** Binding local protegido, monkeypatch `SecuredFlask` contra CSRF/Path Traversal e travas atômicas de gravação (`safe_json_write`).
 
 ---
 
