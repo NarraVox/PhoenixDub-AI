@@ -109,7 +109,7 @@ def trim_silence_logic(audio, threshold=-35, padding_ms_start=20, padding_ms_end
     if start_trim >= end_trim: return audio
     return audio[start_trim:end_trim]
 
-def processar_dublagem_jogos(job_dir, job_id, start_time):
+def processar_dublagem_jogos(job_dir, job_id, start_time, start_from_stage=1, stop_after_stage=10):
     with active_jobs_lock:
         if len(active_jobs) >= MAX_CONCURRENT_JOBS:
              logging.warning(f"❌ [HARDWARE] Limite de {MAX_CONCURRENT_JOBS} job(s) atingido. Ignorando {job_id}.")
@@ -731,6 +731,10 @@ def processar_dublagem_jogos(job_dir, job_id, start_time):
             cb(100, 5, "Processamento de texto concluído.")
             unload_gema_model() # [NEW] Libera RAM para o Chatterbox v2
 
+        if stop_after_stage <= 5:
+            logging.info(f"🛑 [BATCH CONTROL] Concluído Estágio 2 (Tradução). Pausando job {job_id} para transição de VRAM.")
+            return
+
         # [FIX CRÍTICO] - Consolidação de Backups ANTES de montar a fila
         logging.info("Sincronizando textos com os backups do disco...")
         backup_final_dir = job_dir / "_backup_texto_final"
@@ -982,6 +986,10 @@ def processar_dublagem_jogos(job_dir, job_id, start_time):
 
         # Descarrega o Qwen3-TTS da GPU antes de iniciar a masterização pesada do FFmpeg
         unload_qwen3_model()
+
+        if stop_after_stage <= 7:
+            logging.info(f"🛑 [BATCH CONTROL] Concluído Estágio 3 (TTS Geração de Voz). Pausando job {job_id} para transição de VRAM.")
+            return
 
         # --- ETAPA 7: FINALIZAÇÃO E MASTERIZAÇÃO ---
         cb(0, 7, "Iniciando finalização e masterização...")
