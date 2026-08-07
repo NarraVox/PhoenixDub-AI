@@ -60,8 +60,8 @@ O diferencial técnico core do projeto é a **extrema eficiência de hardware**:
 > [!TIP]
 > ### 📥 DOWNLOAD DIRETO DOS 2 ARQUIVOS DO PROJETO (1-CLIQUE)
 > Baixe os 2 executáveis da versão v0.5 direto para o seu PC sem precisar procurar no GitHub:  
-> 1. 👉 [**[Passo 1] Baixar Instalador Automático: Setup_Nexus.exe (225 MB)**](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Setup_Nexus.exe)  
-> 2. 👉 [**[Passo 2] Baixar Executável Principal: Nexus_AI_Pro.exe (213 MB)**](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Nexus_AI_Pro.exe)
+> 1. 👉 [**[Passo 1] Baixar Instalador Automático: Setup_Nexus.exe**](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Setup_Nexus.exe)  
+> 2. 👉 [**[Passo 2] Baixar Executável Principal: Nexus_AI_Pro.exe**](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Nexus_AI_Pro.exe)
 
 ---
 
@@ -182,8 +182,8 @@ The core technical highlight of the project is its **extreme hardware efficiency
 > [!TIP]
 > ### 📥 DIRECT 1-CLICK DOWNLOADS (.EXE)
 > Download the 2 executables directly to your PC:  
-> 1. 👉 [**[Step 1] Download Automated Installer: Setup_Nexus.exe (225 MB)**](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Setup_Nexus.exe)  
-> 2. 👉 [**[Step 2] Download Main Suite: Nexus_AI_Pro.exe (213 MB)**](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Nexus_AI_Pro.exe)
+> 1. 👉 [**[Step 1] Download Automated Installer: Setup_Nexus.exe**](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Setup_Nexus.exe)  
+> 2. 👉 [**[Step 2] Download Main Suite: Nexus_AI_Pro.exe**](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Nexus_AI_Pro.exe)
 
 ---
 
