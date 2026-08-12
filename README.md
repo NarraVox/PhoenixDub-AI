@@ -25,7 +25,7 @@ O diferencial técnico core do projeto é a **extrema eficiência de hardware**:
 
 ### 🎥 Demonstração Visual & Interface (Showcase)
 
-![NarraVox Sentinel Dashboard](assets/Image_fx_1.jpg)
+
 
 🎬 **[Clique Aqui para Assistir à Dublagem do Call of Duty: MW3 no YouTube (1 Minuto)](https://youtu.be/E3HuG6ju7W8)**  
 *(Demonstração real de uma cutscene do Call of Duty: Modern Warfare 3 dublada automaticamente pelo PhoenixDub AI em Português PT-BR)*
