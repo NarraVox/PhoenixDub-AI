@@ -1,217 +1,237 @@
 # PhoenixDub AI 🚀🔥
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v0.6.0-E11D48?style=flat-square&labelColor=1E293B)
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&labelColor=1E293B&logo=python&logoColor=white)
-![PyTorch](https://img.shields.io/badge/PyTorch-CUDA_Accelerated-EE4C2C?style=flat-square&labelColor=1E293B&logo=pytorch&logoColor=white)
-![GPU Target](https://img.shields.io/badge/GPU_Target-RTX_3050_6GB-76B900?style=flat-square&labelColor=1E293B&logo=nvidia&logoColor=white)
-![Licença](https://img.shields.io/badge/Licen%C3%A7a-Apache_2.0-16A34A?style=flat-square&labelColor=1E293B)
-[![Apoia.se](https://img.shields.io/badge/Apoia.se-NarraVox_Studios-E11D48?style=flat-square&labelColor=1E293B&logo=patreon)](https://apoia.se/narravox_studios)
-[![Baixar Setup](https://img.shields.io/badge/%F0%9F%93%A5_1._Setup_Nexus.exe-Download-0284C7?style=flat-square&labelColor=1E293B)](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Setup_Nexus.exe)
-[![Baixar Executável](https://img.shields.io/badge/%F0%9F%9A%80_2._Nexus_AI_Pro.exe-Download-16A34A?style=flat-square&labelColor=1E293B)](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Nexus_AI_Pro.exe)
+![Status](https://img.shields.io/badge/Status-Beta_em_desenvolvimento-E11D48?style=flat-square)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.6.0_CUDA_12.4-EE4C2C?style=flat-square)
+![GPU Target](https://img.shields.io/badge/GPU_Target-RTX_3050_6GB-76B900?style=flat-square)
+![Licença](https://img.shields.io/badge/Licen%C3%A7a-Apache_2.0-16A34A?style=flat-square)
 
 [Português](#português) | [English](#english)
 
----
-
 ## Português
 
-**PhoenixDub AI** é uma solução completa de **engenharia de software e inteligência artificial** voltada para **edição, sincronização e dublagem automatizada** de vídeos e jogos para Português (PT-BR). 
+**PhoenixDub AI**, da NarraVox Studios, é uma suíte desktop para dublagem de jogos e vídeos em português brasileiro, edição de mídia e mixagem de áudio. O processamento de IA foi desenvolvido para execução local, com gerenciamento de memória voltado a GPUs como a NVIDIA RTX 3050 de 6 GB.
 
-O diferencial técnico core do projeto é a **extrema eficiência de hardware**: pipelines complexos de IA (síntese de voz, transcrição ASR e diarização) otimizados para rodar **100% localmente em GPUs de entrada (NVIDIA RTX 3050 6GB VRAM)**, dispensando dependências ou custos com APIs pagas na nuvem.
+> [!NOTE]
+> Este README descreve o código em desenvolvimento. A v0.6.0 é a referência das notas de lançamento existentes; o número da próxima versão ainda não foi definido. Recursos posteriores podem não estar nos executáveis publicados. Consulte o [rascunho da próxima versão](RELEASE_DRAFT.md) e as [notas da v0.6.0](../RELEASE_NOTES.md).
+a
+### 🎥 Demonstração
 
-👉 **Bio & Portfólio do Autor:** [https://narravox.github.io/bio/](https://narravox.github.io/bio/)
+![NarraVox Sentinel Dashboard](../assets/Image_fx_1.jpg)
 
----
+[Assista à demonstração de dublagem de Call of Duty: Modern Warfare 3](https://youtu.be/E3HuG6ju7W8).
 
-### 🎥 Demonstração Visual & Interface (Showcase)
+[Bio e portfólio do autor](https://narravox.github.io/bio/).
 
+### Recursos
 
+- **Titan Games:** dublagem de áudios em lote, seleção de múltiplas pastas e processamento por estágios de transcrição, tradução, síntese e finalização.
+- **Titan Video:** dublagem de vídeos, acompanhamento de filas e tratamento de silêncio nas falas.
+- **Painel de correção:** busca de segmentos, rascunhos persistentes, prévia de áudio, fila de redublagem e exportação de jogos e vídeos.
+- **Vortex Editor:** edição de mídia e fatiador de vídeos com duração configurável. O corte sem recodificação depende dos quadros-chave do arquivo.
+- **Vortex DJ:** análise e mixagem de faixas de áudio.
+- **Gerenciamento de VRAM:** carregamento e liberação dos modelos por estágio para reduzir o consumo de memória. A capacidade necessária depende do modelo e da tarefa.
+- **Sincronização:** ajustes de duração para aproximar a fala dublada do tempo original; os resultados precisam de revisão.
 
-🎬 **[Clique Aqui para Assistir à Dublagem do Call of Duty: MW3 no YouTube (1 Minuto)](https://youtu.be/E3HuG6ju7W8)**  
-*(Demonstração real de uma cutscene do Call of Duty: Modern Warfare 3 dublada automaticamente pelo PhoenixDub AI em Português PT-BR)*
+Os antigos motores Cine Gen/GodoGen foram removidos desta distribuição. Arquivos de interface e dependências remanescentes não indicam disponibilidade desses motores.
 
----
+### Stack tecnológica
 
-### 🛠️ Stack Tecnológica & IAs Utilizadas
+| Área | Implementação atual |
+|---|---|
+| Linguagem | Python; os requisitos e o instalador devem ser conferidos para a versão escolhida |
+| Transcrição | faster-whisper 1.2.1 e integração Qwen3-ASR 0.6B |
+| Síntese de voz | Qwen3-TTS, com modelos locais de 1.7B/0.6B conforme disponibilidade |
+| Diarização | Biblioteca pyannote.audio 3.3.1; o código referencia o modelo speaker-diarization-3.1 |
+| Tradução | Modelos GGUF locais via llama-cpp-python e integração com servidor local |
+| Aceleração | PyTorch 2.6.0, torchaudio 2.6.0 e torchvision 0.21.0 com CUDA 12.4 |
+| Interface | Flask, Flask-Cors, HTML/CSS/JavaScript e janela pywebview |
+| Mídia | FFmpeg, librosa, soundfile e pydub |
 
-* **Linguagem Principal:** Python 3.10+
-* **Modelos de IA & Transcrição:** OpenAI Whisper (ASR), Qwen3-TTS (Síntese de Voz), Pyannote.audio 3.1 (Diarização de Locutores)
-* **Aceleração por Hardware:** PyTorch com suporte nativo CUDA, Gestão Dinâmica de Memória VRAM (Offloading)
-* **Interface & Orquestração Desktop:** Flask, WebSockets, HTML5/CSS3 (Design Premium Glassmorphism), Suíte Multiprocesso
-* **Processamento de Áudio e Mídia:** FFmpeg Full Build Core, eSpeak-NG engine
+As versões declaradas estão em [requirements.txt](../requirements.txt). O arquivo ainda inclui dependências de geração de imagem/vídeo que precisam de revisão, e não lista o `pywebview` usado pela aplicação desktop.
 
----
+### Arquitetura e portas locais
 
-### 🧠 💡 Destaques de Engenharia & Decisões Técnicas
+A entrada na raiz é [`Nexus_AI_Pro.py`](../Nexus_AI_Pro.py), que chama `nexus.nexus_app.main()`. O Hub inicia os motores em processos separados.
 
-1. ⚡ **VRAM Management & Memory Offloading (Target 6GB):**
-   - Arquitetura de agendamento de recursos que gerencia a alocação e liberação de modelos pesados em VRAM (ex: descarregando instâncias de LLM antes de iniciar o motor de voz), prevenindo erros de *Out-Of-Memory (OOM)* em GPUs modestas.
-2. 🔄 **Pipeline Concorrente com Preservação de Tempo (Time Preservation):**
-   - Sistema de filas de tarefas concorrentes em CUDA que processa centenas de áudios de jogos em lote, aplicando algoritmos de ajuste de *pitch* e *speed* para alinhar a dublagem perfeitamente ao tempo original.
-3. 🏛️ **Arquitetura Desktop Modular baseada em Microsserviços:**
-   - A central mestre (`nexus_app.py`) gerencia e orquestra 4 subsistemas isolados rodando em portas locais dedicadas:
-     - **Porta 5000:** Dashboard Principal (Sentinel Hub)
-     - **Porta 5002:** Engine de Dublagem de Jogos em Lote (`nexus_dub_games.py`)
-     - **Porta 5003:** Editor Portátil de Ondas de Áudio (`narravox_editor.py`)
-     - **Porta 5004:** Engine de Dublagem de Vídeos Longos & Trailers (`nexus_dub_video.py`)
+| Serviço | Porta | Módulo |
+|---|---:|---|
+| Sentinel Hub | 5000 | `nexus.nexus_app` |
+| Titan Games | 5002 | `nexus.dub.dubbing` |
+| Vortex Editor | 5003 | `nexus.editor.narravox_editor` |
+| Titan Video | 5004 | `nexus.dub.dubbing` |
+| Vortex DJ | 5005 | `nexus.dj.vortex_dj` |
 
----
+Games e Video compartilham o módulo de dublagem, com modos e processos distintos. O Hub fica disponível em `http://127.0.0.1:5000` enquanto a aplicação está aberta.
 
-> [!TIP]
-> ### 📥 DOWNLOAD DIRETO DOS 2 ARQUIVOS DO PROJETO (1-CLIQUE)
-> Baixe os 2 executáveis da versão v0.5 direto para o seu PC sem precisar procurar no GitHub:  
-> 1. 👉 [**[Passo 1] Baixar Instalador Automático: Setup_Nexus.exe**](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Setup_Nexus.exe)  
-> 2. 👉 [**[Passo 2] Baixar Executável Principal: Nexus_AI_Pro.exe**](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Nexus_AI_Pro.exe)
+### Requisitos e preparação
 
----
+- **Windows de 64 bits**, ambiente principal desta distribuição.
+- **GPU NVIDIA com CUDA** para os fluxos acelerados; a integração atual Qwen3-ASR exige CUDA. A RTX 3050 de 6 GB é o alvo de otimização, sem garantia de que qualquer modelo caiba nessa VRAM.
+- **16 GB de RAM como referência inicial**; modelos maiores podem exigir mais RAM e memória virtual.
+- **Python e Git** para execução pelo código-fonte.
+- **FFmpeg e ffprobe no PATH** para processamento de mídia.
+- **Microsoft Edge WebView2 Runtime** para a janela desktop com backend Edge Chromium.
+- Internet para instalação e download inicial dos modelos. Modelos restritos de diarização exigem aceitar os termos no Hugging Face e configurar `HF_TOKEN` com acesso autorizado.
 
-### 🗨️ Participe da nossa Comunidade!
-**Queremos ouvir você!** Deixe seu feedback, sugestões ou poste seus resultados na aba de [**Discussões (Discussions)**](https://github.com/NarraVox/PhoenixDub-AI/discussions).
+### Instalação e execução pelo código-fonte
 
----
+Os comandos abaixo usam PowerShell e pressupõem que o repositório já está em `C:\IA_dublagem`. Há caminhos absolutos de modelos no código atual; mudar a pasta exige revisar essas configurações.
 
-> [!WARNING]
-> ### ⚠️ Aviso de Versão Beta (v0.5 - The Sentinel Update)
-> Esta versão é fruto de uma reescrita completa do software para automação e estabilidade. Por ser um release Beta, os executáveis podem apresentar instabilidades. Caso encontre algum problema, por favor reporte na aba de [Issues](https://github.com/NarraVox/PhoenixDub-AI/issues).
+**1. Crie um ambiente somente se ainda não existir um ambiente preparado.**
 
----
-
-> [!IMPORTANT]
-> ### 💖 Ajude a Financiar a Versão 1.0 e o Cine Gen! (Apoia.se)
-> O PhoenixDub é um projeto independente (*Bootstrapping*). Nosso foco é **rodar IAs pesadas localmente no seu computador**.
-> * Com o seu apoio, financiamos a **Versão 1.0** (dublagem local definitiva e gerador de músicas por IA) e a pesquisa do **Cine Gen** (gerador de vídeos via IA para PCs modesto).
-> 👉 **[Apoie a NarraVox Studios no Apoia.se clicando aqui!](https://apoia.se/narravox_studios)**
-
----
-
-### 🖥️ Requisitos do Sistema & Suporte de Hardware
-* **Processador:** Intel (6ª geração ou superior) ou AMD equivalente
-* **Placa de Vídeo (OBRIGATÓRIA):** GPU dedicada NVIDIA com suporte a CUDA
-  * *Recomendado:* NVIDIA RTX 3050 (6GB VRAM) ou superior
-* **Memória RAM:** Mínimo de 16 GB
-
----
-
-### 🚀 Tutorial de Instalação (Para Desenvolvedores & Execução Local)
-
-#### Passo 1: Ferramentas de Base (Obrigatório)
-1. **Git para Windows:** [Baixe Aqui](https://git-scm.com/download/win)
-2. **Anaconda / Miniconda:** [Baixe Aqui](https://www.anaconda.com/download)
-3. **eSpeak-NG:** [Baixe o .msi X64 Aqui](https://github.com/espeak-ng/espeak-ng/releases) *(Essencial para síntese de voz no Windows)*
-
-#### Passo 2: O Cérebro de Tradução (LM Studio)
-1. Instale o **LM Studio** ([lmstudio.ai](https://lmstudio.ai)).
-2. Baixe o modelo: `unsloth/gemma-4-E4B-it-GGUF` (Recomendado: Q4_K_M).
-3. Em **Local Server**, clique em **Start Server** na porta **1234**.
-
-#### Passo 3: Execução via Anaconda Prompt
-```bash
-# 1. Ative o ambiente virtual
-conda activate C:\IA_dublagem\env
-
-# 2. Acesse a pasta do projeto
-cd C:\IA_dublagem
-
-# 3. Inicie o aplicativo central
-python nexus_app.py
+```powershell
+Set-Location C:\IA_dublagem
+python -m venv env
+.\env\Scripts\python.exe -m pip install --upgrade pip
+.\env\Scripts\python.exe -m pip install -r requirements.txt
+.\env\Scripts\python.exe -m pip install pywebview
 ```
-Acesse a interface unificada pelo navegador em `http://localhost:5000` ou pela janela desktop nativa.
 
----
+Esses comandos preparam as dependências declaradas e a janela desktop; a instalação limpa completa ainda é uma pendência da próxima versão. Se já usa Conda, ative o ambiente existente e use o `python` correspondente, sem recriar `env`.
 
-### 🛠️ Solução de Problemas (FAQ)
+**2. Prepare os modelos e a tradução.**
 
-| Problema | Solução |
-| :--- | :--- |
-| **"Invalid audio stream" ou erro MP3** | Instale a versão **FFmpeg FULL** (Gyan.dev). |
-| **"Out of Memory" ou Error 1455** | Feche o LM Studio quando solicitado para liberar VRAM. |
-| **"espeak-ng not found"** | Instale o eSpeak-NG .msi e reinicie a máquina. |
-| **Erro 1234 (Connection Refused)** | Verifique se o server do LM Studio está ativo na porta 1234. |
+- O instalador possui rotina de download de modelos. Os pesos não são fornecidos pelo `pip install`.
+- O carregador de voz procura `MODELS/qwen3_1.7b_pytorch` e `MODELS/qwen3_0.6b` sob `C:/IA_dublagem`.
+- Para tradução, confira o modelo GGUF e os caminhos em `nexus/core/server_config.json`. O código oferece carregamento local com llama-cpp-python e um inicializador de servidor em `nexus/build_tools/run_llama_server.py`.
+- Caso utilize LM Studio, carregue o modelo compatível escolhido e inicie o servidor local na porta configurada (1234 na configuração atual). LM Studio é uma opção de backend.
+- Para diarização, configure `HF_TOKEN` no ambiente e autorize o acesso ao modelo solicitado pelo carregador. Nunca publique seu token.
 
----
+**3. Inicie o Hub.**
 
-### 🎖️ Créditos e Agradecimentos
-Para conhecer todas as tecnologias e projetos que tornaram o PhoenixDub possível, consulte o arquivo [CREDITS.md](CREDITS.md).
+```powershell
+Set-Location C:\IA_dublagem
+.\env\Scripts\python.exe Nexus_AI_Pro.py
+```
 
----
+Para um ambiente Conda já preparado:
+
+```powershell
+conda activate C:\IA_dublagem\env
+Set-Location C:\IA_dublagem
+python Nexus_AI_Pro.py
+```
+
+### Downloads publicados e estado beta
+
+- [Setup_Nexus.exe — instalador](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Setup_Nexus.exe)
+- [Nexus_AI_Pro.exe — aplicação](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Nexus_AI_Pro.exe)
+- [Página de releases](https://github.com/NarraVox/PhoenixDub-AI/releases)
+
+Os links apontam para os artefatos da release marcada como mais recente no GitHub, quando disponíveis. Confira as notas dessa release para saber quais recursos estão incluídos. O projeto permanece em beta; a validação completa de instalação e dublagem em GPU da próxima publicação ainda está pendente.
+
+### Solução de problemas
+
+| Problema | O que verificar |
+|---|---|
+| FFmpeg ausente, erro MP3 ou fluxo de áudio inválido | Execute `ffmpeg -version` e `ffprobe -version`; confira o PATH e o arquivo de entrada. |
+| CUDA indisponível | Confira o driver NVIDIA, o ambiente Python ativo e a instalação de PyTorch com CUDA. |
+| Falta de VRAM | Feche outros processos que usam a GPU, libere modelos anteriores e reduza o tamanho do modelo. |
+| Erro 1455 no Windows | Confira RAM e memória virtual/arquivo de paginação; esse erro não significa apenas falta de VRAM. |
+| Conexão recusada na porta 1234 | Confira o backend de tradução selecionado, o servidor iniciado e a porta configurada. |
+| `No module named webview` | Instale `pywebview` no mesmo ambiente usado para iniciar o aplicativo. |
+| Falha na diarização | Confira acesso ao modelo, termos aceitos e `HF_TOKEN`, sem expor o token nos logs. |
+| Modelo de voz não encontrado | Confira os diretórios de pesos em `MODELS` e os caminhos utilizados pelo carregador. |
+
+### Documentação, comunidade e apoio
+
+- [Contexto técnico](documentacao/CONTEXTO_IA.md) e [guia de manutenção](documentacao/GUIA_DE_MANUTENCAO.md).
+- [Organização das saídas de jogos](GAME_OUTPUT_LAYOUTS.md).
+- [Créditos](../CREDITS.md).
+- [Discussões](https://github.com/NarraVox/PhoenixDub-AI/discussions) e [relatos de problemas](https://github.com/NarraVox/PhoenixDub-AI/issues).
+- [Apoie o desenvolvimento independente no Apoia.se](https://apoia.se/narravox_studios).
 
 ## English
 
-**PhoenixDub AI** is an advanced **software engineering and AI solution** designed for **automated video editing, voice synchronization, and dubbing** into Portuguese (PT-BR).
+**PhoenixDub AI**, by NarraVox Studios, is a desktop suite for Brazilian Portuguese game and video dubbing, media editing and audio mixing. Its AI pipeline is designed for local processing, with memory management targeting GPUs such as the NVIDIA RTX 3050 with 6 GB VRAM.
 
-The core technical highlight of the project is its **extreme hardware efficiency**: complex AI pipelines (voice synthesis, ASR transcription, speaker diarization) optimized to run **100% locally on entry-level GPUs (NVIDIA RTX 3050 6GB VRAM)**, eliminating cloud costs and third-party API lock-in.
+> [!NOTE]
+> This README describes the development code. Existing release notes use v0.6.0 as their reference; the next version number has not been assigned. Newer features may not be included in published executables. See the [next release draft](RELEASE_DRAFT.md) and [v0.6.0 release notes](../RELEASE_NOTES.md).
 
-👉 **Author Portfolio & Bio:** [https://narravox.github.io/bio/](https://narravox.github.io/bio/)
+### Demo and features
+
+[Watch the Call of Duty: Modern Warfare 3 dubbing demo](https://youtu.be/E3HuG6ju7W8).
+
+- **Titan Games:** batch dubbing with multiple input folders and staged transcription, translation, synthesis and finalization.
+- **Titan Video:** video dubbing, queue tracking and speech silence handling.
+- **Correction panel:** segment search, persistent drafts, audio previews, redubbing queue and game/video export.
+- **Vortex Editor:** media editing and configurable video splitting. Cuts without re-encoding depend on source keyframes.
+- **Vortex DJ:** audio track analysis and mixing.
+- **Memory and timing management:** models are loaded and released across stages; speech duration is adjusted toward the original timing. Memory usage varies by model and results require review.
+
+The old Cine Gen/GodoGen engines were removed from this distribution. Remaining interface files and dependencies do not indicate working engines.
+
+### Technology and architecture
+
+The stack includes faster-whisper 1.2.1, Qwen3-ASR 0.6B, Qwen3-TTS, pyannote.audio 3.3.1, llama-cpp-python, PyTorch 2.6.0 with CUDA 12.4, Flask, pywebview and FFmpeg. The diarization code references the `speaker-diarization-3.1` model; its version differs from the library version.
+
+[`Nexus_AI_Pro.py`](../Nexus_AI_Pro.py) starts the Hub and desktop window. The Hub manages separate engine processes:
+
+| Service | Port | Module |
+|---|---:|---|
+| Sentinel Hub | 5000 | `nexus.nexus_app` |
+| Titan Games | 5002 | `nexus.dub.dubbing` |
+| Vortex Editor | 5003 | `nexus.editor.narravox_editor` |
+| Titan Video | 5004 | `nexus.dub.dubbing` |
+| Vortex DJ | 5005 | `nexus.dj.vortex_dj` |
+
+### Requirements and source installation
+
+Use 64-bit Windows, Python, Git, FFmpeg/ffprobe on PATH and the Microsoft Edge WebView2 Runtime. NVIDIA CUDA is required by the current Qwen3-ASR integration. The hardware target is an RTX 3050 with 6 GB VRAM and 16 GB system RAM as an initial reference; larger models may need more memory. Internet access is needed for installation and initial model downloads.
+
+With the repository already at `C:\IA_dublagem`, run in PowerShell. Create the environment only if a prepared one does not already exist:
+
+```powershell
+Set-Location C:\IA_dublagem
+python -m venv env
+.\env\Scripts\python.exe -m pip install --upgrade pip
+.\env\Scripts\python.exe -m pip install -r requirements.txt
+.\env\Scripts\python.exe -m pip install pywebview
+```
+
+The requirements still contain image/video generation dependencies and omit the desktop `pywebview` dependency. Full clean-install validation for the next release is pending.
+
+Model weights require separate preparation. The installer includes download routines. The voice loader looks for `MODELS/qwen3_1.7b_pytorch` and `MODELS/qwen3_0.6b` under `C:/IA_dublagem`. Review hardcoded paths before relocating the project.
+
+For translation, check the GGUF model and paths in `nexus/core/server_config.json`. Local llama-cpp-python loading and the `nexus/build_tools/run_llama_server.py` server launcher are available. LM Studio is an alternative: load a compatible model and start its local server on the configured port (currently 1234). For restricted diarization models, accept the required terms and configure an authorized `HF_TOKEN`; keep it private.
+
+Start the application:
+
+```powershell
+Set-Location C:\IA_dublagem
+.\env\Scripts\python.exe Nexus_AI_Pro.py
+```
+
+For an existing Conda environment, activate it and run `python Nexus_AI_Pro.py` from the project root. The Hub is available at `http://127.0.0.1:5000` while the application is running.
+
+### Published downloads and beta status
+
+- [Setup_Nexus.exe — installer](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Setup_Nexus.exe)
+- [Nexus_AI_Pro.exe — application](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Nexus_AI_Pro.exe)
+- [Release history](https://github.com/NarraVox/PhoenixDub-AI/releases)
+
+These links target the GitHub release marked as latest, when its assets are available. Check that release's notes for included features. The project remains in beta; complete installation and real GPU dubbing validation for the next release is pending.
+
+### Troubleshooting
+
+| Issue | Check |
+|---|---|
+| Missing FFmpeg or invalid audio stream | Run `ffmpeg -version` and `ffprobe -version`; check PATH and the source file. |
+| CUDA unavailable | Check the NVIDIA driver, active Python environment and CUDA-enabled PyTorch installation. |
+| Out of VRAM | Close other GPU workloads, unload previous models and choose a smaller model. |
+| Windows error 1455 | Check system RAM and virtual memory/page file settings. |
+| Connection refused on port 1234 | Check the selected translation backend, running server and configured port. |
+| `No module named webview` | Install `pywebview` in the environment running the app. |
+| Diarization failure | Check model access, accepted terms and `HF_TOKEN`; do not expose the token. |
+| Missing voice model | Check downloaded weights and loader paths under `MODELS`. |
+
+### Documentation and community
+
+[Technical context](documentacao/CONTEXTO_IA.md), [maintenance guide](documentacao/GUIA_DE_MANUTENCAO.md), [game output layouts](GAME_OUTPUT_LAYOUTS.md) and [credits](../CREDITS.md).
+
+[Discussions](https://github.com/NarraVox/PhoenixDub-AI/discussions) · [Issues](https://github.com/NarraVox/PhoenixDub-AI/issues) · [Support on Apoia.se](https://apoia.se/narravox_studios) · [Author portfolio](https://narravox.github.io/bio/).
 
 ---
 
-### 🎥 Visual Showcase & Interface
-
-![NarraVox Sentinel Dashboard](assets/Image_fx_1.jpg)
-
-🎬 **[Click Here to Watch Call of Duty: MW3 Dubbing Demo on YouTube (1 Minute)](https://youtu.be/E3HuG6ju7W8)**  
-*(Real video demonstration of a Call of Duty: Modern Warfare 3 cutscene automatically dubbed into Portuguese PT-BR by PhoenixDub AI)*
-
----
-
-### 🛠️ Tech Stack & AI Models
-
-* **Core Language:** Python 3.10+
-* **AI Models & ASR:** OpenAI Whisper (ASR), Qwen3-TTS (Voice Synthesis), Pyannote.audio 3.1 (Speaker Diarization)
-* **Hardware Acceleration:** PyTorch with CUDA backend, Dynamic VRAM Management (Offloading)
-* **Desktop Interface & Orchestration:** Flask, WebSockets, HTML5/CSS3 (Glassmorphism Design), Multiprocessing Suite
-* **Media & Audio Processing:** FFmpeg Full Build Core, eSpeak-NG engine
-
----
-
-### 🧠 💡 Engineering Highlights & Technical Architecture
-
-1. ⚡ **VRAM Management & Memory Offloading (Target 6GB):**
-   - Resource scheduling architecture that handles memory allocation and model offloading (e.g., clearing LLM instances prior to TTS generation), preventing *Out-Of-Memory (OOM)* crashes on entry-level GPUs.
-2. 🔄 **Concurrent Pipeline with Time Preservation:**
-   - Multi-threaded CUDA queue manager for batch game audio dubbing, implementing automated pitch and speed adjustments to strictly match original file durations.
-3. 🏛️ **Microservice-based Modular Desktop Architecture:**
-   - The master controller (`nexus_app.py`) orchestrates 4 isolated sub-services running on dedicated local ports:
-     - **Port 5000:** Master Sentinel Dashboard
-     - **Port 5002:** Batch Game Dubbing Engine (`nexus_dub_games.py`)
-     - **Port 5003:** Portable Audio Waveform Editor (`narravox_editor.py`)
-     - **Port 5004:** Video & Trailer Dubbing Engine (`nexus_dub_video.py`)
-
----
-
-> [!TIP]
-> ### 📥 DIRECT 1-CLICK DOWNLOADS (.EXE)
-> Download the 2 executables directly to your PC:  
-> 1. 👉 [**[Step 1] Download Automated Installer: Setup_Nexus.exe**](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Setup_Nexus.exe)  
-> 2. 👉 [**[Step 2] Download Main Suite: Nexus_AI_Pro.exe**](https://github.com/NarraVox/PhoenixDub-AI/releases/latest/download/Nexus_AI_Pro.exe)
-
----
-
-### 🖥️ System Requirements
-* **Processor:** Intel (6th Gen+) or AMD equivalent
-* **Graphics Card (MANDATORY):** Dedicated NVIDIA GPU with CUDA support
-  * *Recommended:* NVIDIA RTX 3050 (6GB VRAM) or higher
-* **RAM:** Minimum 16 GB
-
----
-
-### 🛠️ Troubleshooting (FAQ)
-
-| Issue | Solution |
-| :--- | :--- |
-| **"Invalid audio stream" or MP3 error** | Install **FFmpeg FULL** build (Gyan.dev). |
-| **"Out of Memory" or Error 1455** | Close LM Studio when prompted to free VRAM. |
-| **"espeak-ng not found"** | Install eSpeak-NG .msi package and restart. |
-
----
-*Developed with ❤️ by Paulo Henrik Carvalho de Araújo.*
-| Ensure eSpeak-NG is correctly installed. |
-| **Error 1234 (Connection Refused)** | LM Studio "Start Server" is not toggled on. |
-
----
-
-### 🎖️ Credits and Acknowledgments
-To meet the incredible people and technologies behind PhoenixDub, check the [CREDITS.md](CREDITS.md) file.
-
----
 *Developed with ❤️ by Paulo Henrik Carvalho de Araújo.*
