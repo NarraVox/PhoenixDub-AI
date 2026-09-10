@@ -10,14 +10,12 @@
 
 ## Português
 
-**PhoenixDub AI**, da NarraVox Studios, é uma suíte desktop para dublagem de jogos e vídeos em português brasileiro, edição de mídia e mixagem de áudio. O processamento de IA foi desenvolvido para execução local, com gerenciamento de memória voltado a GPUs como a NVIDIA RTX 3050 de 6 GB.
+**PhoenixDub AI**, da NarraVox Studios, é uma suíte desktop para dublagem de jogos e vídeos em português brasileiro, edição de mídia e criação de músicas com IA. O processamento de IA foi desenvolvido para execução local, com gerenciamento de memória voltado a GPUs como a NVIDIA RTX 3050 de 6 GB.
 
 > [!NOTE]
-> Este README descreve o código em desenvolvimento. A v0.6.0 é a referência das notas de lançamento existentes; o número da próxima versão ainda não foi definido. Recursos posteriores podem não estar nos executáveis publicados. Consulte o [rascunho da próxima versão](RELEASE_DRAFT.md) e as [notas da v0.6.0](../RELEASE_NOTES.md).
-a
-### 🎥 Demonstração
+> Este README descreve o código em desenvolvimento. A v0.6.0 é a referência das notas de lançamento existentes; o número da próxima versão ainda não foi definido. Recursos posteriores podem não estar nos executáveis publicados. Consulte as [notas da v0.6.0](https://github.com/NarraVox/PhoenixDub-AI/releases/tag/v0.6.0).
 
-![NarraVox Sentinel Dashboard](../assets/Image_fx_1.jpg)
+### 🎥 Demonstração
 
 [Assista à demonstração de dublagem de Call of Duty: Modern Warfare 3](https://youtu.be/E3HuG6ju7W8).
 
@@ -29,7 +27,7 @@ a
 - **Titan Video:** dublagem de vídeos, acompanhamento de filas e tratamento de silêncio nas falas.
 - **Painel de correção:** busca de segmentos, rascunhos persistentes, prévia de áudio, fila de redublagem e exportação de jogos e vídeos.
 - **Vortex Editor:** edição de mídia e fatiador de vídeos com duração configurável. O corte sem recodificação depende dos quadros-chave do arquivo.
-- **Vortex DJ:** análise e mixagem de faixas de áudio.
+- **Vortex DJ (Beta):** criação de músicas com IA usando ACE-Step/ACE-Step 1.5.
 - **Gerenciamento de VRAM:** carregamento e liberação dos modelos por estágio para reduzir o consumo de memória. A capacidade necessária depende do modelo e da tarefa.
 - **Sincronização:** ajustes de duração para aproximar a fala dublada do tempo original; os resultados precisam de revisão.
 
@@ -40,7 +38,7 @@ Os antigos motores Cine Gen/GodoGen foram removidos desta distribuição. Arquiv
 | Área | Implementação atual |
 |---|---|
 | Linguagem | Python; os requisitos e o instalador devem ser conferidos para a versão escolhida |
-| Transcrição | faster-whisper 1.2.1 e integração Qwen3-ASR 0.6B |
+| Transcrição | faster-whisper 1.2.1 |
 | Síntese de voz | Qwen3-TTS, com modelos locais de 1.7B/0.6B conforme disponibilidade |
 | Diarização | Biblioteca pyannote.audio 3.3.1; o código referencia o modelo speaker-diarization-3.1 |
 | Tradução | Modelos GGUF locais via llama-cpp-python e integração com servidor local |
@@ -67,7 +65,7 @@ Games e Video compartilham o módulo de dublagem, com modos e processos distinto
 ### Requisitos e preparação
 
 - **Windows de 64 bits**, ambiente principal desta distribuição.
-- **GPU NVIDIA com CUDA** para os fluxos acelerados; a integração atual Qwen3-ASR exige CUDA. A RTX 3050 de 6 GB é o alvo de otimização, sem garantia de que qualquer modelo caiba nessa VRAM.
+- **GPU NVIDIA com CUDA** para os fluxos acelerados. A RTX 3050 de 6 GB é o alvo de otimização, sem garantia de que qualquer modelo caiba nessa VRAM.
 - **16 GB de RAM como referência inicial**; modelos maiores podem exigir mais RAM e memória virtual.
 - **Python e Git** para execução pelo código-fonte.
 - **FFmpeg e ffprobe no PATH** para processamento de mídia.
@@ -144,10 +142,10 @@ Os links apontam para os artefatos da release marcada como mais recente no GitHu
 
 ## English
 
-**PhoenixDub AI**, by NarraVox Studios, is a desktop suite for Brazilian Portuguese game and video dubbing, media editing and audio mixing. Its AI pipeline is designed for local processing, with memory management targeting GPUs such as the NVIDIA RTX 3050 with 6 GB VRAM.
+**PhoenixDub AI**, by NarraVox Studios, is a desktop suite for Brazilian Portuguese game and video dubbing, media editing and AI music creation. Its AI pipeline is designed for local processing, with memory management targeting GPUs such as the NVIDIA RTX 3050 with 6 GB VRAM.
 
 > [!NOTE]
-> This README describes the development code. Existing release notes use v0.6.0 as their reference; the next version number has not been assigned. Newer features may not be included in published executables. See the [next release draft](RELEASE_DRAFT.md) and [v0.6.0 release notes](../RELEASE_NOTES.md).
+> This README describes the development code. Existing release notes use v0.6.0 as their reference; the next version number has not been assigned. Newer features may not be included in published executables. See the [v0.6.0 release notes](https://github.com/NarraVox/PhoenixDub-AI/releases/tag/v0.6.0).
 
 ### Demo and features
 
@@ -157,14 +155,14 @@ Os links apontam para os artefatos da release marcada como mais recente no GitHu
 - **Titan Video:** video dubbing, queue tracking and speech silence handling.
 - **Correction panel:** segment search, persistent drafts, audio previews, redubbing queue and game/video export.
 - **Vortex Editor:** media editing and configurable video splitting. Cuts without re-encoding depend on source keyframes.
-- **Vortex DJ:** audio track analysis and mixing.
+- **Vortex DJ (Beta):** AI music creation using ACE-Step/ACE-Step 1.5.
 - **Memory and timing management:** models are loaded and released across stages; speech duration is adjusted toward the original timing. Memory usage varies by model and results require review.
 
 The old Cine Gen/GodoGen engines were removed from this distribution. Remaining interface files and dependencies do not indicate working engines.
 
 ### Technology and architecture
 
-The stack includes faster-whisper 1.2.1, Qwen3-ASR 0.6B, Qwen3-TTS, pyannote.audio 3.3.1, llama-cpp-python, PyTorch 2.6.0 with CUDA 12.4, Flask, pywebview and FFmpeg. The diarization code references the `speaker-diarization-3.1` model; its version differs from the library version.
+The stack includes faster-whisper 1.2.1, Qwen3-TTS, pyannote.audio 3.3.1, llama-cpp-python, PyTorch 2.6.0 with CUDA 12.4, Flask, pywebview and FFmpeg. The diarization code references the `speaker-diarization-3.1` model; its version differs from the library version.
 
 [`Nexus_AI_Pro.py`](../Nexus_AI_Pro.py) starts the Hub and desktop window. The Hub manages separate engine processes:
 
@@ -178,7 +176,7 @@ The stack includes faster-whisper 1.2.1, Qwen3-ASR 0.6B, Qwen3-TTS, pyannote.aud
 
 ### Requirements and source installation
 
-Use 64-bit Windows, Python, Git, FFmpeg/ffprobe on PATH and the Microsoft Edge WebView2 Runtime. NVIDIA CUDA is required by the current Qwen3-ASR integration. The hardware target is an RTX 3050 with 6 GB VRAM and 16 GB system RAM as an initial reference; larger models may need more memory. Internet access is needed for installation and initial model downloads.
+Use 64-bit Windows, Python, Git, FFmpeg/ffprobe on PATH and the Microsoft Edge WebView2 Runtime. An NVIDIA GPU with CUDA is required for accelerated processing. The hardware target is an RTX 3050 with 6 GB VRAM and 16 GB system RAM as an initial reference; larger models may need more memory. Internet access is needed for installation and initial model downloads.
 
 With the repository already at `C:\IA_dublagem`, run in PowerShell. Create the environment only if a prepared one does not already exist:
 
