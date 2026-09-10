@@ -13,7 +13,7 @@
 **PhoenixDub AI**, da NarraVox Studios, é uma suíte desktop para dublagem de jogos e vídeos em português brasileiro, edição de mídia e criação de músicas com IA. O processamento de IA foi desenvolvido para execução local, com gerenciamento de memória voltado a GPUs como a NVIDIA RTX 3050 de 6 GB.
 
 > [!NOTE]
-> Este README descreve o código em desenvolvimento. A v0.6.0 é a referência das notas de lançamento existentes; o número da próxima versão ainda não foi definido. Recursos posteriores podem não estar nos executáveis publicados. Consulte as [notas da v0.6.0](https://github.com/NarraVox/PhoenixDub-AI/releases/tag/v0.6.0).
+> **v0.8.0 — Beta:** edição manual de jogos e vídeos, fila de correções e atualizações pelo Hub. Consulte as [notas da versão](RELEASE_NOTES.md) e o [histórico de atualizações](docs/ATUALIZACOES.md).
 
 ### 🎥 Demonstração
 
@@ -46,11 +46,11 @@ Os antigos motores Cine Gen/GodoGen foram removidos desta distribuição. Arquiv
 | Interface | Flask, Flask-Cors, HTML/CSS/JavaScript e janela pywebview |
 | Mídia | FFmpeg, librosa, soundfile e pydub |
 
-As versões declaradas estão em [requirements.txt](../requirements.txt). O arquivo ainda inclui dependências de geração de imagem/vídeo que precisam de revisão, e não lista o `pywebview` usado pela aplicação desktop.
+As versões declaradas estão em [requirements.txt](requirements.txt). O arquivo ainda inclui dependências de geração de imagem/vídeo que precisam de revisão, e inclui o `pywebview` usado pela aplicação desktop.
 
 ### Arquitetura e portas locais
 
-A entrada na raiz é [`Nexus_AI_Pro.py`](../Nexus_AI_Pro.py), que chama `nexus.nexus_app.main()`. O Hub inicia os motores em processos separados.
+A entrada na raiz é [`Nexus_AI_Pro.py`](Nexus_AI_Pro.py), que chama `nexus.nexus_app.main()`. O Hub inicia os motores em processos separados.
 
 | Serviço | Porta | Módulo |
 |---|---:|---|
@@ -134,9 +134,9 @@ Os links apontam para os artefatos da release marcada como mais recente no GitHu
 
 ### Documentação, comunidade e apoio
 
-- [Contexto técnico](documentacao/CONTEXTO_IA.md) e [guia de manutenção](documentacao/GUIA_DE_MANUTENCAO.md).
-- [Organização das saídas de jogos](GAME_OUTPUT_LAYOUTS.md).
-- [Créditos](../CREDITS.md).
+- [Contexto técnico](docs/documentacao/CONTEXTO_IA.md) e [guia de manutenção](docs/documentacao/GUIA_DE_MANUTENCAO.md).
+- [Organização das saídas de jogos](docs/GAME_OUTPUT_LAYOUTS.md).
+- [Créditos](CREDITS.md).
 - [Discussões](https://github.com/NarraVox/PhoenixDub-AI/discussions) e [relatos de problemas](https://github.com/NarraVox/PhoenixDub-AI/issues).
 - [Apoie o desenvolvimento independente no Apoia.se](https://apoia.se/narravox_studios).
 
@@ -145,7 +145,7 @@ Os links apontam para os artefatos da release marcada como mais recente no GitHu
 **PhoenixDub AI**, by NarraVox Studios, is a desktop suite for Brazilian Portuguese game and video dubbing, media editing and AI music creation. Its AI pipeline is designed for local processing, with memory management targeting GPUs such as the NVIDIA RTX 3050 with 6 GB VRAM.
 
 > [!NOTE]
-> This README describes the development code. Existing release notes use v0.6.0 as their reference; the next version number has not been assigned. Newer features may not be included in published executables. See the [v0.6.0 release notes](https://github.com/NarraVox/PhoenixDub-AI/releases/tag/v0.6.0).
+> **v0.8.0 — Beta:** manual dubbing corrections for games and videos, correction queues and Hub updates. See RELEASE_NOTES.md for changes and validation limits.
 
 ### Demo and features
 
@@ -164,7 +164,7 @@ The old Cine Gen/GodoGen engines were removed from this distribution. Remaining 
 
 The stack includes faster-whisper 1.2.1, Qwen3-TTS, pyannote.audio 3.3.1, llama-cpp-python, PyTorch 2.6.0 with CUDA 12.4, Flask, pywebview and FFmpeg. The diarization code references the `speaker-diarization-3.1` model; its version differs from the library version.
 
-[`Nexus_AI_Pro.py`](../Nexus_AI_Pro.py) starts the Hub and desktop window. The Hub manages separate engine processes:
+[`Nexus_AI_Pro.py`](Nexus_AI_Pro.py) starts the Hub and desktop window. The Hub manages separate engine processes:
 
 | Service | Port | Module |
 |---|---:|---|
@@ -226,7 +226,7 @@ These links target the GitHub release marked as latest, when its assets are avai
 
 ### Documentation and community
 
-[Technical context](documentacao/CONTEXTO_IA.md), [maintenance guide](documentacao/GUIA_DE_MANUTENCAO.md), [game output layouts](GAME_OUTPUT_LAYOUTS.md) and [credits](../CREDITS.md).
+[Technical context](docs/documentacao/CONTEXTO_IA.md), [maintenance guide](docs/documentacao/GUIA_DE_MANUTENCAO.md), [game output layouts](docs/GAME_OUTPUT_LAYOUTS.md) and [credits](CREDITS.md).
 
 [Discussions](https://github.com/NarraVox/PhoenixDub-AI/discussions) · [Issues](https://github.com/NarraVox/PhoenixDub-AI/issues) · [Support on Apoia.se](https://apoia.se/narravox_studios) · [Author portfolio](https://narravox.github.io/bio/).
 

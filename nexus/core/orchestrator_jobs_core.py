@@ -30,19 +30,19 @@ if not hasattr(np, 'NAN'):
 try:
     import sys
     from pathlib import Path
-    
+
     # Define o caminho do nosso ambiente de elite
     base_env = Path(sys.executable).parent.parent
     local_site = base_env / "Lib" / "site-packages"
-    
+
     # Limpeza Seletiva: Remove APENAS o site-packages do AppData (onde moram os impostores)
     # Mas mantém a pasta 'Lib' (onde moram o glob, asyncio, etc)
     sys.path = [p for p in sys.path if not ("AppData" in p and "site-packages" in p)]
-    
+
     # Insere o nosso site-packages como a PRIORIDADE ZERO
     if str(local_site) not in sys.path:
         sys.path.insert(0, str(local_site))
-        
+
     # print(f"🛡️ [NEXUS_ISOLATION] Ambiente blindado e seletivo. Local: {local_site.name}")
 
 except Exception as e:
@@ -53,17 +53,17 @@ try:
     import sys
     import ctypes
     from pathlib import Path
-    
+
     base_env = Path(sys.executable).parent.parent
     site_packages = base_env / "Lib" / "site-packages"
-    
+
     dll_paths = [
         site_packages / "llama_cpp" / "lib",
         site_packages / "nvidia" / "cublas" / "bin",
         site_packages / "nvidia" / "cuda_runtime" / "bin",
         site_packages / "nvidia" / "cuda_nvrtc" / "bin"
     ]
-    
+
     for p in dll_paths:
         if p.exists():
             os.environ["PATH"] = str(p) + os.pathsep + os.environ.get("PATH", "")
@@ -104,42 +104,42 @@ def processar_transcricao(job_dir, job_id, start_time):
     try:
         set_low_process_priority()
         def cb(p, etapa, s=None, **kwargs): set_progress(job_id, p, etapa, start_time, ETAPAS_TRANSCRICAO, s, **kwargs)
-        
+
         input_file = next(job_dir.glob('input.*'), None)
         if not input_file:
             raise FileNotFoundError("Nenhum arquivo de entrada encontrado no diretório do job.")
 
-        backup_dir = job_dir / "_backup_transcricao_whisper"
+        backup_dir = job_dir / "_backup_transcricao"
         backup_dir.mkdir(exist_ok=True)
-        
+        # Qwen ASR foi apenas um experimento; o motor adotado é Whisper.
         cb(5, 1, "Carregando modelo Whisper...")
         model = get_whisper_model()
-        
-        cb(10, 1, "Iniciando transcrição...")
-        
+        cb(10, 1, "Iniciando transcrição com Whisper...")
         segments, info = model.transcribe(str(input_file))
         total_duration = info.duration
-        
+        detected_language = getattr(info, "language", None)
+
         all_segments_data = []
-        
+
         for segment in segments:
             progress = (segment.end / total_duration) * 100 if total_duration > 0 else 100
             tempo_atual = str(timedelta(seconds=int(segment.end)))
             tempo_total = str(timedelta(seconds=int(total_duration)))
             cb(progress, 1, f"Transcrevendo... {tempo_atual}/{tempo_total}")
-            
+
             segment_data = {
                 "start": round(segment.start, 3),
                 "end": round(segment.end, 3),
-                "text": segment.text.strip()
+                "text": segment.text.strip(),
+                "detected_language": detected_language,
             }
             all_segments_data.append(segment_data)
-            
+
             # Backup contínuo por segmento
             safe_json_write(segment_data, backup_dir / f"segment_{segment.start:.3f}.json")
-        
+
         cb(100, 2, "Gerando arquivos finais...")
-        
+
         # Gerar arquivo JSON completo
         json_output_path = job_dir / "transcricao_completa.json"
         safe_json_write(all_segments_data, json_output_path)
@@ -174,11 +174,11 @@ def processar_conversao(job_dir, job_id, start_time):
             logging.warning(f"❌ [HARDWARE] Limite de {MAX_CONCURRENT_JOBS} job(s) atingido. Ignorando {job_id}.")
             return
         active_jobs.add(job_id)
-    
+
     try:
         set_low_process_priority()
         def cb(p, etapa, s=None, **kwargs): set_progress(job_id, p, etapa, start_time, ETAPAS_CONVERSAO, s, **kwargs)
-        
+
         status = safe_json_read(job_dir / "job_status.json") or {}
         file_format_map = status.get('file_format_map', {})
 
@@ -186,7 +186,7 @@ def processar_conversao(job_dir, job_id, start_time):
         para_converter_dir = job_dir / "_2_para_converter"
         convertidos_dir = job_dir / "_3_convertidos"
         convertidos_dir.mkdir(exist_ok=True)
-        
+
         files_to_process = list(para_converter_dir.glob("*.*"))
         total_files = len(files_to_process)
         if total_files == 0:
@@ -198,14 +198,14 @@ def processar_conversao(job_dir, job_id, start_time):
 
 
         cb(0, 1, f"Iniciando conversão para {total_files} arquivos...")
-        
+
         sucesso_count = 0
         for i, file_to_convert in enumerate(files_to_process):
             cb((i / total_files) * 100, 1, f"Convertendo: {file_to_convert.name}")
-            
+
             convert_stem = file_to_convert.stem
             base_ref_stem = convert_stem.replace("_dubbed", "")
-            
+
             ref_path = None
             if base_ref_stem in reference_files_map:
                 ref_path = reference_files_map[base_ref_stem]
@@ -259,17 +259,17 @@ def try_reconstruct_project_from_all_backups(job_dir):
     project_data_path = job_dir / "project_data.json"
     backup_transc_dir = job_dir / "_backup_transcricao"
     backup_texto_dir = job_dir / "_backup_texto_final"
-    
+
     # Se já tem arquivo com dados, não mexe
     if project_data_path.exists():
         data = safe_json_read(project_data_path)
         if data and len(data) > 0:
             return
-            
+
     logging.info("=== PHOENIX: INICIALIZANDO PROJETO LIMPO OU RECUPERANDO ===")
-    
+
     recovered_nodes = {}
-    
+
     # Base: Transcrição (Tem os dados originais e metadados)
     if backup_transc_dir.exists():
         for bf in backup_transc_dir.glob("*.json"):
@@ -291,7 +291,7 @@ def try_reconstruct_project_from_all_backups(job_dir):
                     else:
                         recovered_nodes[data['id']] = data
             except: pass
-            
+
     if recovered_nodes:
         final_list = list(recovered_nodes.values())
         final_list.sort(key=lambda x: x.get('id', ''))
@@ -306,15 +306,15 @@ def processar_separacao(job_dir, job_id, start_time):
              logging.warning(f"❌ [HARDWARE] Limite de {MAX_CONCURRENT_JOBS} job(s) atingido. Ignorando {job_id}.")
              return
         active_jobs.add(job_id)
-    
+
     try:
         set_low_process_priority()
         def cb(p, etapa, s=None, **kwargs): set_progress(job_id, p, etapa, start_time, ETAPAS_SEPARACAO, s, **kwargs)
-        
+
         input_dir = job_dir / "_input"
         output_dir = job_dir / "_saida_audio_restaurado"
         output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         input_files = list(input_dir.glob("*.*"))
         total_files = len(input_files)
 
@@ -323,15 +323,15 @@ def processar_separacao(job_dir, job_id, start_time):
             return
 
         cb(0, 1, f"Iniciando restauração de áudio (FFmpeg) para {total_files} arquivos...")
-        
+
         for i, audio_file in enumerate(input_files):
             cb((i / total_files) * 100, 1, f"Processando: {audio_file.name}")
-            
+
             # Verificar se é vídeo e extrair áudio
             suffix = audio_file.suffix.lower()
             if suffix in ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm']:
                 extracted_audio_path = audio_file.with_name(f"{audio_file.stem}_extracted.wav")
-                
+
                 if extracted_audio_path.exists() and extracted_audio_path.stat().st_size > 1000:
                     logging.info(f"✅ Áudio já extraído encontrado: {extracted_audio_path.name}. Pulando extração.")
                     audio_file = extracted_audio_path
@@ -350,17 +350,17 @@ def processar_separacao(job_dir, job_id, start_time):
                     except subprocess.CalledProcessError as e:
                         logging.error(f"Erro ao extrair áudio do vídeo {audio_file.name}: {e.stderr}")
                         continue
-            
+
             # --- LÓGICA DE LIMPEZA / REMOÇÃO DE EFEITO DE RÁDIO (FFMPEG) ---
             output_path = output_dir / f"{audio_file.stem}.wav"
-            
+
             # Filtros Explicados:
             # 1. afftdn=nf=-25: Remove ruído de banda larga (chiado/hiss) com força média (-25dB)
             # 2. highpass=f=80: Remove "rumble" e graves exagerados que sujam a clonagem
             # 3. lowpass=f=12000: Corta frequências super agudas inúteis que podem ter artefatos
             # 4. equalizer=f=3500...: Dá um leve ganho nas frequências de voz para tentar "abrir" o som abafado
             # [FIX] Removido compand agressivo que causava o efeito "bombear" / cortar a voz subitamente.
-            
+
             cmd_clean = [
                 'ffmpeg', '-y', '-i', str(audio_file),
                 '-af', 'afftdn=nf=-25, highpass=f=80, lowpass=f=12000, equalizer=f=3500:t=h:w=2000:g=2',
@@ -408,7 +408,7 @@ def converter_arquivos():
     datestamp = datetime.now().strftime('%d.%m.%Y')
     job_id = f"job_conversor_{datestamp}_{timestamp}"
     job_dir = Path(app.config['UPLOAD_FOLDER']) / job_id
-    
+
     ref_dir = job_dir / "_1_referencia"
     conv_dir = job_dir / "_2_para_converter"
     ref_dir.mkdir(parents=True, exist_ok=True)
@@ -418,7 +418,7 @@ def converter_arquivos():
     for file in ref_files:
         filename = secure_filename(file.filename)
         file.save(ref_dir / filename)
-    
+
     for file in conv_files:
         filename = secure_filename(file.filename)
         base_filename, extension = Path(filename).stem, Path(filename).suffix

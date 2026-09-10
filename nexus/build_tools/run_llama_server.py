@@ -65,15 +65,16 @@ def find_alternative_model(current_path):
     # Caminhos para verificar
     root = Path("C:/IA_dublagem")
     possible_dirs = [
-        root / "_MODELS_",
+        root / "MODELS",
         root,
-        Path("_MODELS_"),
-        Path("uploads/_MODELS_"),
+        Path("MODELS"),
+        Path("uploads/MODELS/"),
         Path(".")
     ]
-    
+
     # 1. Tenta nomes de arquivos conhecidos
     known_filenames = [
+        "Qwen3.5-9B-UD-IQ3_XXS.gguf",
         "Qwen3.5-4B-Q6_K.gguf",
         "Qwen3.5-4B-Q4_K_M.gguf",
         "gemma-4-E4B-it-qat-UD-Q4_K_XL.gguf",
@@ -93,19 +94,19 @@ def find_alternative_model(current_path):
             qwen_files = [f for f in qwen_files if "tts" not in f.name.lower() and "embed" not in f.name.lower() and "acestep" not in f.name.lower()]
             if qwen_files:
                 return str(qwen_files[0].resolve())
-                
+
             gguf_files = list(d.glob("*gemma-4*.gguf"))
             if not gguf_files:
                 gguf_files = list(d.glob("*gemma*.gguf"))
             if gguf_files:
                 return str(gguf_files[0].resolve())
-                
+
     return current_path
 
 if __name__ == "__main__":
     # Ajusta os argumentos de inicialização dinamicamente para otimização de RAM e cache
     args = sys.argv[1:]
-    
+
     # 1. Resolve dinamicamente o modelo caso a rota fornecida não exista
     if "--model" in args:
         idx = args.index("--model")
@@ -121,11 +122,11 @@ if __name__ == "__main__":
     if "--cache" not in args:
         args.extend(["--cache", "True"])
         print("[NEXUS_SERVER] 🧠 Cache de Prompt / KV habilitado (--cache True)")
-        
+
     if "--cache_size" not in args:
         args.extend(["--cache_size", "1073741824"]) # 1 GB
         print("[NEXUS_SERVER] 🧠 Tamanho do Cache configurado para 1GB (--cache_size 1073741824)")
-        
+
     if "--use_mmap" not in args:
         args.extend(["--use_mmap", "False"])
         print("[NEXUS_SERVER] 🏎️ Mapeamento de Memória desabilitado para economizar RAM (--use_mmap False)")

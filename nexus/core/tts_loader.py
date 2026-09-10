@@ -21,16 +21,16 @@ def get_qwen3_engine():
                     torch.set_num_threads(1)
                 except:
                     pass
-                
+
                 device = "cuda:0" if torch.cuda.is_available() else "cpu"
-                
+
                 # Caminho para o modelo PyTorch de 1.7B
-                model_dir_17b = "c:/IA_dublagem/_MODELS_/qwen3_1.7b_pytorch"
-                model_dir_06b = "c:/IA_dublagem/_MODELS_/qwen3_0.6b"
-                
+                model_dir_17b = "c:/IA_dublagem/MODELS/qwen3_1.7b_pytorch"
+                model_dir_06b = "c:/IA_dublagem/MODELS/qwen3_0.6b"
+
                 # Se o CUDA estiver ativo e não estiver forçado o uso do 0.6B, prioriza o de 1.7B
                 force_06b = os.path.exists("C:/IA_dublagem/usar_qwen_06b.txt")
-                
+
                 # Escolhe qual modelo carregar
                 if force_06b:
                     chosen_model_dir = model_dir_06b
@@ -54,10 +54,10 @@ def get_qwen3_engine():
 
                     logging.info(f"🎙️ [NEXUS_VOICE] Despertando Qwen3-TTS {model_label} PyTorch via FasterQwen3TTS (CUDA Graphs) em: {device}")
                     from faster_qwen3_tts import FasterQwen3TTS
-                    
+
                     _QWEN3_INSTANCE = FasterQwen3TTS.from_pretrained(
-                        model_name=chosen_model_dir, 
-                        device="cuda", 
+                        model_name=chosen_model_dir,
+                        device="cuda",
                         dtype=torch.bfloat16,
                         attn_implementation="sdpa",
                         max_seq_len=2048
@@ -66,7 +66,7 @@ def get_qwen3_engine():
                 else:
                     # Sem CUDA: Fallback automático para o modelo PyTorch de 0.6B (CPU)
                     raise RuntimeError("GPU CUDA não disponível. Usando fallback de CPU.")
-                    
+
             except Exception as e:
                 import traceback
                 logging.warning(f"⚠️ [NEXUS_VOICE] Falha ao carregar o motor via FasterQwen3TTS: {e}. Usando Fallback PyTorch 0.6B padrão...")
@@ -80,11 +80,11 @@ def get_qwen3_engine():
                             local_dir=model_dir_06b,
                             local_dir_use_symlinks=False
                         )
-                    
+
                     from qwen_tts import Qwen3TTSModel
                     dtype = torch.bfloat16
                     _QWEN3_INSTANCE = Qwen3TTSModel.from_pretrained(
-                        model_dir_06b, 
+                        model_dir_06b,
                         device_map="cuda:0" if torch.cuda.is_available() else "cpu",
                         dtype=dtype,
                         attn_implementation="sdpa"
@@ -93,7 +93,7 @@ def get_qwen3_engine():
                 except Exception as fallback_err:
                     logging.error(f"❌ Falha crítica total no carregamento de TTS: {fallback_err}\n{traceback.format_exc()}")
                     return None
-                    
+
     return _QWEN3_INSTANCE
 
 def unload_qwen3_model():
@@ -116,7 +116,7 @@ def wait_for_vram_release(threshold_mb=4000, cb=None):
     """[v2026.VRAM_WATCHDOG] Aguarda a VRAM ser liberada (Geralmente após fechar o LM Studio)"""
     try:
         total_result = subprocess.run(
-            ['nvidia-smi', '--query-gpu=memory.total', '--format=csv,nounits,noheader'], 
+            ['nvidia-smi', '--query-gpu=memory.total', '--format=csv,nounits,noheader'],
             capture_output=True, text=True, check=True
         )
         total_vram = int(total_result.stdout.strip().split('\n')[0])
@@ -132,11 +132,11 @@ def wait_for_vram_release(threshold_mb=4000, cb=None):
 
     logging.info(f"⏳ [VRAM WATCHDOG] Aguardando liberação de memória (Alvo: >{threshold_mb}MB livres)...")
     if cb: cb(99, 1, "⚠️ Tradução concluída! FECHE O LM STUDIO para continuar.")
-    
+
     while True:
         try:
             result = subprocess.run(
-                ['nvidia-smi', '--query-gpu=memory.free', '--format=csv,nounits,noheader'], 
+                ['nvidia-smi', '--query-gpu=memory.free', '--format=csv,nounits,noheader'],
                 capture_output=True, text=True, check=True
             )
             free_vram = int(result.stdout.strip().split('\n')[0])
@@ -148,7 +148,7 @@ def wait_for_vram_release(threshold_mb=4000, cb=None):
                 break
         except Exception as e:
             logging.warning(f"⚠️ Erro ao ler VRAM: {e}")
-            break 
-            
+            break
+
         time.sleep(10)
     return True

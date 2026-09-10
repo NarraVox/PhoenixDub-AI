@@ -1,30 +1,48 @@
-Esta versão introduz a **Arquitetura de Fila por Estágios de IA**, otimizando a memória VRAM e trazendo **blindagem de segurança de nível industrial** para criadores e modders.
+# PhoenixDub AI v0.8.0 — Edição manual de vídeos e jogos
 
-## 🌟 O que há de novo na v0.6.0:
+### Principais mudanças
 
-### ⚡ 1. Fila de Dublagem por Estágios de IA (Stage Batch Queue)
-- **Otimização Extrema de VRAM:** Execute múltiplas pastas de áudio em lote! O motor processa o Whisper em todas as pastas (Estágio 1), a Tradução LLM (Estágio 2), o Qwen3-TTS Titan (Estágio 3) e finaliza na Masterização (Estágio 4).
-- **Recarga Zero de Modelo:** Cada modelo de IA é carregado na placa de vídeo apenas **1 vez por lote**, economizando memória e acelerando o processamento em GPUs de 6GB (RTX 3050 Target).
-- ⚠️ **Nota Experimental (Beta):** Recurso de ponta recém-implementado nesta versão v0.6.0. Como está em fase de validação, pedimos a ajuda da comunidade para testar e reportar eventuais bugs na nossa aba de Issues!
+Esta atualização reúne as mudanças posteriores à v0.6.0, com destaque para a edição manual das dublagens de jogos e vídeos.
 
-### 📂 2. Múltipla Seleção de Pastas Sem Alterar Estrutura de Modding (.pak / .pck)
-- **Suporte a Ctrl / Shift:** Escolha várias pastas simultaneamente no seletor nativo do Windows.
-- **100% Compatível com Repack:** Nenhuma pasta do seu jogo é alterada ou movida. A estrutura original de diretórios permanece intacta para você recriar os arquivos `.pak`, `.pck`, `.vpk` ou `.bank` sem erros.
+#### Edição e correção manual
 
-### ⏱️ 3. Cronômetro de Sessão Ativa (Sem Drift)
-- **Precisão Cirúrgica:** Medição exata do tempo real em que a GPU/CPU esteve trabalhando em memória (`_session_progress_state`), ignorando totalmente as horas em que o programa esteve fechado.
+- Painel compartilhado para encontrar e corrigir falas de diferentes projetos de jogos e vídeos, ampliando o antigo fluxo limitado a uma pasta específica.
+- Busca por texto original, tradução ou identificador, com filtro por projeto, paginação e tolerância a pequenas diferenças de escrita.
+- Rascunhos salvos automaticamente e controle de revisões para preservar o texto durante o processamento.
+- Correção de várias falas de uma vez: selecione resultados, escreva a tradução e gere cada fala com sua referência individual de voz.
+- Prévia de áudio, fila de redublagem em segundo plano, progresso geral e registro de falhas. As falas concluídas ficam salvas para permitir tentar novamente as pendentes.
+- Indicador de caracteres baseado na duração original, com referência de 18 caracteres por segundo. Textos maiores continuam permitidos; a prévia usa aceleração de até 1,20× e preserva falas que ainda excederem a duração original.
+- Exportação dos áudios corrigidos dos jogos e de uma nova cópia do vídeo com vozes corrigidas e fundo separado. Falas longas podem se sobrepor e precisam de revisão.
 
-### 🛡️ 4. Blindagem de Segurança e Proteção de Dados
-- **Anti-Command Injection:** Sanitização de títulos no `os.system` para evitar injeção de comandos CMD.
-- **Isolamento Local (Localhost):** Binding local protegido, monkeypatch `SecuredFlask` contra CSRF/Path Traversal e travas atômicas de gravação (`safe_json_write`).
+#### Processamento e organização de jogos
 
-### 🔄 5. Verificação Automática de Atualizações por Build Hash
-- **Impressão Digital Git SHA:** Endpoint `/api/check-update` para comparação automática de hashes de código entre a build local e o GitHub.
+- Ajustes no lote por estágios, rotas de acompanhamento, identificação da pasta ativa e recuperação do último lote salvo.
+- Contagem acumulada dos áudios selecionados, cópia paralela dos arquivos e recuperação da pasta original quando a entrada do projeto está vazia.
+- Preparação paralela de áudios em WAV mono de 16 kHz para o fluxo de diarização em lote.
+- Botão de início unificado, cartões de projetos e atualização de progresso e estado na interface.
+- Ajustes na preservação da extensão e na escolha do codec de saída, evitando WAV antigo conflitante com o formato final.
+- Organização específica das saídas de State of Decay por jogo e personagem dentro de uploads, incluindo as correções.
 
-> [!TIP]
-> ### 📦 Download Direto dos Executáveis (1-Clique)
-> - 📥 **Setup_Nexus.exe** (Instalador Automático 1-Clique)
-> - 🚀 **Nexus_AI_Pro.exe** (Executável da Aplicação Principal)
+#### Áudio, tradução e modelos
 
----
-*NarraVox Studios Premium Suite // Powered by Qwen3-TTS, Whisper ASR & CUDA*
+- Tratamento de silêncio nas falas de vídeo com detecção de voz e margens conservadoras; cache renovado quando a fonte ou a versão do tratamento muda.
+- Revisão dos prompts de tradução, limpeza de metadados e nova tentativa de condensação quando a tradução ultrapassa a referência de 18 caracteres por segundo.
+- Ajustes na preservação de reações isoladas e no tratamento de traduções vazias, repetitivas ou iguais ao original. A qualidade continua dependente do modelo e da revisão humana.
+- Carregamento unificado do Qwen, reconhecimento de variantes 9B/4B, ajustes das DLLs CUDA no Windows e liberação explícita do motor CTranslate2 usado pelo Whisper.
+
+#### Editor, aplicativo e instalação
+
+- Botão **Verificar atualizações** no Hub: mostra a versão instalada, consulta releases do GitHub e informa quando há uma nova versão. Para pacotes compatíveis, **Atualizar e reiniciar** baixa e verifica os arquivos, guarda uma cópia de recuperação e reabre o aplicativo. Checkouts Git e versões que alteram dependências exigem atualização pelo procedimento correspondente. O ciclo com executáveis empacotados ainda está em validação.
+- Proteção de desenvolvimento e contra regressão: cópias Git ou marcadas como desenvolvimento permitem somente consulta; pacotes com versão igual ou anterior à local são bloqueados antes da instalação.
+- Fatiador de vídeos com duração configurável e divisão via FFmpeg sem recodificação; os cortes efetivos dependem dos quadros-chave do arquivo.
+- Ajustes na reinicialização para reabrir a janela após a liberação da porta do Hub.
+- Ajustes no diretório de modelos e na detecção de modelos pelo instalador; título da release associado à tag de publicação.
+- Inclusão de acesso ao apoio do projeto nas interfaces.
+- Remoção de motores antigos de Cine Gen/GodoGen, painel Aider e forge local desta distribuição. Ainda existem interfaces e dependências remanescentes que precisam de revisão.
+- Documentação reorganizada e histórico contínuo em ATUALIZACOES.md.
+
+### Validação realizada na preparação
+
+- Em 2026-09-10, passaram **57 testes Python**, incluindo correções, busca, fila em grupo, duração, progresso, exportação, atualização, distribuição e política de publicação.
+- Passaram também os **2 arquivos de testes JavaScript**, com 5 cenários de progresso e 9 verificações de contagem de caracteres.
+- Os testes usam projetos temporários, áudio de teste e síntese substituta. Instalação limpa, executáveis, qualidade dos modelos e dublagem completa em GPU não foram validados nesta revisão.

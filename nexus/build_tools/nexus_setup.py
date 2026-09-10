@@ -10,6 +10,13 @@ from pathlib import Path
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import webview
 
+# Patch automático de compatibilidade para torchvision 0.18+ (GFPGAN / BasicSR)
+try:
+    import torchvision.transforms.functional as F
+    sys.modules['torchvision.transforms.functional_tensor'] = F
+except Exception:
+    pass
+
 token_submitted_event = threading.Event()
 current_token = None
 
@@ -32,10 +39,10 @@ class SetupAPI:
         try:
             self._update(10, "Iniciando Diagnóstico...")
             self._log("🔍 VARREDURA DE SISTEMA INICIADA...", "cmd")
-            
+
             # 1. Verifica Python
             self._log(f"Motor Python: {sys.version.split()[0]}", "info")
-            
+
             # 2. Verifica Torch (Core)
             self._update(30, "Verificando Motores de Áudio...")
             try:
@@ -72,10 +79,13 @@ class SetupAPI:
 
     def _execute_installation(self, mode, modules):
         try:
+            if getattr(sys, 'frozen', False):
+                from nexus.distribution import deploy_runtime
+                deploy_runtime(Path.cwd(), overwrite=True)
             self._log(f"Iniciando instalacao no modo {mode.upper()}...", "success")
             if not modules or mode != "modular":
                 modules = {"base": True, "voice": True, "llama": True, "video": True}
-                
+
             # [SURVIVAL] Criação do ENV ou Download de Python Portátil
             if not self.env_path.exists():
                 self._update(10, "Preparando Ambiente...")
@@ -129,52 +139,6 @@ class SetupAPI:
             else:
                 self._log("ℹ️ Módulo Aceleração Llama-CPP não selecionado. Pulando.", "info")
 
-            # Instalação do Módulo Vídeo Generativo (Diffusers + transformers)
-            if modules.get("video"):
-                self._update(80, "🎬 Configurando dependências de Vídeo (Diffusers/Transformers)...")
-                video_libs = ["diffusers", "transformers", "accelerate", "sentencepiece"]
-                self._run_pip(python_exe, video_libs)
-                try:
-                    self._log("Tentando injetar Flash-Attention 2 (Turbo Mode)...", "info")
-                    self._run_pip(python_exe, ["flash-attn>=2.5.0", "--no-build-isolation"])
-                    self._log("✅ Flash-Attention 2 ATIVO!", "success")
-                except:
-                    self._log("⚠️ Flash-Attention 2 falhou na compilação. Usando modo estável padrão.", "warn")
-
-                # Verificação e download dos modelos de vídeo
-                models_dir_1 = Path(os.getcwd()) / "_MODELS_"
-                models_dir_2 = Path(os.getcwd()) / "models"
-                
-                # 1. Wan v2.2 GGUF
-                wan_filename = "Wan2.2-TI2V-5B-Q4_K_M.gguf"
-                if (models_dir_1 / wan_filename).exists():
-                    self._log("✅ Modelo Wan v2.2 detectado localmente em _MODELS_.", "success")
-                elif (models_dir_2 / wan_filename).exists():
-                    self._log("✅ Modelo Wan v2.2 detectado localmente em models.", "success")
-                else:
-                    self.download_model_with_retry(python_exe, repo_id='QuantStack/Wan2.2-TI2V-5B-GGUF', filename=wan_filename)
-
-                # 2. FLUX.2-klein GGUF
-                flux_filename = "flux-2-klein-4b-Q4_K_M.gguf"
-                if (models_dir_1 / flux_filename).exists():
-                    self._log("✅ Modelo FLUX.2-klein detectado localmente em _MODELS_.", "success")
-                elif (models_dir_2 / flux_filename).exists():
-                    self._log("✅ Modelo FLUX.2-klein detectado localmente em models.", "success")
-                else:
-                    self.download_model_with_retry(python_exe, repo_id='unsloth/FLUX.2-klein-4B-GGUF', filename=flux_filename)
-
-                # 3. Qwen3-TTS-CustomVoice
-                qwen_voice_dir_1 = models_dir_1 / "Qwen3-TTS-12Hz-0.6B-CustomVoice"
-                qwen_voice_dir_2 = models_dir_2 / "Qwen3-TTS-12Hz-0.6B-CustomVoice"
-                if qwen_voice_dir_1.exists():
-                    self._log("✅ Modelo Qwen3-TTS-CustomVoice detectado em _MODELS_.", "success")
-                elif qwen_voice_dir_2.exists():
-                    self._log("✅ Modelo Qwen3-TTS-CustomVoice detectado em models.", "success")
-                else:
-                    self.download_model_with_retry(python_exe, repo_id='Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice', is_snapshot=True)
-            else:
-                self._log("ℹ️ Módulo Vídeo Generativo não selecionado. Pulando.", "info")
-
             # Instalação do Módulo Dublagem / Áudio (Whisper/TTS)
             if modules.get("voice"):
                 self._update(90, "🎙️ Configurando Titan Qwen3, Audio-IA e Docs OCR...")
@@ -183,20 +147,19 @@ class SetupAPI:
                 self._log("Vocoder 12Hz injetado com sucesso.", "success")
                 self._log("💡 LEMBRETE: Acesse hf.co/pyannote/speaker-diarization-community-1 para aceitar os termos de uso e configure a variável HF_TOKEN para habilitar a diarização.", "warn")
 
-                models_dir_1 = Path(os.getcwd()) / "_MODELS_"
+                models_dir_1 = Path(os.getcwd()) / "MODELS"
                 models_dir_2 = Path(os.getcwd()) / "models"
 
                 # 1. Qwen-3.5 GGUF
+                qwen_9b_filename = "Qwen3.5-9B-UD-IQ3_XXS.gguf"
                 qwen_filename = "Qwen3.5-4B-Q4_K_M.gguf"
                 gemma_filename = "gemma-4-E4B-it-Q4_K_M.gguf"
-                if (models_dir_1 / qwen_filename).exists():
-                    self._log("✅ Modelo Qwen-3.5 detectado localmente em _MODELS_.", "success")
-                elif (models_dir_2 / qwen_filename).exists():
-                    self._log("✅ Modelo Qwen-3.5 detectado localmente em models.", "success")
-                elif (models_dir_1 / gemma_filename).exists():
-                    self._log("✅ Modelo Gemma-4 detectado localmente em _MODELS_.", "success")
-                elif (models_dir_2 / gemma_filename).exists():
-                    self._log("✅ Modelo Gemma-4 detectado localmente em models.", "success")
+                if (models_dir_1 / qwen_9b_filename).exists() or (models_dir_2 / qwen_9b_filename).exists():
+                    self._log("✅ Modelo Qwen-3.5 9B (IQ3_XXS) detectado localmente.", "success")
+                elif (models_dir_1 / qwen_filename).exists() or (models_dir_2 / qwen_filename).exists():
+                    self._log("✅ Modelo Qwen-3.5 4B detectado localmente.", "success")
+                elif (models_dir_1 / gemma_filename).exists() or (models_dir_2 / gemma_filename).exists():
+                    self._log("✅ Modelo Gemma-4 detectado localmente em MODELS.", "success")
                 else:
                     self.download_model_with_retry(python_exe, repo_id='unsloth/Qwen3.5-4B-GGUF', filename=qwen_filename)
 
@@ -204,13 +167,13 @@ class SetupAPI:
                 qwen_base_dir_1 = models_dir_1 / "qwen3_1.7b_pytorch"
                 qwen_base_dir_2 = models_dir_2 / "qwen3_1.7b_pytorch"
                 if (qwen_base_dir_1 / "model.safetensors").exists():
-                    self._log("✅ Modelo Qwen3-TTS-Base (1.7B PyTorch) detectado em _MODELS_.", "success")
+                    self._log("✅ Modelo Qwen3-TTS-Base (1.7B PyTorch) detectado em MODELS.", "success")
                 elif (qwen_base_dir_2 / "model.safetensors").exists():
                     self._log("✅ Modelo Qwen3-TTS-Base (1.7B PyTorch) detectado em models.", "success")
                 else:
                     self.download_model_with_retry(
-                        python_exe, 
-                        repo_id='Qwen/Qwen3-TTS-12Hz-1.7B-Base', 
+                        python_exe,
+                        repo_id='Qwen/Qwen3-TTS-12Hz-1.7B-Base',
                         is_snapshot=True
                     )
             else:
@@ -243,26 +206,26 @@ class SetupAPI:
 
             self._update(100, "Instalacao Concluida!")
             self._log("PROCESSO FINALIZADO!", "success")
-            
+
         except Exception as e:
             print(f"ERRO NO BACKEND: {e}")
             self._log(f"ERRO: {str(e)}", "error")
 
     def download_model_with_retry(self, python_exe, repo_id, filename=None, is_snapshot=False, allow_patterns=None):
         global token_submitted_event, current_token
-        
+
         if is_snapshot:
             local_dir_name = "qwen3_1.7b_pytorch" if "1.7B-Base" in repo_id else ("qwen3_0.6b" if "Qwen3-TTS-12Hz-0.6B-Base" in repo_id else repo_id.split('/')[-1])
             if allow_patterns:
                 patterns_str = ", ".join([f"'{p}'" for p in allow_patterns])
-                code = f"from huggingface_hub import snapshot_download; snapshot_download(repo_id='{repo_id}', local_dir='_MODELS_/{local_dir_name}', local_dir_use_symlinks=False, allow_patterns=[{patterns_str}])"
+                code = f"from huggingface_hub import snapshot_download; snapshot_download(repo_id='{repo_id}', local_dir='MODELS/{local_dir_name}', local_dir_use_symlinks=False, allow_patterns=[{patterns_str}])"
             else:
-                code = f"from huggingface_hub import snapshot_download; snapshot_download(repo_id='{repo_id}', local_dir='_MODELS_/{local_dir_name}', local_dir_use_symlinks=False)"
+                code = f"from huggingface_hub import snapshot_download; snapshot_download(repo_id='{repo_id}', local_dir='MODELS/{local_dir_name}', local_dir_use_symlinks=False)"
             desc = f"snapshot do repositório '{repo_id}'"
         else:
-            code = f"from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='{repo_id}', filename='{filename}', local_dir='_MODELS_')"
+            code = f"from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='{repo_id}', filename='{filename}', local_dir='MODELS')"
             desc = f"arquivo '{filename}' do repositório '{repo_id}'"
-            
+
         while True:
             try:
                 self._log(f"📥 Baixando {desc} da HuggingFace...", "warn")
@@ -275,33 +238,33 @@ class SetupAPI:
                          self._log(line.strip())
                          output_lines.append(line.strip())
                 process.wait()
-                
+
                 if process.returncode == 0:
                      self._log(f"✅ Download de {desc} concluído com sucesso!", "success")
                      return
-                
+
                 # Se falhou, vamos analisar a saída
                 error_output = "\n".join(output_lines)
                 is_gated = any(kw in error_output.lower() for kw in ["gated", "accept the terms", "terms", "gatedrepo", "authorization", "license"])
                 is_auth = any(kw in error_output.lower() for kw in ["unauthorized", "401", "403", "token", "credentials", "login", "invalid token"])
-                
+
                 if is_gated or is_auth:
                      self._log("⚠️ DETECTADO ERRO DE AUTORIZAÇÃO / TERMOS NO HUGGING FACE!", "warn")
                      if is_gated:
                          self._log("Este modelo requer que você aceite os termos no site do Hugging Face.", "warn")
                      else:
                          self._log("Este modelo requer um token de acesso válido do Hugging Face.", "warn")
-                     
+
                      # Notifica a interface web
                      # Vamos usar o prefixo [NEED_TOKEN] para a UI interceptar
                      terms_url = f"https://huggingface.co/{repo_id}"
                      self._update(90, f"[NEED_TOKEN]{repo_id}|{terms_url}")
-                     
+
                      # Limpa e aguarda o evento do token
                      token_submitted_event.clear()
                      self._log("Aguardando fornecimento do token e confirmação dos termos na interface...", "info")
                      token_submitted_event.wait()
-                     
+
                      if current_token:
                          self._log("Token recebido! Aplicando credenciais e tentando novamente...", "success")
                          os.environ["HF_TOKEN"] = current_token
@@ -315,7 +278,7 @@ class SetupAPI:
                      continue
                 else:
                      raise Exception(f"Erro no download do modelo. Código de retorno: {process.returncode}")
-                     
+
             except Exception as e:
                 self._log(f"Falha ao baixar modelo: {e}", "error")
                 raise e
@@ -324,14 +287,14 @@ class SetupAPI:
         """Baixa arquivos grandes com reporte de progresso periódico."""
         import urllib.request
         req = urllib.request.Request(
-            url, 
+            url,
             headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
         )
         with urllib.request.urlopen(req) as response:
             total_size = int(response.info().get('Content-Length', 0))
             bytes_so_far = 0
             chunk_size = 1024 * 1024 # 1 MB
-            
+
             with open(dest_path, 'wb') as f:
                 last_update_time = time.time()
                 while True:
@@ -340,7 +303,7 @@ class SetupAPI:
                         break
                     f.write(chunk)
                     bytes_so_far += len(chunk)
-                    
+
                     current_time = time.time()
                     if current_time - last_update_time > 3.0:
                         percent = int((bytes_so_far / total_size) * 100) if total_size else 0
@@ -455,8 +418,8 @@ def main():
     api = SetupAPI(NexusServer.ui_logs)
     server = HTTPServer(("127.0.0.1", port), NexusServer)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    
-    window = webview.create_window("NarraVox - Nexus AI Setup Pro", f"http://127.0.0.1:{port}", 
+
+    window = webview.create_window("NarraVox - Nexus AI Setup Pro", f"http://127.0.0.1:{port}",
                                    width=1280, height=800, background_color='#050505')
     window.events.shown += lambda: window.maximize()
     webview.start()

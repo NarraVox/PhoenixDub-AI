@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {summarize} from '../nexus/client/js/corrections/progress.js';
+const record = (status, total, completed, current=null, failed=0) => ({status,progress:{total,completed,current,failed}});
+const group = [record('done',1,1), record('running',1,0,'ELD'), record('queued',1,0)];
+assert.deepEqual(summarize(group), {total:3,completed:1,failed:0,running:1,unknown:false,waiting:1,percent:33});
+assert.equal(summarize([...group.slice(0,1),record('done',1,1),group[2]]).percent,66);
+assert.equal(summarize([record('done',3,3)]).percent,100);
+const failure = summarize([record('error',3,1)]);
+assert.equal(failure.failed,2); assert.equal(failure.waiting,0); assert.equal(failure.percent,33);
+assert.equal(summarize([record('queued',null,0)]).unknown,true);
+console.log('Progresso global: 5 cenários passaram.');

@@ -33,11 +33,11 @@ def apply_lowpass_filter(input_path, output_path, cutoff_hz=13000):
         if cutoff_hz >= nyquist:
             shutil.copy(str(input_path), str(output_path))
             return True
-            
+
         normal_cutoff = cutoff_hz / nyquist
         # 6th-order Butterworth low-pass filter
         b, a = butter(6, normal_cutoff, btype='low', analog=False)
-        
+
         if len(data.shape) > 1:
             filtered_channels = []
             for ch in range(data.shape[1]):
@@ -45,7 +45,7 @@ def apply_lowpass_filter(input_path, output_path, cutoff_hz=13000):
             filtered_data = np.stack(filtered_channels, axis=-1)
         else:
             filtered_data = lfilter(b, a, data)
-            
+
         sf.write(str(output_path), filtered_data, sr)
         logging.info("[*] [Low-Pass] Filtro passa-baixa aplicado com sucesso.")
         return True
@@ -70,14 +70,14 @@ def start_ace_server_helper(dj, acestep_tools_dir, models_dir, update_status):
             env["PATH"] = str(acestep_tools_dir) + os.pathsep + env.get("PATH", "")
     except:
         env["PATH"] = str(acestep_tools_dir) + os.pathsep + env.get("PATH", "")
-        
+
     if torch.cuda.is_available():
         env["GGML_BACKEND"] = "CUDA0"
         env["GGML_CUDA_F16"] = "1"
         env["GGML_CUDA_DMMV_X"] = "64"
         env["CUDA_LAUNCH_BLOCKING"] = "0"
         env["GGML_CUDA_FORCE_MMQ"] = "0"
-        
+
     cmd = [
         str(acestep_tools_dir / "ace-server.exe"),
         "--host", "127.0.0.1",
@@ -87,13 +87,13 @@ def start_ace_server_helper(dj, acestep_tools_dir, models_dir, update_status):
         "--vae-chunk", "512",
         "--vae-overlap", "32"
     ]
-    
+
     log_file_path = UPLOAD_FOLDER / "ace_server.log"
     dj.ace_server_log_file = open(log_file_path, "w", encoding="utf-8")
     dj.ace_server_process = subprocess.Popen(
         cmd, env=env, stdout=dj.ace_server_log_file, stderr=subprocess.STDOUT
     )
-    
+
     try:
         import ctypes
         PROCESS_ALL_ACCESS = 0x1F0FFF
@@ -103,7 +103,7 @@ def start_ace_server_helper(dj, acestep_tools_dir, models_dir, update_status):
             ctypes.windll.kernel32.SetPriorityClass(handle, IDLE_PRIORITY_CLASS)
             ctypes.windll.kernel32.CloseHandle(handle)
     except: pass
-    
+
     server_ready = False
     for _ in range(15):
         if dj.ace_server_process.poll() is not None:
@@ -118,7 +118,7 @@ def start_ace_server_helper(dj, acestep_tools_dir, models_dir, update_status):
                 break
         except: pass
         time.sleep(0.5)
-        
+
     if not server_ready:
         raise Exception("Timeout ao iniciar ace-server.exe local na porta 8085.")
 
@@ -155,23 +155,23 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
     try:
         dj.generating_music = True
         update_status("🔍 [5%] Verificando ferramentas de música...", "[1/7] Verificando binários e modelos...")
-        
+
         acestep_tools_dir = ENV_DIR / "tools_acestep"
         acestep_tools_dir.mkdir(parents=True, exist_ok=True)
-        
+
         binaries = [
             "ace-server.exe", "ggml.dll", "ggml-cuda.dll", "ggml-cpu-x64.dll",
             "mp3-codec.exe", "neural-codec.exe", "ggml-cpu-haswell.dll",
             "ggml-cpu-skylakex.dll", "ggml-cpu-sse42.dll", "ggml-base.dll"
         ]
         base_url = "https://www.serveurperso.com/temp/acestep.cpp-win64/build/Release/"
-        
+
         for f_name in binaries:
             dest = acestep_tools_dir / f_name
             if not dest.exists():
                 update_status(f"⬇️ Baixando {f_name}...", f"Baixando binário {f_name}...")
                 dj.download_file_with_progress(base_url + f_name, dest, f_name, update_status)
-                
+
         if os.name == "nt":
             try:
                 # Setup CUDA DLLs configuration
@@ -241,7 +241,7 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                         if src_path.exists() and not dst_path.exists():
                             shutil.copy(src_path, dst_path)
                 _find_and_copy_cuda_dlls(acestep_tools_dir)
-                
+
                 hybrid_dll = acestep_tools_dir / "nvcudart_hybrid64.dll"
                 if not hybrid_dll.exists():
                     found = False
@@ -260,8 +260,8 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                                 break
             except Exception as ex:
                 logging.warning(f"⚠️ Erro ao configurar DLLs CUDA: {ex}")
-                
-        models_dir = BASE_DIR / "_MODELS_"
+
+        models_dir = f"{BASE_DIR}/MODELS/"
         models_dir.mkdir(parents=True, exist_ok=True)
         models_urls = {
             "vae-BF16.gguf": "https://www.serveurperso.com/temp/acestep.cpp-win64/models/vae-BF16.gguf",
@@ -273,7 +273,7 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
             if not dest.exists():
                 update_status(f"⬇️ [15%] Baixando modelo: {m_name}...", f"Baixando modelo {m_name}...")
                 dj.download_file_with_progress(url, dest, m_name, update_status)
-                
+
         dit_model = None
         for p in models_dir.glob("*acestep*.gguf"):
             if "lm" not in p.name.lower() and "vae" not in p.name.lower():
@@ -317,24 +317,24 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
         # ----------------------------------------------------
         update_status("🧠 [35%] Iniciando Fase 1: Composição e Letras...", "Carregando servidor em modo Compositor (LM)...")
         start_ace_server_helper(dj, acestep_tools_dir, models_dir, update_status)
-        
+
         lm_data_list = []
         for idx in range(batch_count):
             log_prefix = f"[{idx+1}/{batch_count}] " if batch_count > 1 else ""
             lm_data = None
-            
+
             if (mode == 'cover' or mode == 'extend') and source_audio:
                 update_status(f"🔊 {log_prefix}[45%] Analisando música base...", f"{log_prefix}Extraindo tokens da música base...")
                 source_path = dj.generated_music_dir / source_audio
                 if not source_path.exists(): source_path = UPLOAD_FOLDER / source_audio
                 if not source_path.exists(): raise Exception(f"Música de origem não encontrada: {source_audio}")
-                
+
                 with open(source_path, "rb") as f_audio:
                     files = {"audio": (source_path.name, f_audio, "audio/mpeg")}
                     res_understand = requests.post("http://127.0.0.1:8085/understand", files=files, timeout=300)
                 if res_understand.status_code != 200: raise Exception(f"Erro no understand: {res_understand.text}")
                 und_job_id = res_understand.json().get("id")
-                
+
                 und_done = False
                 for _ in range(120):
                     time.sleep(1)
@@ -348,12 +348,12 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                             elif status == "failed": raise Exception(f"Understand falhou: {res_poll.json().get('error')}")
                     except Exception as ex:
                         if "Understand falhou" in str(ex): raise ex
-                        
+
                 if not und_done: raise Exception("Timeout no understand.")
-                
+
                 res_result = requests.get(f"http://127.0.0.1:8085/job?id={und_job_id}&result=1", timeout=60)
                 if res_result.status_code != 200: raise Exception("Erro ao recuperar resultado do understand.")
-                
+
                 content_type = res_result.headers.get("Content-Type", "")
                 if "multipart/" in content_type:
                     import email
@@ -363,9 +363,9 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                             lm_data = json.loads(part.get_payload(decode=True).decode('utf-8'))
                             break
                 else: lm_data = res_result.json()
-                
+
                 if isinstance(lm_data, list) and len(lm_data) > 0: lm_data = lm_data[0]
-                
+
                 if mode == 'extend':
                     codes = lm_data.get("audio_codes", [])
                     precise_duration = len(codes) / 5.0 if isinstance(codes, list) else len(codes.strip().split()) / 5.0
@@ -392,7 +392,7 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                 res_lm = requests.post("http://127.0.0.1:8085/lm", json=payload_lm, timeout=300)
                 if res_lm.status_code != 200: raise Exception(f"Erro no /lm: {res_lm.text}")
                 lm_job_id = res_lm.json().get("id")
-                
+
                 lm_done = False
                 for _ in range(480):
                     time.sleep(0.25)
@@ -406,12 +406,12 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                             elif status == "failed": raise Exception(f"LM falhou: {res_poll.json().get('error')}")
                     except Exception as ex:
                         if "LM falhou" in str(ex): raise ex
-                        
+
                 if not lm_done: raise Exception("Timeout no Compositor (LM).")
-                
+
                 res_result = requests.get(f"http://127.0.0.1:8085/job?id={lm_job_id}&result=1", timeout=60)
                 if res_result.status_code != 200: raise Exception("Erro ao recuperar resultado do LM.")
-                
+
                 content_type = res_result.headers.get("Content-Type", "")
                 if "multipart/" in content_type:
                     import email
@@ -421,7 +421,7 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                             lm_data = json.loads(part.get_payload(decode=True).decode('utf-8'))
                             break
                 else: lm_data = res_result.json()
-                
+
                 if isinstance(lm_data, list) and len(lm_data) > 0: lm_data = lm_data[0]
                 if "caption" not in lm_data: lm_data["caption"] = caption
 
@@ -439,18 +439,18 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
         # ----------------------------------------------------
         update_status("🚀 [65%] Iniciando Fase 2: Geração do áudio...", "Carregando servidor em modo Síntese (DiT)...")
         start_ace_server_helper(dj, acestep_tools_dir, models_dir, update_status)
-        
+
         generated_files = []
         for idx, lm_data in enumerate(lm_data_list):
             current_title = f"{title}_{idx+1}" if batch_count > 1 else title
             log_prefix = f"[{idx+1}/{batch_count}] " if batch_count > 1 else ""
-            
+
             lm_data["steps"] = steps
             lm_data["cfg_scale"] = cfg_scale
             lm_data["duration"] = duration
-            
+
             update_status(f"🎛️ {log_prefix}[70%] Sintetizando ondas sonoras (Difusora)...", f"{log_prefix}Renderizando áudio do lote...")
-            
+
             if mode == 'extend' and source_audio:
                 source_path = dj.generated_music_dir / source_audio
                 if not source_path.exists(): source_path = UPLOAD_FOLDER / source_audio
@@ -460,10 +460,10 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                     res_synth = requests.post("http://127.0.0.1:8085/synth", files=files, data=data, timeout=300)
             else:
                 res_synth = requests.post("http://127.0.0.1:8085/synth", json=lm_data, timeout=300)
-                
+
             if res_synth.status_code != 200: raise Exception(f"Erro no /synth: {res_synth.text}")
             synth_job_id = res_synth.json().get("id")
-            
+
             synth_done = False
             for _ in range(720):
                 time.sleep(0.25)
@@ -473,24 +473,24 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                         data = res_poll.json()
                         status = data.get("status")
                         progress = data.get("progress")
-                        
+
                         if progress is not None:
                             pct = int(float(progress))
                             total_pct = 70 + int(pct * 0.25)
                             update_status(f"🎛️ {log_prefix}[{total_pct}%] Gerando áudio: {pct}%...", f"{log_prefix}Difusão: {pct}%")
-                            
+
                         if status in ["success", "done"]:
                             synth_done = True
                             break
                         elif status == "failed": raise Exception(f"Síntese falhou: {data.get('error')}")
                 except Exception as ex:
                     if "Síntese falhou" in str(ex): raise ex
-                    
+
             if not synth_done: raise Exception("Timeout na síntese de áudio.")
-            
+
             res_audio = requests.get(f"http://127.0.0.1:8085/job?id={synth_job_id}&result=1", timeout=120)
             if res_audio.status_code != 200: raise Exception("Erro ao baixar áudio sintetizado.")
-            
+
             audio_bytes = None
             if "multipart/" in res_audio.headers.get("Content-Type", ""):
                 import email
@@ -500,9 +500,9 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                         audio_bytes = part.get_payload(decode=True)
                         break
             else: audio_bytes = res_audio.content
-            
+
             if not audio_bytes: raise Exception("Áudio vazio recebido do servidor.")
-            
+
             raw_temp_path = dj.generated_music_dir / f"temp_{idx}_{int(time.time())}.wav"
             with open(raw_temp_path, "wb") as f:
                 f.write(audio_bytes)
@@ -524,30 +524,30 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
             short_ts = str(int(time.time()))[-6:]
             final_filename = f"{clean_title}_{short_ts}.mp3"
             final_output_path = dj.generated_music_dir / final_filename
-            
+
             if enable_mastering:
                 # 1. Cirurgia: Filtro passa-baixa em 13kHz para cortar ruídos metálicos
                 update_status(f"✂️ {log_prefix}[97%] Removendo ruídos metálicos (Cirurgia)...", f"{log_prefix}Filtro Passa-Baixa (13kHz)...")
                 filtered_temp_path = dj.generated_music_dir / f"filtered_{idx}_{int(time.time())}.wav"
                 apply_lowpass_filter(raw_temp_path, filtered_temp_path, cutoff_hz=13000)
-                
+
                 # 2. Upscale: AudioSR reconstrói as altas frequências a 48kHz de forma cristalina
                 temp_upscaled_path = dj.generated_music_dir / f"upscaled_{idx}_{int(time.time())}.wav"
-                
+
                 def upscale_progress(block_idx, total_blocks):
                     pct = 97 + int((block_idx / total_blocks) * 2)
                     update_status(
                         f"✨ {log_prefix}[{pct}%] Reconstruindo agudos Hi-Fi com AudioSR (Bloco {block_idx}/{total_blocks})...",
                         f"{log_prefix}AudioSR: Bloco {block_idx} de {total_blocks}..."
                     )
-                
+
                 dj.process_upscale(filtered_temp_path, temp_upscaled_path, ddim_steps=upscale_steps, progress_callback=upscale_progress)
-                
+
                 # Converter para MP3 final via FFmpeg
                 update_status(f"✨ {log_prefix}[99%] Exportando áudio masterizado...", f"Exportando MP3: {final_filename}...")
                 ffmpeg_cmd = ["ffmpeg", "-y", "-i", str(temp_upscaled_path), "-c:a", "libmp3lame", "-q:a", "2", str(final_output_path)]
                 subprocess.run(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                
+
                 # Limpa temporários da cirurgia e upscale
                 if filtered_temp_path.exists(): os.remove(filtered_temp_path)
                 if temp_upscaled_path.exists(): os.remove(temp_upscaled_path)
@@ -556,9 +556,9 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                 update_status(f"💿 {log_prefix}[98%] Exportando áudio bruto...", f"Exportando MP3 bruto: {final_filename}...")
                 ffmpeg_cmd = ["ffmpeg", "-y", "-i", str(raw_temp_path), "-c:a", "libmp3lame", "-q:a", "2", str(final_output_path)]
                 subprocess.run(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                
+
             if raw_temp_path.exists(): os.remove(raw_temp_path)
-            
+
             # Cadastra histórico
             history_file = dj.generated_music_dir / "history.json"
             history = []
@@ -575,7 +575,7 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
             })
             with open(history_file, "w", encoding="utf-8") as f: json.dump(history, f, indent=4)
             dj.project_state["last_generated_song"] = final_filename
-            
+
         update_status("✅ [100%] Lote de músicas processado com sucesso!", f"Pronto! Geração concluída com {batch_count} faixas.")
 
     except Exception as e:

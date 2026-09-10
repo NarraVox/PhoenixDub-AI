@@ -12,10 +12,10 @@ from pathlib import Path
 
 # Import standard vocal noises
 vocal_noises = [
-    "woo", "ehh", "huh", "woof", "ha", "ah", "oof", "oh", "wow", "sigh", "laughter", 
-    "gasp", "pant", "snort", "sob", "groan", "screaming", "whispering", "crying", "ugh", 
-    "cough", "yawn", "grr", "pff", "shh", "ts", "tsc", "hm", "hmm", "mhm", "uh", "um", 
-    "eh", "aah", "ooh", "oops", "ops", "haha", "hehe", "hihi", "hoho", "phew", "brr", 
+    "woo", "ehh", "huh", "woof", "ha", "ah", "oof", "oh", "wow", "sigh", "laughter",
+    "gasp", "pant", "snort", "sob", "groan", "screaming", "whispering", "crying", "ugh",
+    "cough", "yawn", "grr", "pff", "shh", "ts", "tsc", "hm", "hmm", "mhm", "uh", "um",
+    "eh", "aah", "ooh", "oops", "ops", "haha", "hehe", "hihi", "hoho", "phew", "brr",
     "tsk", "aw", "ow", "ouch", "aww", "yay", "yayy", "yuck", "ew", "eww"
 ]
 
@@ -25,17 +25,17 @@ def detect_game_genre(segments):
     """
     if not segments: return "Ação (Geral)"
     sample_text = " / ".join([s['original_text'] for s in segments[:15]])
-    
+
     prompt = f'''
 Diga APENAS qual e o Genero deste jogo (Ex: 'Acao e Guerra', 'Corrida', 'RPG', 'Terror') baseado nas seguintes falas da cena:
 "{sample_text}"
 '''
     payload = {
-        "messages": [{"role": "user", "content": prompt}], 
-        "temperature": 0.1, 
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.1,
         "max_tokens": 50
     }
-    
+
     try:
         response = make_gema_request_with_retries(payload, is_translation=False)
         genre = response.json()['choices'][0]['message']['content'].strip().replace('"', "")
@@ -54,10 +54,10 @@ def gerar_lore_global(segments, video_title=None):
     para criar um 'Dossiê de Lore' que guia a dublagem.
     """
     if not segments: return "Gênero: Desconhecido (Modo Padrão)"
-    
+
     num_samples = max(20, min(50, int(len(segments) * 0.20)))
     sample_text = "\n".join([f"- [{s.get('speaker', 'desconhecido')}]: {s.get('text') or s.get('original_text', '')}" for s in segments[:num_samples]])
-    
+
     video_title_header = ""
     if video_title:
         clean_title = video_title
@@ -68,7 +68,7 @@ def gerar_lore_global(segments, video_title=None):
             clean_title = parts[0].replace('video_', '')
         clean_title = clean_title.replace('_', ' ').strip()
         video_title_header = f"TÍTULO DO ARQUIVO/PROJETO: {clean_title}\n\n"
-        
+
     prompt = f"""
 Você é um Especialista em Localização, Tradução de Mídia e Análise de Conteúdo.
 Analise a transcrição da amostra do vídeo abaixo e crie um dossiê de Lore Global ultra-simplificado para guiar a dublagem de forma concisa e rápida.
@@ -93,14 +93,14 @@ TRANSCRIÇÃO DE AMOSTRA DO VÍDEO:
     payload = {
         "messages": [
             {
-                "role": "system", 
+                "role": "system",
                 "content": "Você é um Diretor de Localização profissional. Crie um dossiê descritivo, prático e útil para a tradução e dublagem de vídeos. IMPORTANTE: Não use a tag <think> e responda diretamente sem raciocinar em voz alta (no-thinking)."
             },
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.3, "max_tokens": 2048
     }
-    
+
     try:
         response = make_gema_request_with_retries(payload, is_translation=False)
         lore = response.json()['choices'][0]['message']['content'].strip()
@@ -110,7 +110,7 @@ TRANSCRIÇÃO DE AMOSTRA DO VÍDEO:
                 idx = lore.lower().find(tag)
                 lore = lore[:idx]
         lore = lore.strip()
-        
+
         lines = lore.split('\n')
         clean_lines = []
         for line in lines:
@@ -126,10 +126,10 @@ TRANSCRIÇÃO DE AMOSTRA DO VÍDEO:
                     continue
             clean_lines.append(line)
         lore = "\n".join(clean_lines).strip()
-        
+
         if not lore:
             lore = "Gênero: Narrativo (Contexto Geral)"
-            
+
         logging.info(f"📜 [LORE GLOBAL] Contexto gerado pelo Gemma 4:\n{lore}")
         return lore
     except Exception as e:
@@ -189,38 +189,38 @@ def should_strip_prefix(prefix_str, original_text, segment_id=None):
     prefix_nums = re.findall(r'\d+', prefix_str)
     if not prefix_nums:
         return True
-        
+
     orig_lower = original_text.lower() if original_text else ""
     num_words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"]
     has_orig_num = any(char.isdigit() for char in original_text) if original_text else False
     if not has_orig_num and original_text:
         has_orig_num = any(w in orig_lower for w in num_words)
-    
+
     if not has_orig_num:
         return True
-        
+
     seg_num = None
     if segment_id:
         seg_num_match = re.search(r'\d+', str(segment_id))
         if seg_num_match:
             seg_num = int(seg_num_match.group())
-            
+
     for num_str in prefix_nums:
         num_val = int(num_str)
         if seg_num is not None:
             if num_val in (seg_num, seg_num + 1, seg_num - 1):
                 return True
-                
+
         num_word_map = {
             0: "zero", 1: "one", 2: "two", 3: "three", 4: "four", 5: "five",
             6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"
         }
         word = num_word_map.get(num_val, "")
         digit = str(num_val)
-        
+
         if (digit not in original_text) and (not word or word not in orig_lower):
             return True
-            
+
     return False
 
 
@@ -234,7 +234,7 @@ def is_hallucinated_number_translation(translated_text, original_text):
     t_clean = translated_text.strip().lower()
     if not t_clean:
         return False
-        
+
     orig_lower = original_text.lower() if original_text else ""
     has_orig_num = any(char.isdigit() for char in original_text) if original_text else False
     if not has_orig_num and original_text:
@@ -246,7 +246,7 @@ def is_hallucinated_number_translation(translated_text, original_text):
             "char", "character", "characters", "letter", "letters", "limit", "phrase", "word", "words"
         ]
         has_orig_num = any(w in orig_lower for w in num_keywords)
-        
+
 
     if not has_orig_num:
         if re.search(r'\b\d{2}:\d{2}\b', t_clean) or '--' in t_clean or '-->' in t_clean:
@@ -258,15 +258,15 @@ def is_hallucinated_number_translation(translated_text, original_text):
 
     if has_orig_num:
         return False
-        
+
     t_stripped = re.sub(r'(?:segundos|segundo|caracteres|caractere|chars|char|letras|letra|seg)\b', '', t_clean)
     t_stripped = re.sub(r'[^\w\s]', '', t_stripped).strip()
-    
+
     if not t_stripped:
         return True
     if t_stripped.isdigit():
         return True
-        
+
     return False
 
 
@@ -277,13 +277,13 @@ def is_loop_hallucination(translated_text, original_text):
     """
     if not translated_text or not original_text:
         return False
-        
+
     words_trans = translated_text.split()
     words_orig = original_text.split()
-    
+
     len_trans = len(words_trans)
     len_orig = len(words_orig)
-    
+
     if len_orig >= 3 and len_trans > 25 and len_trans > 2.5 * len_orig:
         return True
     if len_orig >= 10 and len_trans > 50 and len_trans > 2.0 * len_orig:
@@ -306,13 +306,13 @@ def is_loop_hallucination(translated_text, original_text):
         max_repeat_orig = get_max_repeat_count(original_text.lower())
         if max_repeat_trans > 2.5 * max(1, max_repeat_orig):
             return True
-            
+
     return False
 
 
 def clean_ai_translation(text, original_text, segment_id=None):
     """
-    [v21.0 SCRUBBER DE PENSAMENTO] 
+    [v21.0 SCRUBBER DE PENSAMENTO]
     Limpa blocos de raciocínio interno da Gema 4 / Qwen antes de extrair a tradução.
     """
     if not text: return ""
@@ -320,30 +320,30 @@ def clean_ai_translation(text, original_text, segment_id=None):
         return ""
     if is_loop_hallucination(text, original_text):
         return ""
-    
+
     if re.search(r'[\u4e00-\u9fff]', text):
         return ""
-        
+
     def strip_prefix_if_needed(match):
         matched_str = match.group(0)
         if should_strip_prefix(matched_str, original_text, segment_id):
             return ""
         return matched_str
-        
+
     text = re.sub(r'^(?:seg[-_]?\d+|\d+)\s*(?:[:.,]|-(?!\d))\s*|^(?:seg[-_]?\d+|\d+)\s+', strip_prefix_if_needed, text.strip(), flags=re.IGNORECASE)
-    
+
     text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<\|channel\|?>thought.*?<channel\|?>', '', text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'<thought>.*?</thought>', '', text, flags=re.DOTALL | re.IGNORECASE)
     text = re.sub(r'\[THOUGHT\].*?\[/THOUGHT\]', '', text, flags=re.DOTALL | re.IGNORECASE)
-    
+
     for tag in ['<think>', '<thought>', '[thought]', '<|im_start|>thought']:
         if tag in text.lower():
             idx = text.lower().find(tag)
             text = text[:idx]
-            
+
     text = text.strip()
-    
+
     text_check = text.strip().strip('"').strip('<>').strip().lower()
     if text_check in ["tradução final adaptada", "traducao final adaptada", "translation", "think", "thought"]:
         return ""
@@ -354,10 +354,10 @@ def clean_ai_translation(text, original_text, segment_id=None):
     if (t_clean.startswith('"') and t_clean.endswith('"')) or (t_clean.startswith("'") and t_clean.endswith("'")):
         if len(t_clean) >= 2:
             t_clean = t_clean[1:-1].strip()
-            
+
     t = t_clean
     t = re.sub(r'\(Limite:.*?\)', '', t).strip()
-    
+
     # Se a tradução final ficou idêntica ao original em inglês, rejeita para forçar a contingência
     orig = original_text.strip().strip('"').strip("'").lower() if original_text else ""
     t_limpo = re.sub(r'[^\w\s]', '', t.lower())
@@ -367,7 +367,7 @@ def clean_ai_translation(text, original_text, segment_id=None):
 
     orig = original_text.strip().strip('"') if original_text else ""
     separadores = [" -> ", " => ", " : ", " - "]
-    
+
     for sep in separadores:
         if sep in t:
             parts = t.split(sep)
@@ -389,7 +389,7 @@ def clean_ai_translation(text, original_text, segment_id=None):
     t = re.sub(r'\b100\s*%\s*de\b', 'todo o', t, flags=re.IGNORECASE)
     t = re.sub(r'\b100\s*%\s*', 'totalmente ', t, flags=re.IGNORECASE)
     t = re.sub(r'\b100\s+por\s+cento\b', 'cem por cento', t, flags=re.IGNORECASE)
-    
+
     t = re.sub(r'\b\d+\s*\.\s*(?=[A-ZÀ-Ý])', '', t)
 
     t_final_check = t.strip().strip('"').strip('<>').strip().lower()
@@ -408,11 +408,20 @@ def clean_ai_translation(text, original_text, segment_id=None):
         if t_str and t_str[-1] in ["!", "?"]:
             end_char = t_str[-1]
             t_str = t_str[:-1]
-        
+
         # Remove pontos, vírgulas e reticências de toda a string
         t_str = t_str.replace("...", " ").replace(".", " ").replace(",", " ").replace(";", " ")
         t_str = " ".join(t_str.split())
-        t = t_str + end_char
+
+        # [v2026.REPETITION_PACER] Se houver repetições excessivas de uma mesma palavra (ex: 'não não não não...'),
+        # comprime para no máximo 2 ocorrências consecutivas para preservar a emoção e caber no tempo do áudio.
+        pattern = r'\b(\w+)(?:\s+\1){2,}\b'
+        def repl(match):
+            word = match.group(1)
+            return f"{word} {word}"
+        t_str = re.sub(pattern, repl, t_str, flags=re.IGNORECASE)
+
+        t = t_str.strip() + end_char
 
     return t
 

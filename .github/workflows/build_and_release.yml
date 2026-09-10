@@ -27,56 +27,59 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller pywebview psutil flask flask-cors pythonnet clr-loader requests tqdm
 
+    - name: Testar proteção do atualizador e distribuição
+      run: |
+        python -m unittest discover -s tests -p test_updates.py
+        python -m unittest discover -s tests -p test_distribution.py
+        python -m unittest discover -s tests -p test_release_preparation.py
+
     - name: Gerar Executável do Aplicativo Principal (Nexus AI Pro)
       run: python nexus/build_tools/build_main_app.py
 
     - name: Gerar Executável do Instalador (Setup Nexus)
       run: python nexus/build_tools/build_setup.py
 
-    - name: Testar Executável Nexus AI Pro (Verificar Importações)
+    - name: Testar executáveis fora do checkout
       shell: pwsh
       run: |
+        $smokeRoot = Join-Path $env:RUNNER_TEMP "phoenix-smoke"
+        New-Item -ItemType Directory -Force -Path $smokeRoot | Out-Null
+        Copy-Item -LiteralPath "dist/Nexus_AI_Pro.exe" -Destination $smokeRoot
+        Copy-Item -LiteralPath "dist/Setup_Nexus.exe" -Destination $smokeRoot
         $env:TEST_IMPORTS="1"
-        $proc = Start-Process -FilePath "dist/Nexus_AI_Pro.exe" -NoNewWindow -PassThru
-        # Aguarda até 15 segundos para inicialização e teste de importações
-        Start-Sleep -Seconds 15
-        if (!$proc.HasExited) {
-          Write-Host "Executavel ainda em execucao. Forcando encerramento (normal em Session 0)..."
-          $proc.Kill()
+        foreach ($item in @(@("Nexus_AI_Pro.exe", "import_test_main_ok.txt"), @("Setup_Nexus.exe", "import_test_setup_ok.txt"))) {
+          $proc = Start-Process -FilePath (Join-Path $smokeRoot $item[0]) -WorkingDirectory $smokeRoot -WindowStyle Hidden -PassThru
+          if (!$proc.WaitForExit(60000)) { $proc.Kill(); throw "Timeout no teste de $($item[0])" }
+          if ($proc.ExitCode -ne 0 -or !(Test-Path (Join-Path $smokeRoot $item[1]))) { throw "Falha no teste de $($item[0])" }
         }
-        # Verifica se o arquivo de sucesso foi criado
-        if (!(Test-Path "import_test_main_ok.txt")) {
-          throw "Falha critica: O executavel principal Nexus_AI_Pro.exe falhou ao validar as importacoes (arquivo nao gerado)."
-        }
-        Write-Host "[OK] Nexus_AI_Pro.exe passou no teste de importacao!"
+        if (!(Test-Path (Join-Path $smokeRoot "nexus/client/js/hub_updates.js"))) { throw "Interface ausente no pacote" }
+        if (!(Test-Path (Join-Path $smokeRoot "nexus/correction_worker.py"))) { throw "Motor de correção ausente" }
+        Remove-Item Env:TEST_IMPORTS
 
-    - name: Testar Executável Setup (Verificar Importações)
-      shell: pwsh
-      run: |
-        $env:TEST_IMPORTS="1"
-        $proc = Start-Process -FilePath "dist/Setup_Nexus.exe" -NoNewWindow -PassThru
-        # Aguarda até 15 segundos para inicialização e teste de importações
-        Start-Sleep -Seconds 15
-        if (!$proc.HasExited) {
-          Write-Host "Executavel ainda em execucao. Forcando encerramento (normal em Session 0)..."
-          $proc.Kill()
-        }
-        # Verifica se o arquivo de sucesso foi criado
-        if (!(Test-Path "import_test_setup_ok.txt")) {
-          throw "Falha critica: O instalador Setup_Nexus.exe falhou ao validar as importacoes (arquivo nao gerado)."
-        }
-        Write-Host "[OK] Setup_Nexus.exe passou no teste de importacao!"
+    - name: Gerar pacote de atualização automática
+      run: python nexus/build_tools/build_update_package.py
+
+    - name: Guardar instaladores validados
+      uses: actions/upload-artifact@v4
+      with:
+        name: phoenix-installers
+        path: |
+          dist/Setup_Nexus.exe
+          dist/Nexus_AI_Pro.exe
+          dist/PhoenixDub_Update.zip
+        if-no-files-found: error
 
     - name: Criar Release e Upload dos Executáveis
       uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        name: ⚡ PhoenixDub AI v0.6.0 - "The Stage Batch & Security Update" 🛡️
+        name: PhoenixDub AI ${{ github.ref_name }}
         draft: false
         prerelease: false
         body_path: RELEASE_NOTES.md
         files: |
           dist/Setup_Nexus.exe
           dist/Nexus_AI_Pro.exe
+          dist/PhoenixDub_Update.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

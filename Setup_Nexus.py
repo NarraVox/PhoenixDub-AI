@@ -7,6 +7,8 @@ import os
 # Garante que o diretorio do executavel ou do script esta no sys.path
 if getattr(sys, 'frozen', False):
     sys.path.insert(0, sys._MEIPASS)
+    if os.environ.get('TEST_IMPORTS') != '1':
+        os.chdir(os.path.dirname(sys.executable))
 else:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

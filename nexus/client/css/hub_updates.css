@@ -1,0 +1,11 @@
+.utility-hud {flex-wrap:wrap;max-width:calc(100vw - 40px);justify-content:flex-end;align-items:center;}
+#hub-version {font-size:.75rem;color:var(--neon-cyan);}
+#updates-dialog {margin:auto;color:#eef5ff;background:#101522;border:1px solid #00c5ce;border-radius:14px;width:min(620px, calc(100vw - 40px));max-height:80vh;padding:24px;box-sizing:border-box;}
+#updates-dialog::backdrop {background:rgba(0,0,0,.75);}
+#updates-dialog h2 {font-size:1.3rem;margin:0 0 14px;}
+#updates-dialog p {line-height:1.5;}
+#updates-dialog .updates-actions {display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:20px;}
+#updates-dialog button, #updates-release {padding:10px 14px;border:1px solid #00c5ce;border-radius:6px;background:#172334;color:#eef5ff;font:inherit;cursor:pointer;text-decoration:none;}
+#updates-dialog button:disabled {opacity:.6;cursor:wait;}
+#updates-notes {white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:.85rem;max-height:220px;overflow:auto;background:#0a101b;padding:12px;}
+#updates-progress {width:100%;accent-color:#00c5ce;}

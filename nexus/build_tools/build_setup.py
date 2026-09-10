@@ -9,16 +9,16 @@ def build_setup():
     os.chdir(root_dir)
 
     print("Iniciando Build do Instalador Nexus AI (Setup)...")
-    
+
     app_name = "Setup_Nexus"
     entry_point = "Setup_Nexus.py"
-    
+
     # Busca o executável gerado pelo Nuitka ou PyInstaller
     nuitka_exe = os.path.join("dist_nuitka", "nexus_app.exe")
     if os.path.exists(nuitka_exe):
         shutil.copy2(nuitka_exe, "Nexus_AI_Pro.exe")
         print("Executavel Nuitka detectado e preparado.")
-    
+
     if not os.path.exists("Nexus_AI_Pro.exe"):
         print("AVISO: Nexus_AI_Pro.exe nao encontrado na raiz. O instalador pode falhar.")
 
@@ -40,7 +40,7 @@ def build_setup():
         site_packages = os.path.join(os.getcwd(), "env", "Lib", "site-packages")
         webview_path = os.path.join(site_packages, "webview")
         print(f"Webview nao detectado dinamicamente. Usando fallback: {webview_path}")
-    
+
     params = [
         entry_point,
         f'--name={app_name}',
@@ -49,7 +49,9 @@ def build_setup():
         '--clean',
         f'--workpath={work_dir}',
         f'--distpath={dist_dir}',
-        '--exclude-module=webview', # Evita o crash de analise
+        '--collect-all=webview',
+        '--collect-all=clr_loader',
+        '--collect-all=pythonnet',
         # EXCLUSÕES CRÍTICAS DE MÓDULOS DE ML E BIBLIOTECAS GRANDES (Evita que o instalador tente embutir bibliotecas pesadas)
         '--exclude-module=torch',
         '--exclude-module=torchaudio',
@@ -95,7 +97,8 @@ def build_setup():
         f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "Nexus_AI_Pro.exe"))};.',
         f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "nexus_app.py"))};.',
         f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "vpk_manager.py"))};.',
-        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "client"))};client',
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "client"))};nexus/client',
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "dist", "runtime.zip"))};.',
         f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "requirements.txt"))};.',
         f'--add-data={os.path.abspath(webview_path)};webview', # Adiciona webview manualmente
     ]
@@ -108,7 +111,7 @@ def build_setup():
     final_exe_dest_dir = os.path.join(os.getcwd(), "dist")
     os.makedirs(final_exe_dest_dir, exist_ok=True)
     final_exe_dest = os.path.join(final_exe_dest_dir, f"{app_name}.exe")
-    
+
     if os.path.exists(final_exe_src):
         shutil.copy2(final_exe_src, final_exe_dest)
         print(f"\n[COPIA] Executavel copiado com sucesso para: {final_exe_dest}")

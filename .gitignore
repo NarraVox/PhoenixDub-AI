@@ -3,10 +3,14 @@ env/
 venv/
 .env
 build/
+dist/
+dist_nuitka/
 *.exe
 *.msi
 *.7z
 *.zip
+*.rar
+*.spec
 __pycache__/
 *.pyc
 
@@ -16,12 +20,17 @@ logs/
 scratch/
 Rubbish/
 import_test_main_ok.txt
+import_test_setup_ok.txt
 store_builder_demo.html
+last_uploads.txt
+unets.txt
+benchmark_results.json
+CONTEXTO_CONTINUIDADE_CINEGEN.md
 
 # Dados de IA (Modelos)
 models/
+Models/
 *.gguf
-.aider*
 _MODELS_/
 dj_sets/
 call of duty/
@@ -37,14 +46,43 @@ narravox_logo.png
 # Exceção de Frontend
 !nexus/client/
 !nexus/client/**
-
-# Nexus Godogen
-nexus_godogen/
+nexus/client/*.rar
 
 # Segurança e Credenciais (CRÍTICO)
 token_hf.txt
+*.key
+*.pem
+*.secret
+*.token
+
+# Dados Pessoais e Pastas Locais (CRÍTICO)
+paulo/
+atores narravox/
+*.lnk
+facefusion/
+games/
+gfpgan/
+ip_adapter/
+sd_engine/
+html/
+ComfyUI/
+nexus_godogen/
+
+# Scripts de Teste e Batches Locais
+audit_dlc2_runner.py
+run_dlc2_master.*
+run_audit_dlc2.*
+run_final.*
+scratch_count.py
+
+# Motores Locais e Módulos Não Distribuídos (Cine Gen & GodoGen)
+nexus/cine/
+nexus/godogen/
+
 
 # Documentos Pessoais e Temporários (Regras de Bloqueio)
+*.pdf
+*.odt
 Contrato de Aluguel*
 contrato_editor.html
 carta_apresentacao*
@@ -57,7 +95,6 @@ ace_help*
 temp_video_pipeline.txt
 voz1
 voz3
-ABRIR_AIDER*
 ABRIR_DASHBOARD*
 TESTAR_*
 usar_qwen_*
@@ -69,3 +106,5 @@ tools/*
 
 # Customizações de Agente AI
 .agents/
+/_updates/
+/.nexus-development

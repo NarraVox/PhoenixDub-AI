@@ -94,11 +94,127 @@
                 </div>
             </div>
 
+            <!-- [v2026.SLICER] Painel Fatiador de Vídeo -->
+            <div id="slicer-panel" style="margin-bottom: 24px; border: 1px solid rgba(0,200,255,0.25); border-radius: 10px; background: linear-gradient(135deg, rgba(0,180,255,0.06) 0%, rgba(0,80,160,0.04) 100%); padding: 22px 18px; position: relative; overflow: hidden;">
+                <div style="position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0%, rgba(0,180,255,0.1) 0%, transparent 65%); pointer-events: none;"></div>
+
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                    <span style="font-size: 1.8rem; line-height:1;">✂️</span>
+                    <div>
+                        <div style="font-size: 1rem; font-weight: 900; color: #00c8ff; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0,200,255,0.5);">FATIAR VÍDEO</div>
+                        <div style="font-size: 0.875rem; line-height: 1.5; color: #bdcbdc; letter-spacing: 0; margin-top: 6px;">Divida o vídeo em partes pela duração escolhida.</div>
+                    </div>
+                </div>
+
+                <!-- Slider de duração -->
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px 12px; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <span style="font-size: 0.9375rem; line-height: 1.4; color: #d5deeb; letter-spacing: 0;">Duração de cada parte</span>
+                        <span id="slicer-val-display" style="font-size: 1.25rem; font-weight: 900; color: #00c8ff; text-shadow: 0 0 8px rgba(0,200,255,0.6); min-width: 60px; text-align: right;">5:00 min</span>
+                    </div>
+                    <input type="range" id="slicer-duration-range"
+                           aria-label="Duração de cada parte, em segundos" min="30" max="1800" step="30" value="300"
+                           oninput="atualizarSlicerLabel(this.value)"
+                           style="width: 100%; -webkit-appearance: none; appearance: none; height: 10px; margin: 8px 0; border-radius: 5px; background: linear-gradient(to right, #00c8ff 0%, #00c8ff var(--pct,16.7%), rgba(255,255,255,0.1) var(--pct,16.7%)); outline: none; cursor: pointer;">
+                    <style>
+                        #slicer-duration-range:focus-visible { outline: 2px solid #fff; outline-offset: 6px; }
+                        #slicer-duration-range::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: #00c8ff; box-shadow: 0 0 10px rgba(0,200,255,0.7); cursor: pointer; transition: transform 0.15s; }
+                        #slicer-duration-range::-webkit-slider-thumb:hover { transform: scale(1.25); }
+                        #slicer-duration-range::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #00c8ff; box-shadow: 0 0 10px rgba(0,200,255,0.7); border: none; cursor: pointer; }
+                    </style>
+                    <!-- Marcadores de referência -->
+                    <div style="display: flex; justify-content: space-between; margin-top: 12px;">
+                        <span style="font-size: 0.875rem; color: #bdcbdc;">30s</span>
+                        <span style="font-size: 0.875rem; color: #bdcbdc;">5min</span>
+                        <span style="font-size: 0.875rem; color: #bdcbdc;">15min</span>
+                        <span style="font-size: 0.875rem; color: #bdcbdc;">30min</span>
+                    </div>
+                </div>
+
+                <!-- Botão Fatiar -->
+                <button id="btn-fatiar" onclick="fatiarVideo()"
+                        style="width: 100%; min-height: 52px; padding: 14px 12px; border: none; border-radius: 8px; background: linear-gradient(135deg, #0099cc, #00c8ff); color: #000; font-weight: 900; font-size: 1rem; letter-spacing: 1px; cursor: pointer; box-shadow: 0 0 18px rgba(0,200,255,0.35); transition: all 0.2s ease; font-family: 'Outfit', sans-serif;">
+                    ✂️ &nbsp;FATIAR AGORA
+                </button>
+                <style>
+                    #btn-fatiar:hover { transform: translateY(-1px); box-shadow: 0 0 28px rgba(0,200,255,0.55); }
+                    #btn-fatiar:active { transform: translateY(0); }
+                    #btn-fatiar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+                </style>
+
+                <!-- Status do fatiador -->
+                <div id="slicer-status" style="display:none; margin-top: 16px; font-size: 0.9375rem; line-height: 1.5; overflow-wrap: anywhere; color: #00c8ff; text-align: center; letter-spacing: 1px;"></div>
+            </div>
+
             <label>ARQUIVOS DO PROJETO</label>
             <div id="vortex-projects-list" style="height: 120px; overflow-y: auto; margin-bottom: 20px; background: rgba(0,0,0,0.2);"></div>
 
             <label>BIBLIOTECA DE MÍDIA (UPLOADS)</label>
-            <div id="project-files-list" style="height: 200px; overflow-y: auto; background: rgba(0,0,0,0.4); margin-bottom: 20px; border: 1px solid rgba(255,204,0,0.1); padding: 5px;">
+
+            <!-- [v2026.UPLOAD_ZONE] Botão de import visível + drop zone -->
+            <div id="upload-drop-zone" onclick="importarVideos()"
+                 ondragover="event.preventDefault(); this.classList.add('dz-hover');"
+                 ondragleave="this.classList.remove('dz-hover');"
+                 ondrop="handleUploadZoneDrop(event)">
+                <div class="udz-icon">⬆</div>
+                <div class="udz-label">IMPORTAR VÍDEO</div>
+                <div class="udz-sub">CLIQUE OU ARRASTE ARQUIVOS AQUI</div>
+            </div>
+            <style>
+                #upload-drop-zone {
+                    cursor: pointer;
+                    border: 2px solid rgba(0, 255, 100, 0.45);
+                    border-radius: 10px;
+                    background: linear-gradient(135deg, rgba(0,255,100,0.07) 0%, rgba(0,180,70,0.04) 100%);
+                    padding: 26px 14px 22px;
+                    margin-bottom: 14px;
+                    text-align: center;
+                    transition: all 0.22s ease;
+                    box-shadow: 0 0 18px rgba(0,255,100,0.08), inset 0 0 30px rgba(0,255,100,0.03);
+                    position: relative;
+                    overflow: hidden;
+                }
+                #upload-drop-zone::before {
+                    content: '';
+                    position: absolute;
+                    inset: 0;
+                    background: radial-gradient(ellipse at 50% 0%, rgba(0,255,100,0.12) 0%, transparent 70%);
+                    pointer-events: none;
+                }
+                #upload-drop-zone .udz-icon {
+                    font-size: 2.6rem;
+                    line-height: 1;
+                    margin-bottom: 10px;
+                    color: #00ff64;
+                    text-shadow: 0 0 20px rgba(0,255,100,0.8), 0 0 40px rgba(0,255,100,0.4);
+                    display: block;
+                    transition: transform 0.2s ease;
+                }
+                #upload-drop-zone .udz-label {
+                    font-size: 0.85rem;
+                    font-weight: 900;
+                    color: #00ff64;
+                    letter-spacing: 3px;
+                    text-shadow: 0 0 12px rgba(0,255,100,0.6);
+                }
+                #upload-drop-zone .udz-sub {
+                    font-size: 0.52rem;
+                    color: rgba(255,255,255,0.35);
+                    margin-top: 6px;
+                    letter-spacing: 1.5px;
+                }
+                #upload-drop-zone:hover, #upload-drop-zone.dz-hover {
+                    background: linear-gradient(135deg, rgba(0,255,100,0.14) 0%, rgba(0,180,70,0.08) 100%);
+                    border-color: #00ff64;
+                    box-shadow: 0 0 28px rgba(0,255,100,0.25), inset 0 0 40px rgba(0,255,100,0.07);
+                    transform: translateY(-1px);
+                }
+                #upload-drop-zone:hover .udz-icon, #upload-drop-zone.dz-hover .udz-icon {
+                    transform: translateY(-3px) scale(1.1);
+                }
+            </style>
+
+            <div id="project-files-list" style="height: 160px; overflow-y: auto; background: rgba(0,0,0,0.4); margin-bottom: 12px; border: 1px solid rgba(255,204,0,0.1); padding: 5px;">
                 <p style="font-size: 0.5rem; text-align: center; opacity: 0.3; margin-top: 20px;">Carregando ativos...</p>
             </div>
             
@@ -135,5 +251,6 @@
     </div>
 
     <script src="js/vortex_editor.js"></script>
+    <script src="js/donation_widget.js"></script>
 </body>
 </html>

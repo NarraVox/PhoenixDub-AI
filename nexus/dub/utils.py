@@ -21,8 +21,9 @@ import re
 import hashlib
 from pydub import AudioSegment, effects
 
-def speedup_audio(audio_segment, speed_factor):
+def speedup_audio(audio_segment, speed_factor, max_speed_factor=1.20):
     """Acelera o áudio sem alterar o pitch usando o filtro profissional atempo do FFmpeg (sem cortes)."""
+    speed_factor = min(float(speed_factor), float(max_speed_factor))
     if speed_factor <= 1.0: return audio_segment
     try:
         temp_dir = "C:/IA_dublagem/uploads/_NEXUS_TEMP_"
@@ -32,7 +33,7 @@ def speedup_audio(audio_segment, speed_factor):
         fd_out, path_out = tempfile.mkstemp(suffix=".wav", dir=temp_dir)
         os.close(fd_in)
         os.close(fd_out)
-        
+
         audio_segment.export(path_in, format="wav")
         cmd = [
             "ffmpeg", "-y", "-i", path_in,
@@ -40,7 +41,7 @@ def speedup_audio(audio_segment, speed_factor):
             "-vn", path_out
         ]
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-        
+
         if os.path.exists(path_out) and os.path.getsize(path_out) > 0:
             speeded_audio = AudioSegment.from_wav(path_out)
             try:
@@ -50,7 +51,7 @@ def speedup_audio(audio_segment, speed_factor):
             return speeded_audio
     except Exception as e:
         logging.warning(f"⚠️ Falha ao acelerar áudio com FFmpeg: {e}. Usando fallback Pydub...")
-        
+
     try:
         return effects.speedup(audio_segment, playback_speed=speed_factor, chunk_size=120, crossfade=20)
     except Exception as err:
@@ -64,17 +65,17 @@ def is_reaction_or_noise(seg):
     texto_bruto = str(seg.get('manual_edit_text') or seg.get('sanitized_text') or seg.get('translated_text') or seg.get('text_pt') or seg.get('original_text', seg.get('text', '')))
     if any(ord(char) > 0x3000 for char in texto_bruto):
         return True
-        
+
     # [v2026.ASR_NOISE_SHIELD] Identifica alucinações de ruído e caracteres repetidos/georgianos
     if any('\u10a0' <= c <= '\u10ff' for c in texto_bruto):
         return True
     if re.search(r'([^\s.,!?_#*\-~])\1{3,}', texto_bruto):
         return True
-        
+
     meta_patterns = [
-        "texto fornecido", "não é em", "som de", "grito", "gemido", "traduzido", "traduzida", 
+        "texto fornecido", "não é em", "som de", "grito", "gemido", "traduzido", "traduzida",
         "tradução", "legenda", "o texto", "cannot translate", "not in english", "análise:", "analise:",
-        "não pode ser", "não é possível", "erro de digitação", "de digitação", "não é uma frase", 
+        "não pode ser", "não é possível", "erro de digitação", "de digitação", "não é uma frase",
         "mistura complexa", "caracteres japoneses", "caracteres asiáticos", "reconhecível", "de origem"
     ]
     texto_limpo = texto_bruto.lower()
@@ -89,14 +90,19 @@ def is_reaction_or_noise(seg):
         if pat in ["texto fornecido", "não é em", "cannot translate", "not in english", "análise:", "analise:", "mistura complexa", "não pode ser", "não é possível"]:
             if pat in texto_limpo:
                 return True
-        
-    only_letters = re.sub(r'[^a-zA-Z]', '', texto_bruto).lower()
-    if len(only_letters) > 3 and (
-        len(set(only_letters)) <= 2 or 
-        "aaa" in only_letters or "ooo" in only_letters or "uuu" in only_letters or "eee" in only_letters or "iii" in only_letters
-    ):
-        return True
-        
+
+    # [v2026.REACTION_SHIELD_FIX] Detecta apenas alucinações reais de ruído/gritos (ex: 'aaaaa', 'uhhh', 'shhh')
+    # Não bloqueia palavras legítimas como 'esse', 'essa', 'isso'
+    for w in texto_limpo.split():
+        w_letters = re.sub(r'[^a-zA-Z]', '', w)
+        if len(w_letters) >= 3:
+            # 3 ou mais vogais/consoantes idênticas em sequência (ex: 'aaaa', 'eeee', 'uhhh')
+            if re.search(r'([a-zA-Z])\1{2,}', w_letters):
+                return True
+            # Palavra inteira feita de apenas 1 única letra repetida (ex: 'aaa')
+            if len(set(w_letters)) == 1:
+                return True
+
     REACTION_WORDS = {
         "yeah", "yes", "ah", "oh", "uh", "hmm", "hm", "wow", "haha", "ha ha", "huh", "hã", "é", "ok", "ops", "oops", "ah!", "oh!", "yeah!",
         "mmm", "mmm.", "mmm...", "mm-hmm", "mm-mm", "uhu", "uh-huh", "uh-oh", "shh", "ts", "tsc"
@@ -104,10 +110,10 @@ def is_reaction_or_noise(seg):
     palavras = re.sub(r'[^a-zA-Z0-9 ]', '', texto_limpo).strip().split()
     if palavras and all(p in REACTION_WORDS for p in palavras):
         return True
-        
+
     if seg.get('emotion') == 'CANTORIA':
         return True
-        
+
     text_orig = str(seg.get('original_text', seg.get('text', ''))).lower()
     text_pt_br = texto_limpo
     music_indicators = ['♪', '♫', '[music]', '(music)', '[singing]', '(singing)', '[canto]', '(canto)', '[cantando]', '[música]', '[musica]']
@@ -122,7 +128,7 @@ def get_best_encoder():
         if subprocess.run(cmd_nv, capture_output=True, timeout=2).returncode == 0:
             logging.info("🚀 [HARDWARE] NVIDIA NVENC Ativo! Renderização via RTX 3050.")
             return 'h264_nvenc'
-        
+
         cmd_qsv = ['ffmpeg', '-f', 'lavfi', '-i', 'color=c=black:s=64x64', '-frames:v', '1', '-c:v', 'h264_qsv', '-f', 'null', '-']
         if subprocess.run(cmd_qsv, capture_output=True, timeout=2).returncode == 0:
             return 'h264_qsv'

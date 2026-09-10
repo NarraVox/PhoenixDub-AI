@@ -30,19 +30,19 @@ if not hasattr(np, 'NAN'):
 try:
     import sys
     from pathlib import Path
-    
+
     # Define o caminho do nosso ambiente de elite
     base_env = Path(sys.executable).parent.parent
     local_site = base_env / "Lib" / "site-packages"
-    
+
     # Limpeza Seletiva: Remove APENAS o site-packages do AppData (onde moram os impostores)
     # Mas mantém a pasta 'Lib' (onde moram o glob, asyncio, etc)
     sys.path = [p for p in sys.path if not ("AppData" in p and "site-packages" in p)]
-    
+
     # Insere o nosso site-packages como a PRIORIDADE ZERO
     if str(local_site) not in sys.path:
         sys.path.insert(0, str(local_site))
-        
+
     # print(f"🛡️ [NEXUS_ISOLATION] Ambiente blindado e seletivo. Local: {local_site.name}")
 
 except Exception as e:
@@ -53,17 +53,17 @@ try:
     import sys
     import ctypes
     from pathlib import Path
-    
+
     base_env = Path(sys.executable).parent.parent
     site_packages = base_env / "Lib" / "site-packages"
-    
+
     dll_paths = [
         site_packages / "llama_cpp" / "lib",
         site_packages / "nvidia" / "cublas" / "bin",
         site_packages / "nvidia" / "cuda_runtime" / "bin",
         site_packages / "nvidia" / "cuda_nvrtc" / "bin"
     ]
-    
+
     for p in dll_paths:
         if p.exists():
             os.environ["PATH"] = str(p) + os.pathsep + os.environ.get("PATH", "")
@@ -99,11 +99,22 @@ def route_limpar_artefatos(job_id):
 @app.route('/dublar_jogos', methods=['POST'])
 def dublar_jogos():
     start_time = time.time()
-    
+
     if 'job_id' in request.form and request.form.get('job_id'):
         job_id = request.form.get('job_id')
         job_dir = Path(app.config['UPLOAD_FOLDER']) / job_id
         if not job_dir.exists(): return jsonify({'error': f'Trabalho não encontrado.'}), 404
+        game_profile = request.form.get('game_profile', 'padrao')
+        game_names = {
+            'state_of_decay': 'State of Decay',
+            'cod': 'Call of Duty',
+            'xcom': 'XCOM',
+        }
+        status_data = safe_json_read(job_dir / "job_status.json") or {}
+        status_data['game_profile'] = game_profile
+        status_data['game_name'] = game_names.get(game_profile, 'Jogo sem nome')
+        status_data['project_name'] = status_data.get('project_name') or status_data.get('original_folder_name') or job_id
+        safe_json_write(status_data, job_dir / "job_status.json")
         threading.Thread(target=processar_dublagem_jogos, args=(job_dir, job_id, start_time)).start()
         return jsonify({'status': 'processing', 'job_id': job_id})
 
@@ -130,7 +141,7 @@ def dublar_jogos():
 
         first_file_data = files[0].read()
         files[0].seek(0)
-        
+
         best_profile = find_best_audio_profile(first_file_data, job_dir)
 
         if not best_profile:
@@ -139,16 +150,16 @@ def dublar_jogos():
 
         if 'wav_files' not in request.files:
             return jsonify({'error': 'Nenhum arquivo enviado.'}), 400
-            
+
         files = request.files.getlist('wav_files')
-        
+
         file_format_map = {}
         # [v10.71 CONSOLIDATED] Suporte a ZIP e arquivos soltos
         for file in files:
             if not file.filename: continue
             filename = secure_filename(file.filename)
             extension = Path(filename).suffix.lower()
-            
+
             if extension == '.zip':
                 temp_zip_path = job_dir / filename
                 file.save(temp_zip_path)
@@ -172,7 +183,7 @@ def dublar_jogos():
                 file.seek(0)
                 base_filename = Path(filename).stem
                 file_format_map[base_filename] = extension
-                
+
                 if best_profile:
                     try:
                         base_filename = Path(filename).stem
@@ -193,16 +204,16 @@ def dublar_jogos():
             # [v10.55 INTELLIGENT DIARIZATION SPLIT]
             # O usuário solicitou "escutar todos os áudios" e cortar se a voz mudar.
             # Também mantemos o split por duração se > 25s.
-            
+
             dur = get_audio_duration(audio_file)
             dur_f = round(dur, 2)
             logging.info(f"Auditando '{audio_file.name}' ({dur_f}s) em busca de trocas de orador...")
-            
+
             # 1. Tenta Split por Orador (Diarização Cirúrgica baseada em VAD)
             if dur > 1.8: # Tamanho mínimo para análise estatística
                  if split_audio_by_speaker(audio_file, job_dir):
                       continue # Já foi splitado e movido
-            
+
             # [v10.86 REMOVIDO] Split por Silêncio foi desativado.
             # O corte bruto por silêncio estava cortando o final das palavras e limitando
             # o tamanho dos espaços de dublagem da IA. Agora deixamos o Whisper gerenciar
@@ -212,7 +223,7 @@ def dublar_jogos():
             (diarization_dir / f"voz{i}").mkdir(exist_ok=True)
 
         status_data = {
-            'job_id': job_id, 'status': 'iniciando', 'files_hash': files_hash, 
+            'job_id': job_id, 'status': 'iniciando', 'files_hash': files_hash,
             'file_format_map': file_format_map, 'detected_profile': best_profile,
             'game_profile': game_profile, 'user_glossary': user_glossary
         }
@@ -246,7 +257,7 @@ def update_text():
     logging.info(f"Texto atualizado para '{file_id}' no job '{job_id}': '{new_text}'")
     safe_json_write(project_data, project_data_path)
     safe_json_write(target_segment, job_dir / "_backup_texto_final" / f"{file_id}.json")
-    
+
     try:
         dubbed_audio_path = job_dir / "_dubbed_audio" / f"{file_id}_dubbed.wav"
         if dubbed_audio_path.exists():
@@ -260,7 +271,7 @@ def update_text():
         if final_audio_path.exists():
             os.remove(final_audio_path)
             logging.info(f"Áudio final removido para '{file_id}'.")
-            
+
     except Exception as e:
         logging.error(f"Erro ao remover áudios antigos para '{file_id}': {e}")
 
@@ -271,24 +282,24 @@ def recent_jobs():
     jobs = []
     # Force absolute path resolution
     upload_path = Path(app.config['UPLOAD_FOLDER']).resolve()
-    
+
     # logging.debug(f"[RECENT_JOBS] Verificando pasta uploads: {upload_path}")
-    
+
     if not upload_path.exists():
         logging.warning(f"[RECENT_JOBS] Pasta de uploads NÃO encontrada: {upload_path}")
         return jsonify([])
 
     try:
         # List directories sorted by mtime descending
-        dirs = sorted([d for d in upload_path.iterdir() if d.is_dir()], 
+        dirs = sorted([d for d in upload_path.iterdir() if d.is_dir()],
                       key=lambda x: x.stat().st_mtime, reverse=True)
-        
+
         # logging.info(f"[RECENT_JOBS] Encontrados {len(dirs)} diretórios candidatos.")
 
         for d in dirs:
             status_file = d / "job_status.json"
             # logging.debug(f"[RECENT_JOBS] Checando: {d.name}")
-            
+
             if status_file.exists():
                 try:
                     data = safe_json_read(status_file)
@@ -312,10 +323,10 @@ def recent_jobs():
                 pass
 
             if len(jobs) >= 10: break
-            
+
     except Exception as e:
         logging.error(f"[RECENT_JOBS] ERRO CRÍTICO AO LISTAR: {e}", exc_info=True)
-        
+
     logging.info(f"[RECENT_JOBS] Retornando {len(jobs)} projetos.")
     return jsonify(jobs)
 
@@ -325,11 +336,11 @@ def resume_job(job_id):
     logging.info(f"[RESUME] Pedido de retomada recebido para: {job_id}")
     upload_path = Path(app.config['UPLOAD_FOLDER'])
     job_dir = upload_path / job_id
-    
+
     if not job_dir.exists():
         logging.error(f"[RESUME] Pasta não encontrada: {job_dir}")
         return jsonify({'error': 'Job não encontrado'}), 404
-    
+
     with active_jobs_lock:
         if job_id in active_jobs:
             logging.info(f"[RESUME] Job {job_id} já está em active_jobs. Ignorando.")
@@ -337,17 +348,17 @@ def resume_job(job_id):
 
     # Se não estiver rodando, reinicia a thread
     logging.info(f"[RESUME] Iniciando Thread para: {job_id}")
-    
+
     # [FIX] Força atualização visual imediata
     status_file = job_dir / "job_status.json"
     status_data = safe_json_read(status_file) or {}
     status_data['status'] = 'retomando'
     status_data['etapa'] = 'Reinicializando Processos...'
     safe_json_write(status_data, status_file)
-    
+
     # [FIX] Recupera o tempo já gasto anteriormente no projeto para não zerar o relogio
     tempo_previo = status_data.get('total_elapsed_secs', 0)
-    start_time = time.time() - tempo_previo 
+    start_time = time.time() - tempo_previo
     try:
         # [SISTEMA STEALTH] A retomada de jobs de vídeo agora é responsabilidade do Motor Dedicado (5003).
         # Este Hub agora foca apenas na retomada de Jobs de Games/Audio.
@@ -366,11 +377,18 @@ def dublar_lote_jogos():
     data = request.json or {}
     job_ids = data.get('job_ids', [])
     parent_folder = data.get('parent_folder', request.form.get('parent_folder'))
-    
+    game_profile = data.get('game_profile', request.form.get('game_profile', 'padrao'))
+    game_names = {
+        'state_of_decay': 'State of Decay',
+        'cod': 'Call of Duty',
+        'xcom': 'XCOM',
+    }
+    game_name = game_names.get(game_profile, 'Jogo sem nome')
+
     if not job_ids and 'job_ids' in request.form:
         raw_jobs = request.form.get('job_ids', '')
         job_ids = [j.strip() for j in raw_jobs.split(',') if j.strip()]
-        
+
     jobs_info_list = []
 
     # [v2026.MULTI_FOLDER_BATCH] Se forem passadas pastas em parent_folder (separadas por ';')
@@ -387,15 +405,15 @@ def dublar_lote_jogos():
                     safe_sub_name = "".join([c if c.isalnum() else "_" for c in p_path.name.upper()]).strip("_")
                     sub_job_id = f"PROJETO_{datestr}_{safe_sub_name}"
                     sub_job_dir = Path(app.config['UPLOAD_FOLDER']) / sub_job_id
-                    
+
                     source_dir = sub_job_dir / "_1_MOVER_OS_FICHEIROS_DAQUI"
                     (sub_job_dir / "_2_PARA_AS_PASTAS_DE_VOZ").mkdir(parents=True, exist_ok=True)
                     source_dir.mkdir(parents=True, exist_ok=True)
-                    
+
                     file_format_map = {}
                     for af in audio_files:
                         file_format_map[af.stem] = af.suffix.lower()
-                    
+
                     # [v2026.FAST_PARALLEL_COPY] Cópia paralela ultra-rápida para 2.000+ arquivos não travar a interface
                     def _copy_single_file(af):
                         try:
@@ -406,11 +424,12 @@ def dublar_lote_jogos():
 
                     with ThreadPoolExecutor(max_workers=16) as copy_exec:
                         list(copy_exec.map(_copy_single_file, audio_files))
-                        
+
                     status_data = {
                         'job_id': sub_job_id, 'status': 'iniciando', 'progress': 0, 'etapa': 'Iniciando',
                         'subetapa': f'{len(audio_files)} arquivos preparados.', 'total_seg': len(audio_files),
-                        'file_format_map': file_format_map, 'game_profile': data.get('game_profile', 'padrao'),
+                        'file_format_map': file_format_map, 'game_profile': game_profile,
+                        'game_name': game_name, 'project_name': p_path.name,
                         'original_folder_name': p_path.name,
                         'original_folder_path': str(p_path.resolve())
                     }
@@ -424,18 +443,24 @@ def dublar_lote_jogos():
             if not j_dir.exists():
                 j_dir = Path("c:/IA_dublagem/jobs") / j_id
             if j_dir.exists() and not any(j['job_id'] == j_id for j in jobs_info_list):
+                status_path = j_dir / "job_status.json"
+                status_data = safe_json_read(status_path) or {}
+                status_data['game_profile'] = game_profile
+                status_data['game_name'] = game_name
+                status_data['project_name'] = status_data.get('project_name') or status_data.get('original_folder_name') or j_id
+                safe_json_write(status_data, status_path)
                 jobs_info_list.append({
                     'job_id': j_id,
                     'job_dir': j_dir,
                     'start_time': start_time
                 })
-            
+
     if not jobs_info_list:
         return jsonify({'error': 'Nenhuma pasta de projeto ou subpasta de áudio encontrada para o lote.'}), 404
-        
+
     from nexus.core.batch_orchestrator import enqueue_batch_jobs
     enqueue_batch_jobs(jobs_info_list)
-    
+
     return jsonify({
         'status': 'enqueued',
         'message': f'Fila por estágios iniciada com sucesso para {len(jobs_info_list)} pasta(s).',
@@ -449,25 +474,79 @@ def dublar_lote_jogos():
 @app.route('/api/job-status/<job_id>')
 def progress(job_id):
     with progress_lock:
-        if job_id in progress_dict: 
+        if job_id in progress_dict:
             p_data = dict(progress_dict[job_id])
             status_path = Path(app.config['UPLOAD_FOLDER']) / job_id / "job_status.json"
             if status_data := safe_json_read(status_path):
                 p_data.update(status_data)
             return jsonify(p_data)
-            
+
         status_path = Path(app.config['UPLOAD_FOLDER']) / job_id / "job_status.json"
         if status_data := safe_json_read(status_path):
-             return jsonify({ 
-                 'progress': status_data.get('progress', 0), 
+             return jsonify({
+                 'progress': status_data.get('progress', 0),
                  'status': status_data.get('status', 'processando'),
                  'etapa': status_data.get('etapa', 'Pronto'),
-                 'subetapa': status_data.get('subetapa'), 
+                 'subetapa': status_data.get('subetapa'),
                  'tempo_decorrido': status_data.get('tempo_decorrido', '0:00:00'),
                  'total_seg': status_data.get('total_seg', 0),
                  'current_seg': status_data.get('current_seg', 0)
              })
     return jsonify({'progress': 0, 'status': 'iniciando', 'message': 'Aguardando início...'})
+
+@app.route('/api/active-batch-status')
+def active_batch_status():
+    from nexus.core.batch_orchestrator import get_batch_status
+    b_stat = get_batch_status()
+    if b_stat.get("is_running") and b_stat.get("active_job_id"):
+        active_id = b_stat["active_job_id"]
+        with progress_lock:
+            if active_id in progress_dict:
+                p_data = dict(progress_dict[active_id])
+                p_data.update(b_stat)
+                return jsonify(p_data)
+        status_path = Path(app.config['UPLOAD_FOLDER']) / active_id / "job_status.json"
+        if status_data := safe_json_read(status_path):
+            status_data.update(b_stat)
+            return jsonify(status_data)
+    return jsonify(b_stat)
+
+@app.route('/api/get-last-batch')
+def get_last_batch():
+    from nexus.core.batch_orchestrator import get_last_batch_manifest
+    manifest = get_last_batch_manifest()
+    if manifest:
+        return jsonify({"has_batch": True, "manifest": manifest})
+    return jsonify({"has_batch": False})
+
+@app.route('/api/resume-last-batch', methods=['POST'])
+def resume_last_batch():
+    import time
+    from nexus.core.batch_orchestrator import get_last_batch_manifest, enqueue_batch_jobs
+    manifest = get_last_batch_manifest()
+    if not manifest or not manifest.get("jobs"):
+        return jsonify({"success": False, "message": "Nenhuma fila anterior registrada."}), 400
+
+    jobs_info_list = []
+    for j in manifest["jobs"]:
+        j_id = j["job_id"]
+        j_dir = Path(j["job_dir"])
+        if j_dir.exists():
+            jobs_info_list.append({
+                "job_id": j_id,
+                "job_dir": j_dir,
+                "start_time": time.time()
+            })
+
+    if not jobs_info_list:
+        return jsonify({"success": False, "message": "As pastas da fila anterior não foram encontradas no disco."}), 400
+
+    enqueue_batch_jobs(jobs_info_list, parent_folder=manifest.get("parent_folder"))
+    return jsonify({
+        "success": True,
+        "message": f"Fila anterior retomada com sucesso ({len(jobs_info_list)} pastas no lote).",
+        "enqueued_jobs": [j["job_id"] for j in jobs_info_list]
+    })
 
 @app.errorhandler(Exception)
 def handle_exception(e):
@@ -483,7 +562,8 @@ def favicon(): return make_response('', 204)
 @app.route('/uploads/<path:path>')
 def send_upload(path): return send_from_directory(app.config['UPLOAD_FOLDER'], path)
 
-CURRENT_APP_VERSION = "v0.6.0"
+from nexus.version import APP_VERSION
+CURRENT_APP_VERSION = "v" + APP_VERSION
 
 def get_local_build_hash():
     """Gera uma impressão digital (Hash SHA256 / Commit SHA) da build local atual."""
@@ -508,37 +588,8 @@ def get_local_build_hash():
 
 @app.route('/api/check-update', methods=['GET'])
 def check_update_route():
-    """Verifica no GitHub se há uma nova versão por Hash de Commit ou Release Tag."""
-    import urllib.request
-    import json
-    local_hash = get_local_build_hash()
-    try:
-        url = "https://api.github.com/repos/NarraVox/PhoenixDub-AI/releases/latest"
-        req = urllib.request.Request(url, headers={'User-Agent': 'NarraVox-App'})
-        with urllib.request.urlopen(req, timeout=5) as response:
-            if response.status == 200:
-                data = json.loads(response.read().decode())
-                latest_tag = data.get('tag_name', CURRENT_APP_VERSION)
-                has_update = (latest_tag != CURRENT_APP_VERSION)
-                return jsonify({
-                    'success': True,
-                    'current_version': CURRENT_APP_VERSION,
-                    'latest_version': latest_tag,
-                    'local_hash': local_hash,
-                    'has_update': has_update,
-                    'is_dev_build': not has_update,
-                    'download_url': 'https://github.com/NarraVox/PhoenixDub-AI/releases/latest'
-                })
-    except Exception as e:
-        return jsonify({
-            'success': True,
-            'current_version': CURRENT_APP_VERSION,
-            'latest_version': CURRENT_APP_VERSION,
-            'local_hash': local_hash,
-            'has_update': False,
-            'is_dev_build': True,
-            'note': 'Offline ou limite de API excedido.'
-        })
+    from nexus.updates import check_update
+    return check_update()
 
 # --- GERENCIAMENTO DE SISTEMA ---
 @app.route('/system_info')
@@ -566,7 +617,7 @@ def uninstall_system():
     """Gera um script de limpeza e encerra o app."""
     import os
     import subprocess
-    
+
     # Script Batch para deletar as pastas pesadas
     # Ele espera 3 segundos para o app fechar totalmente
     batch_content = f"""@echo off
@@ -585,10 +636,10 @@ del "%~f0"
 """
     with open("uninstall_nexus.bat", "w") as f:
         f.write(batch_content)
-    
+
     # Abre o script em uma nova janela de terminal e fecha o app
     os.startfile("uninstall_nexus.bat")
-    
+
     # Encerra o processo atual (força fechamento do Webview e Flask)
     import os
     import signal
@@ -596,3 +647,7 @@ del "%~f0"
     return jsonify({'status': 'uninstalling'})
 
 # [v2026.9 FIX] Aquecimento de Motor e Patch de Emergência
+
+# [v2026.SLICER] Fatiador de Vídeo
+from nexus.core.video_slicer_route import video_slicer_blueprint
+app.register_blueprint(video_slicer_blueprint)

@@ -1,10 +1,16 @@
 # --- NEXUS AI - REQUIREMENTS (v2026.RTX_ULTRA) ---
-# Atualizado em: 2026-05-12
-# Otimizado para RTX 3050 (6GB) e Motores Llama 3 / Chatterbox
+# Atualizado em: 2026-08-16
+# Otimizado para NVIDIA RTX 3050 (6GB VRAM) e Motores Qwen3-TTS / Cine Gen / PuLID / GFPGAN
 
 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu124
+--extra-index-url https://download.pytorch.org/whl/cu124
 
-# [MOTOR_IA] Aceleração Local
+# [TORCH_CORE] PyTorch 2.6 CUDA 12.4
+torch==2.6.0+cu124
+torchaudio==2.6.0+cu124
+torchvision==0.21.0+cu124
+
+# [MOTOR_IA] Aceleração Local LLM
 llama-cpp-python==0.3.23
 nvidia-cublas-cu12
 nvidia-cudnn-cu12
@@ -13,51 +19,48 @@ nvidia-cuda-nvrtc-cu12
 
 # [AUDIO_IA] Transcrição e Diarização
 faster-whisper==1.2.1
+bitsandbytes==0.50.2
 pyannote.audio==3.3.1
 librosa==0.10.2.post1
 soundfile==0.13.1
 pydub==0.25.1
 
-# [VOICE_IA] Geração de Voz (Qwen3-TTS GGUF)
+# [VOICE_IA] Geração de Voz e Dublagem (Qwen3-TTS)
 qwen-tts>=0.0.1
-flash-attn>=2.5.0
-soundfile==0.13.1
-pydub==0.25.1
-torch==2.5.1+cu121
-torchaudio==2.5.1+cu121
-numpy==1.26.4
-transformers>=4.45.1
+# Versão mantida para compatibilidade do ambiente de voz testado.
+transformers==4.57.6
+tokenizers>=0.20.0
 
-# [NEXUS_CORE] Infraestrutura
+# [CINE_GEN] Geração de Imagem, PuLID e Vídeo
+diffusers>=0.30.0
+accelerate>=0.34.0
+sentencepiece
+protobuf
+
+# [FACE_AI] Reconhecimento, Recorte e Restauração Facial
+insightface>=0.7.3
+onnxruntime-gpu>=1.18.0
+rembg>=2.0.50
+gfpgan>=1.3.8
+facexlib>=0.3.0
+basicsr>=1.4.2
+
+# [NEXUS_CORE] Infraestrutura e API Web
 Flask==3.1.0
 Flask-Cors==5.0.0
-huggingface-hub==0.28.1
-requests==2.33.1
-psutil==6.1.1
-python-dotenv==1.0.1
-tqdm==4.67.3
-Werkzeug==3.1.3
-
-# [UTILITARIOS] Suporte
-aiohttp==3.11.12
-anyio==4.8.0
-attrs==25.1.0
-click==8.1.8
-filelock==3.17.0
-Jinja2==3.1.5
-MarkupSafe==3.0.2
-Pillow==11.1.0
-PyYAML==6.0.2
-regex==2026.4.4
-scikit-learn==1.8.0
-scipy==1.17.1
-tokenizers==0.22.2
-typing_extensions==4.15.0
-urllib3==2.6.3
-
-# [DJ_AUTO_MIX] Motor de Beatmatching
-mixingbear==0.1.2
+pywebview>=5.0
+huggingface-hub>=0.28.1
+requests>=2.31.0
+psutil>=6.0.0
+python-dotenv>=1.0.1
+tqdm>=4.66.0
+Werkzeug>=3.0.0
+Pillow>=10.0.0
+PyYAML>=6.0.1
 
 # [NEXUS_DOCS] OCR e Leitura de Documentos
 pdfplumber>=0.11.0
 easyocr>=1.7.1
+
+# [DJ_AUTO_MIX] Motor de Beatmatching
+mixingbear==0.1.2

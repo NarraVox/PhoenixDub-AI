@@ -55,7 +55,6 @@
                 </div>
                 <div style="display: flex; gap: 10px; flex-shrink: 0;">
                     <a href="https://apoia.se/narravox" target="_blank" style="background: #ff0080; color: white; border: none; padding: 11px 18px; border-radius: 10px; font-weight: 800; font-size: 0.8rem; font-family: 'Outfit', sans-serif; text-decoration: none; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 15px rgba(255, 0, 128, 0.3); text-transform: uppercase; display: inline-block;" onmouseover="this.style.boxShadow='0 0 20px rgba(255, 0, 128, 0.6)'; this.style.transform='scale(1.03)';" onmouseout="this.style.boxShadow='0 0 15px rgba(255, 0, 128, 0.3)'; this.style.transform='scale(1)';">Apoia.se</a>
-                    <a href="https://polar.sh/narravox" target="_blank" style="background: rgba(255, 255, 255, 0.05); color: white; border: 1px solid rgba(255,255,255,0.15); padding: 11px 18px; border-radius: 10px; font-weight: 800; font-size: 0.8rem; font-family: 'Outfit', sans-serif; text-decoration: none; cursor: pointer; transition: all 0.3s; text-transform: uppercase; display: inline-block;" onmouseover="this.style.background='rgba(255,255,255,0.12)';" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)';">Polar.sh</a>
                 </div>
             </div>
 
@@ -105,30 +104,18 @@
                     <div style="display: flex; align-items: center; gap: 15px;">
                         <input type="checkbox" id="mod-voice" checked onchange="calcTotalSize()" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
                         <div>
-                            <div style="font-weight: 800; font-size: 0.95rem; color: #fff;">🎙️ Módulo Dublagem (Áudio, Voz & Sincronia)</div>
-                            <div style="font-size: 0.75rem; color: #888;">CustomVoice TTS, transcrição Whisper, diarização, LivePortrait e modelos Gemma-4 & Qwen3-Base.</div>
+                            <div style="font-weight: 800; font-size: 0.95rem; color: #fff;">🎙️ Módulo Dublagem (Qwen3-TTS & Whisper)</div>
+                            <div style="font-size: 0.75rem; color: #888;">Motor Qwen3-TTS 12Hz, transcrição Faster-Whisper, diarização Pyannote e LLM de tradução.</div>
                         </div>
                     </div>
-                    <span style="font-weight: 800; font-size: 0.9rem; color: var(--primary);">~9.00 GB</span>
-                </label>
-
-                <!-- Módulo Vídeo -->
-                <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); padding: 15px 20px; border-radius: 14px; cursor: pointer; transition: all 0.3s;" class="module-label" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        <input type="checkbox" id="mod-video" checked onchange="calcTotalSize()" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
-                        <div>
-                            <div style="font-weight: 800; font-size: 0.95rem; color: #fff;">🎬 Módulo Vídeo Generativo (PyTorch + Diffusers)</div>
-                            <div style="font-size: 0.75rem; color: #888;">Motores de imagem/vídeo (FLUX-klein, Wan v2.2) e modelos de voz Qwen3-CustomVoice.</div>
-                        </div>
-                    </div>
-                    <span style="font-weight: 800; font-size: 0.9rem; color: var(--primary);">~13.50 GB</span>
+                    <span style="font-weight: 800; font-size: 0.9rem; color: var(--primary);">~7.50 GB</span>
                 </label>
             </div>
 
             <!-- Calculador de tamanho total -->
             <div style="background: rgba(0, 242, 255, 0.05); border: 1px solid rgba(0, 242, 255, 0.2); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 0.85rem; color: #aaa;">Tamanho estimado de download e instalação:</span>
-                <span id="total-size-label" style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 900; color: var(--primary);">~24.60 GB</span>
+                <span id="total-size-label" style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; font-weight: 900; color: var(--primary);">~19.40 GB</span>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px;">
@@ -169,10 +156,10 @@
                     <h3 style="color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;">💻 Tecnologias de Apoio</h3>
                     <ul style="list-style: none; padding: 0; font-size: 0.85rem;">
                         <li>🚀 <b>Python & Flask:</b> Engine e API Web</li>
-                        <li>🎙️ <b>Faster-Whisper & Chatterbox:</b> Transcrição e Clonagem Vocal</li>
-                        <li>🎬 <b>FFmpeg:</b> Processamento de Mídia Profissional</li>
-                        <li>🧠 <b>Google Gemma 4:</b> Inteligência Agêntica (via LM Studio)</li>
-                        <li>✨ <b>DeepFilterNet:</b> Limpeza e Restauração de Áudio</li>
+                        <li>🎙️ <b>Qwen3-TTS & Faster-Whisper:</b> Síntese Neural e Transcrição</li>
+                        <li>🎬 <b>RealVisXL & PuLID v1.1:</b> Geração de Imagem & Identidade Facial</li>
+                        <li>✨ <b>GFPGAN & Rembg:</b> Restauração 4K e Recorte de Precisão</li>
+                        <li>🎞️ <b>FFmpeg:</b> Processamento de Mídia Profissional</li>
                     </ul>
 
                     <!-- APOIO -->
@@ -241,5 +228,6 @@
     </div>
 
     <script src="js/installer_ui.js"></script>
+    <script src="js/donation_widget.js"></script>
 </body>
 </html>

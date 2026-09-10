@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {textMetrics} from '../nexus/client/js/corrections/timing.js';
+assert.equal(textMetrics('',4).recommended,72);
+assert.equal(textMetrics('',3.5).recommended,63);
+assert.equal(textMetrics('a'.repeat(63),3.5).over,false);
+assert.equal(textMetrics('a'.repeat(64),3.5).over,true);
+assert.equal(textMetrics('Me dê cobertura',.705313).count,15);
+assert.equal(textMetrics('Me dê cobertura',.705313).recommended,12);
+assert.equal(textMetrics('de\u0302',4).count,2);
+assert.equal(textMetrics('',4).count,0);
+assert.equal(textMetrics('texto',null).recommended,null);
+console.log('Contagem de caracteres: 9 verificações passaram.');

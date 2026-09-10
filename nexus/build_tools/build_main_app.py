@@ -9,14 +9,17 @@ def build_nexus_pro():
     os.chdir(root_dir)
 
     print("Iniciando Build do Nexus AI Professional (Modo de Compatibilidade)...")
-    
+
     app_name = "Nexus_AI_Pro"
     entry_point = "Nexus_AI_Pro.py"
-    
+
     # Limpeza profunda
     for folder in ['build', 'dist', '__pycache__']:
         if os.path.exists(folder):
             shutil.rmtree(folder, ignore_errors=True)
+
+    from build_runtime import build_runtime
+    runtime = build_runtime(root_dir)
 
     # Configurações do PyInstaller
     # Usamos --collect-all para evitar o bug de analise de bytecode (IndexError)
@@ -66,8 +69,10 @@ def build_nexus_pro():
         '--exclude-module=pydub',
         '--exclude-module=av',
         # Incluindo a pasta client (interface) com caminhos absolutos para evitar erro de .spec no PyInstaller
-        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "client"))};client',
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "client"))};nexus/client',
+        f'--add-data={runtime};.',
         f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "requirements.txt"))};.',
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "update_worker.py"))};nexus',
     ]
 
     print(f"Empacotando recursos (Coleta Bruta) e gerando {app_name}.exe...")
@@ -75,16 +80,16 @@ def build_nexus_pro():
         PyInstaller.__main__.run(params)
     except Exception as e:
         print(f"Erro durante o build: {e}")
-        return
+        raise
 
     # Limpeza pós-build
     if os.path.exists(f"{app_name}.spec"):
         os.remove(f"{app_name}.spec")
-        
+
     # Copia o executável gerado para a raiz do repositório para o build_setup.py empacotar
     final_exe_src = os.path.join(os.getcwd(), "dist", f"{app_name}.exe")
     final_exe_dest = os.path.join(os.getcwd(), f"{app_name}.exe")
-    
+
     if os.path.exists(final_exe_src):
         shutil.copy2(final_exe_src, final_exe_dest)
         print(f"\n[COPIA] Executavel copiado com sucesso para a raiz: {final_exe_dest}")
@@ -97,5 +102,3 @@ def build_nexus_pro():
 
 if __name__ == "__main__":
     build_nexus_pro()
-
-

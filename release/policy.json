@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/NarraVox/PhoenixDub-AI.git",
+  "files": [".gitignore", "CREDITS.md", "README.md", "RELEASE_NOTES.md", "Nexus_AI_Pro.py", "Setup_Nexus.py", "requirements.txt", "vpk_manager.py", "apoia-se.md", "AGENTS.md", ".github/workflows/build_and_release.yml"],
+  "directories": ["nexus/", "docs/", "release/", "tests/"],
+  "extensions": [".py", ".md", ".txt", ".html", ".css", ".js", ".mjs", ".json", ".svg", ".ico"],
+  "exclude": ["nexus/core/server_config.json", "nexus/core/qwen_asr_loader.py", "nexus/core/character_voice_shield.py", "tests/correction_preview_server.py"],
+  "preserve_remote": ["nexus/core/server_config.json"],
+  "preserve_vendor_directory": "tools/vgmstream-cli/",
+  "max_text_bytes": 2097152
+}

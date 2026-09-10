@@ -26,12 +26,12 @@ else:
     from nexus.core.orchestrator_jobs_games import *
     from nexus.core.orchestrator_jobs_core import *
     from nexus.core.orchestrator_routes import *
-    
+
     modules_to_patch = [
-        'utils', 'vocals', 'diarization', 'whisper', 'whisper_loader', 'qwen_loader', 
-        'tts_loader', 'model_loader', 'tts', 'translation', 'translation_utils', 
-        'translation_api', 'translation_processors', 'translation_corrector', 
-        'translation_sync', 'translation_maestro', 'orchestrator_jobs_games', 
+        'utils', 'vocals', 'diarization', 'whisper', 'whisper_loader', 'qwen_loader',
+        'tts_loader', 'model_loader', 'tts', 'translation', 'translation_utils',
+        'translation_api', 'translation_processors', 'translation_corrector',
+        'translation_sync', 'translation_maestro', 'orchestrator_jobs_games',
         'orchestrator_jobs_core', 'orchestrator_routes'
     ]
 

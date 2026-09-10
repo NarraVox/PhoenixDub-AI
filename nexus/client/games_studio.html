@@ -50,10 +50,28 @@
 
             <!-- ETAPA 3: CONFIG & DUBLAGEM -->
             <div class="rig-module">
-                <label>ETAPA 3: ESTAÇÃO DOSSIER (CONFIG)</label>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="margin-bottom: 0;">ETAPA 3: ESTAÇÃO DOSSIÊ (CONFIG)</label>
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" class="back-btn" style="padding: 2px 8px; font-size: 0.6rem; background: rgba(0, 243, 255, 0.15); color: #00f3ff; border: 1px solid #00f3ff; cursor: pointer;" onclick="toggleSelectAllProjects(true)">⚡ TODOS</button>
+                        <button type="button" class="back-btn" style="padding: 2px 8px; font-size: 0.6rem; background: rgba(255, 255, 255, 0.08); color: #aaa; cursor: pointer;" onclick="toggleSelectAllProjects(false)">LIMPAR</button>
+                        <button type="button" class="back-btn" style="padding: 2px 8px; font-size: 0.6rem; background: rgba(0, 255, 65, 0.1); color: #00ff41; border: 1px solid rgba(0,255,65,0.4); cursor: pointer;" onclick="refreshProjectsList(); logToTerminal('🔄 Status dos projetos atualizado!', 'success');" title="Atualizar Status dos Projetos">🔄</button>
+                    </div>
+                </div>
+
                 <div style="margin-bottom: 15px;">
-                    <div style="color: #00f3ff; font-size: 0.55rem; font-weight: 900; margin-bottom: 5px; letter-spacing: 1px;">💡 DICA LOTE: SEGURE CTRL OU SHIFT PARA SELECIONAR VÁRIOS PROJETOS AO MESMO TEMPO</div>
-                    <select id="project-selector" multiple size="4" style="margin-bottom: 0; width: 100%; height: 110px; background: rgba(0,0,0,0.5); border: 1px solid var(--accent); color: #fff; border-radius: 4px; padding: 5px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="color: #00f3ff; font-size: 0.65rem; font-weight: 900; letter-spacing: 1px;">📁 SELECIONE OS PROJETOS PARA O LOTE:</span>
+                        <span id="selected-projects-badge" style="color: #00ff41; font-size: 0.65rem; font-weight: 900; background: rgba(0,255,65,0.1); padding: 2px 8px; border-radius: 3px; border: 1px solid rgba(0,255,65,0.3);">0 SELECIONADO(S)</span>
+                    </div>
+
+                    <!-- Container Visual de Cards com Scroll -->
+                    <div id="project-cards-container" style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; border: 1px solid rgba(255, 18, 79, 0.3); border-radius: 6px; padding: 10px; background: rgba(0,0,0,0.5);">
+                        <div style="color: #888; font-size: 0.7rem; text-align: center; padding: 15px;">Carregando dossiês de projetos...</div>
+                    </div>
+
+                    <!-- Select Oculto para Manter 100% de Compatibilidade -->
+                    <select id="project-selector" multiple style="display: none;">
                         <option value="">SELECIONE O PROJETO...</option>
                     </select>
                 </div>
@@ -105,6 +123,7 @@
                 </select>
                 <button class="btn-rig" onclick="executar('dublar_inteligente')" id="btn-iniciar" style="background: linear-gradient(135deg, #00ff41, #00b32d); color: #000; font-weight: 900; padding: 14px; font-size: 0.85rem; letter-spacing: 1px; box-shadow: 0 0 15px rgba(0, 255, 65, 0.4); margin-top: 10px;">🚀 INICIAR DUBLAGEM</button>
                 <button class="btn-rig" onclick="executar('dublar_inteligente')" id="btn-continuar" style="display: none; background: #ffaa00; margin-top: 10px; box-shadow: 0 0 20px rgba(255, 170, 0, 0.4);">CONTINUAR DUBLAGEM</button>
+                <button class="btn-rig" onclick="retomarUltimaFila()" id="btn-retomar-fila" style="display: none; background: linear-gradient(135deg, #00f3ff, #0099cc); color: #000; font-weight: 900; padding: 14px; font-size: 0.85rem; letter-spacing: 1px; box-shadow: 0 0 20px rgba(0, 243, 255, 0.5); margin-top: 10px; border: 1px solid #fff;">⚡ RETOMAR ÚLTIMA FILA EM LOTE</button>
             </div>
 
             <!-- ETAPA 4: REPACK -->
@@ -129,20 +148,7 @@
                 </div>
             </div>
 
-            <!-- ETAPA 5: MODO CORREÇÃO GLOBAL AVANÇADO -->
-            <div class="rig-module" style="border: 1px solid #00f3ff; background: rgba(0,243,255,0.03);">
-                <label style="color: #00f3ff; font-weight: 900;">🎯 ETAPA 5: MODO CORREÇÃO GLOBAL AVANÇADO</label>
-                <div style="font-size: 0.55rem; color: #aaa; margin-bottom: 10px;">Digite qualquer frase/palavra para buscar em TODOS os projetos e corrigir instantaneamente:</div>
-                
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" id="global-search-input" placeholder="Buscar frase (ex: 'mochila', 'casa')..." style="margin-bottom: 0;" onkeyup="if(event.key==='Enter') buscarDialogosGlobais()">
-                    <button class="btn-rig" style="padding: 0 15px; width: auto; background: #00f3ff; color: #000; font-weight: 900;" onclick="buscarDialogosGlobais()">🔍 BUSCAR</button>
-                </div>
-
-                <div id="correction-results-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-                    <div style="color: #666; font-size: 0.6rem; text-align: center;">Digite um termo e clique em Buscar para localizar diálogos em todos os projetos.</div>
-                </div>
-            </div>
+            <div id="global-correction-panel" data-kind="games"></div>
 
         </div>
 
@@ -160,22 +166,22 @@
                 </div>
 
                 <div class="progress-circle">
-                    <div class="percent-tag" id="percent-text">0%</div>
+                    <div class="percent-tag" id="percent-text" style="font-size: 2.2rem; font-weight: 900;">0%</div>
                 </div>
-                <div id="current-step-text" style="font-weight: 900; color: var(--accent); letter-spacing: 5px; font-size: 0.8rem;">IDLE STATUS</div>
+                <div id="current-step-text" style="font-weight: 900; color: var(--accent); letter-spacing: 3px; font-size: 1.25rem; text-align: center; text-transform: uppercase; margin-top: 10px;">IDLE STATUS</div>
                 
                 <!-- [v2026.TIMER] Cronômetro de Performance Titan -->
-                <div id="titan-timer" style="font-family: 'Consolas', monospace; font-size: 1.2rem; font-weight: 900; color: #fff; margin-top: 5px; letter-spacing: 2px; opacity: 0.8;">0:00:00</div>
+                <div id="titan-timer" style="font-family: 'Consolas', monospace; font-size: 1.5rem; font-weight: 900; color: #fff; margin-top: 6px; letter-spacing: 2px; opacity: 0.9;">0:00:00</div>
                 
-                <div id="project-progress-area" style="display: none; width: 100%; margin-top: 40px; transform: translateZ(30px);">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: flex-end;">
-                        <div id="active-tool-badge" style="background: #00ff41; color: #000; padding: 5px 15px; font-weight: 900; font-size: 0.6rem; letter-spacing: 2px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);">PRONTO (ONLINE)</div>
-                        <div id="segment-counter" style="color: #fff; font-weight: 900; font-size: 0.7rem; letter-spacing: 3px; opacity: 0.7;">000 / 000</div>
+                <div id="project-progress-area" style="display: none; width: 100%; margin-top: 30px; transform: translateZ(30px);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px; align-items: flex-end;">
+                        <div id="active-tool-badge" style="background: #00ff41; color: #000; padding: 7px 18px; font-weight: 900; font-size: 0.95rem; letter-spacing: 2px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);">PRONTO (ONLINE)</div>
+                        <div id="segment-counter" style="color: #00f3ff; font-weight: 900; font-size: 1.45rem; letter-spacing: 2px; text-shadow: 0 0 12px rgba(0,243,255,0.6); font-family: 'Consolas', monospace;">000 / 000</div>
                     </div>
-                    <div style="width: 100%; height: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,60,60,0.1); position: relative; overflow: hidden;">
-                        <div id="dynamic-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff124f, #ff3c3c); box-shadow: 0 0 30px var(--accent-glow); transition: 0.5s cubic-bezier(0.17, 0.67, 0.83, 0.67);"></div>
+                    <div style="width: 100%; height: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,60,60,0.2); position: relative; overflow: hidden; border-radius: 4px;">
+                        <div id="dynamic-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff124f, #ff3c3c, #00ff41); box-shadow: 0 0 30px var(--accent-glow); transition: 0.4s cubic-bezier(0.17, 0.67, 0.83, 0.67);"></div>
                     </div>
-                    <div id="status-msg-detail" style="font-size: 0.6rem; color: var(--accent); margin-top: 15px; text-align: center; letter-spacing: 3px; font-weight: 900; text-transform: uppercase;">ESTABELECENDO LINK NEURAL...</div>
+                    <div id="status-msg-detail" style="font-size: 0.95rem; color: #ffffff; background: rgba(255, 18, 79, 0.12); border-left: 4px solid var(--accent); padding: 10px 15px; margin-top: 15px; text-align: left; letter-spacing: 1px; font-weight: 800; text-transform: uppercase; border-radius: 4px;">ESTABELECENDO LINK NEURAL...</div>
                 </div>
             </div>
 
@@ -193,5 +199,7 @@
     </div>
 
     <script src="js/games_studio.js"></script>
+    <script src="js/correction_panel.js"></script>
+    <script src="js/donation_widget.js"></script>
 </body>
 </html>

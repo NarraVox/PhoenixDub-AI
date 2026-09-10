@@ -11,7 +11,7 @@ var pollInterval = null;
             textArea.select();
             document.execCommand('copy');
             document.body.removeChild(textArea);
-            
+
             btn.innerText = "✅ COPIADO COM SUCESSO!";
             btn.style.borderColor = "var(--success)";
             setTimeout(function() {
@@ -27,12 +27,12 @@ var pollInterval = null;
             entry.style.marginBottom = '2px';
             var now = new Date();
             var time = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
-            
+
             if (type === "success") entry.style.color = "#00ff88";
             if (type === "warn") entry.style.color = "#ffcc00";
             if (type === "error") entry.style.color = "#ff4444";
             if (type === "cmd") entry.style.color = "#00f2ff";
-            
+
             entry.innerHTML = '<span style="opacity:0.4">[' + time + ']</span> ' + msg;
             logBox.appendChild(entry);
             logBox.scrollTop = logBox.scrollHeight;
@@ -50,10 +50,9 @@ var pollInterval = null;
         }
 
         function calcTotalSize() {
-            var size = 2.1; // Base & Aceleração GPU module: ~2.10 GB
-            if (document.getElementById('mod-voice').checked) size += 9.00;
-            if (document.getElementById('mod-video').checked) size += 13.50;
-            
+            var size = 2.1; // Base & Aceleração GPU: ~2.10 GB
+            if (document.getElementById('mod-voice') && document.getElementById('mod-voice').checked) size += 7.50;
+
             document.getElementById('total-size-label').innerText = "~" + size.toFixed(2) + " GB";
         }
 
@@ -61,13 +60,12 @@ var pollInterval = null;
             var modules = {
                 base: true,
                 llama: true, // Sempre obrigatório para aceleração GPU
-                voice: document.getElementById('mod-voice').checked,
-                video: document.getElementById('mod-video').checked
+                voice: document.getElementById('mod-voice') ? document.getElementById('mod-voice').checked : true
             };
-            
+
             document.getElementById('selection-content').style.display = 'none';
             document.getElementById('progress-container').style.display = 'block';
-            
+
             fetch('/start', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -81,7 +79,7 @@ var pollInterval = null;
         function startSetup(mode) {
             document.getElementById('main-content').style.display = 'none';
             document.getElementById('progress-container').style.display = 'block';
-            
+
             fetch('/start', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -124,11 +122,11 @@ var pollInterval = null;
                 var parts = label.replace("[NEED_TOKEN]", "").split("|");
                 var repoId = parts[0];
                 var termsUrl = parts[1];
-                
+
                 document.getElementById('gated-repo-name').innerText = repoId;
                 document.getElementById('gated-repo-link').href = termsUrl;
                 document.getElementById('token-modal').style.display = 'flex';
-                
+
                 updateProgress(percent, "Aguardando Token do Hugging Face...");
                 return;
             }
@@ -140,7 +138,7 @@ var pollInterval = null;
         function submitToken() {
             var token = document.getElementById('hf-token-input').value.trim();
             var checkbox = document.getElementById('hf-terms-checkbox').checked;
-            
+
             if (!checkbox) {
                 alert("Por favor, marque a caixa confirmando que aceitou os termos no site.");
                 return;
@@ -149,10 +147,10 @@ var pollInterval = null;
                 alert("Por favor, insira o token do Hugging Face.");
                 return;
             }
-            
+
             document.getElementById('submit-token-btn').disabled = true;
             document.getElementById('submit-token-btn').innerText = "Enviando...";
-            
+
             fetch('/submit_token', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
