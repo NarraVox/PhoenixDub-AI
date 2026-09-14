@@ -20,27 +20,32 @@ def same_word_count_check(original, translated):
 
 def gema_etapa_correcao_master(original_text, current_translation, duration, reason="sincronia", profile_id='padrao'):
     """
-    [v14.50 CORRETOR MASTER] - O Agente que resolve tudo.
+    [v14.50 CORRETOR MASTER] - O Agente que resolve tudo com adaptação natural e sem traduções secas.
     """
     profile = load_game_profile(profile_id)
-    lore_text = profile.get("lore", "Gênero: Jogo de Aventura/Ação")
-    target_chars = int(duration * 16)
+    lore_text = profile.get("lore", "Gênero: Jogo de Ação e Sobrevivência.")
+    ai_instructions = profile.get("ai_instructions", "Mantenha gírias de jogos/combate e coloquialidade em PT-BR.")
+    target_chars = int(duration * 18)
     
     prompt = (
-        f"Tarefa: Corretor Master v2026.\n"
-        f"Lore: {lore_text}\n"
-        f"Problema: {reason}\n"
-        f"Original: {original_text}\n"
-        f"Atual: {current_translation}\n"
-        f"Regra: Max={target_chars} chars.\n"
-        f"Regra de Adaptação: Garanta coloquialidade em PT-BR. Evite traduções literais (ex: 'tiptoes' -> 'de fininho', 'chop her' -> 'derrubá-lo', 'lasers' -> 'derrete a cara com laser').\n"
-        f"Retorne apenas a frase corrigida entre aspas."
+        f"Tarefa: Corretor Master de Dublagem v2026.\n"
+        f"Contexto e Universo do Jogo (Lore): {lore_text}\n"
+        f"Instruções do Perfil: {ai_instructions}\n"
+        f"Problema Identificado: {reason}\n"
+        f"Texto Original (EN): {original_text}\n"
+        f"Tradução Atual (PT): {current_translation}\n"
+        f"Meta de Tamanho: ~{target_chars} caracteres para caber em {duration:.2f}s.\n"
+        f"Regras Críticas de Adaptação de Dublagem:\n"
+        f"1. ADAPTAÇÃO AO LORE: Respeite estritamente o universo do jogo acima! Jamais confunda homônimos fora do contexto da cena (ex: em combate/zumbis, 'drawing' = atrair inimigos, NUNCA desenhar/pintar; 'loaded up' = equipado/com mochila; 'Zeds' = zumbis).\n"
+        f"2. PROIBIDO FRASES SECAS: NUNCA gere palavras isoladas ou robóticas de 1 palavra só para bater tamanho (ex: NUNCA usar só 'Mochila!'). Se o tempo for curto, crie uma frase curta, fluida e natural (ex: 'Mochila pronta!').\n"
+        f"3. DITOS COLOQUIAIS: Garanta 100% de coloquialidade e naturalidade em PT-BR falado no jogo.\n"
+        f"Retorne APENAS a frase adaptada final entre aspas."
     )
 
     try:
         payload = {
             "messages": [
-                {"role": "system", "content": "Você é um Diretor de Localização. Responda apenas o texto corrigido entre aspas. Evite traduções literais e mantenha a fala 100% natural. Proibido conversar."},
+                {"role": "system", "content": "Você é um Diretor Executivo de Localização de Jogos. Responda apenas o texto corrigido entre aspas. Respeite o universo do jogo, priorize coloquialidade natural e proíba traduções robóticas ou de 1 palavra isolada."},
                 {"role": "user", "content": prompt}
             ],
             "temperature": 0.3,
@@ -61,12 +66,13 @@ def gema_batch_corrector_master(failed_items, cenario_ctx, profile_id='padrao', 
     """
     if not failed_items: return {}
     profile = load_game_profile(profile_id)
-    lore_text = profile.get("lore", "Gênero: Jogo de Aventura/Ação")
+    lore_text = profile.get("lore", "Gênero: Jogo de Ação e Sobrevivência.")
+    ai_instructions = profile.get("ai_instructions", "Coloquialidade PT-BR.")
     
     prompt = (
         f"Tarefa: Corretor Batch v2026.\n"
-        f"Lore: {lore_text} | Contexto: {cenario_ctx}\n"
-        f"Regras: Formato=id: \"Corrigido\"; Sem explicacoes; Sem repeticoes.\n"
+        f"Contexto do Jogo: {lore_text} | Instruções: {ai_instructions} | Cenário: {cenario_ctx}\n"
+        f"Regras: Formato=id: \"Corrigido\"; Sem explicações; Respeite o contexto do jogo; Proibido frases secas de 1 palavra (ex: usar 'Mochila pronta!' em vez de só 'Mochila!'); Mantenha a dublagem fluida em PT-BR.\n"
         f"Entrada:\n"
     )
     for item in failed_items:
@@ -75,7 +81,7 @@ def gema_batch_corrector_master(failed_items, cenario_ctx, profile_id='padrao', 
     try:
         payload = {
             "messages": [
-                {"role": "system", "content": "Você é um Corretor de Dublagem. Responda apenas o ID e o texto entre aspas. Proibido conversar."},
+                {"role": "system", "content": "Você é um Corretor de Dublagem Profissional. Responda apenas o ID e o texto entre aspas. Respeite o universo do jogo e proíba conversas ou respostas secas robóticas."},
                 {"role": "user", "content": prompt}
             ],
             "temperature": 0.2, "max_tokens": 2048

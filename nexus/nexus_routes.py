@@ -144,37 +144,47 @@ def serve_hub():
     threading.Thread(target=switch_active_engine, args=("hub",), daemon=True).start()
     return send_from_directory(CLIENT_DIR, 'nexus_premium.html')
 
-@nexus_blueprint.route('/api/restart_motors')
-@nexus_blueprint.route('/api/restart_server', methods=['GET', 'POST'])
+@nexus_blueprint.route('/api/restart_motors', methods=['POST'])
+@nexus_blueprint.route('/api/restart_server', methods=['POST'])
 def restart_motors():
-    print("\n" + "!"*20)
-    print("  [CRITICAL] REINICIALIZAÇÃO TOTAL DOS SISTEMAS...")
-    print("  Encerrando motores e limpando CPU...")
-    print("" + "!"*20 + "\n")
+    import threading
 
-    # 1. Encerramento de processos em active_engines
-    for name, engine in active_engines.items():
-        p = engine["process"]
-        if p is not None and p.poll() is None:
-            try:
-                subprocess.run(['taskkill', '/F', '/T', '/PID', str(p.pid)], capture_output=True)
-            except:
-                try: p.terminate()
-                except: pass
-            engine["process"] = None
-
-    # 2. Encerramento de processos filhos e netos
-    for p in running_processes:
+    # Launch the actual desktop entry point, not Flask's current argv.
+    command = ([sys.executable] if getattr(sys, 'frozen', False)
+               else [sys.executable, str(security.BASE_DIR / 'Nexus_AI_Pro.py')])
+    command.append('--wait-for-restart')
+    with engine_switch_lock:
+        if getattr(restart_motors, '_pending', False):
+            return jsonify({"success": False, "message": "Reinicialização já em andamento."}), 409
         try:
-            subprocess.run(['taskkill', '/F', '/T', '/PID', str(p.pid)], capture_output=True)
-        except:
-            try: p.terminate()
-            except: pass
-    running_processes.clear()
+            subprocess.Popen(
+                command, cwd=str(security.BASE_DIR),
+                creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0),
+                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except OSError:
+            logging.exception("Não foi possível iniciar a nova instância")
+            return jsonify({"success": False, "message": "Não foi possível reabrir o aplicativo. A janela atual foi mantida."}), 500
+        restart_motors._pending = True
 
-    time.sleep(1)
-    os.execv(sys.executable, ['python'] + sys.argv)
-    return jsonify({"success": True, "message": "Reinicialização total disparada!"})
+    def finish_restart():
+        logging.info("[RESTART] Encerrando motores para reabrir o aplicativo")
+        processes = [e["process"] for e in active_engines.values()] + list(running_processes)
+        for process in processes:
+            if process is not None and process.poll() is None:
+                try:
+                    subprocess.run(['taskkill', '/F', '/T', '/PID', str(process.pid)],
+                                   capture_output=True, timeout=10)
+                except Exception:
+                    logging.exception("Falha ao encerrar motor durante reinicialização")
+        os._exit(0)
+
+    # Return the HTTP acknowledgement before closing the current desktop process.
+    timer = threading.Timer(1.0, finish_restart)
+    timer.daemon = True
+    timer.start()
+    return jsonify({"success": True, "message": "Reiniciando o aplicativo. A janela será reaberta automaticamente."})
 
 @nexus_blueprint.route('/api/clear_cache', methods=['POST'])
 def api_clear_cache():
@@ -249,7 +259,7 @@ def list_vortex_projects():
     dj_projects_dir = UPLOAD_FOLDER / "dj_projects"
     if dj_projects_dir.exists():
         for d in dj_projects_dir.iterdir():
-            if d.is_dir():
+            if d.is_dir() and not d.name.startswith("separated_"):
                 status_file = d / "job_status.json"
                 if status_file.exists():
                     try:
@@ -260,7 +270,7 @@ def list_vortex_projects():
                             projects.append({
                                 "id": d.name,
                                 "type": "vortex_dj",
-                                "status": "completed" if mix_count > 0 else "in_progress",
+                                "status": "completed" if mix_count > 0 or data.get("separation", {}).get("status") == "completed" else "in_progress",
                                 "tracks": track_count,
                                 "last_mod": time.ctime(status_file.stat().st_mtime)
                             })
@@ -341,113 +351,9 @@ def recent_jobs():
 
     return jsonify(jobs)
 
-# --- [v2026.GLOBAL_SEARCH_REPAIR_ENGINE] MODO CORREÇÃO GLOBAL AVANÇADO ---
+# As rotas antigas eram específicas de uma pasta e sobrescreviam os áudios.
+# Clientes antigos devem recarregar para usar o painel com prévia e exportação.
 @nexus_blueprint.route('/api/global_search_dialogues')
-def global_search_dialogues():
-    q = request.args.get('q', '').strip().lower()
-    if not q or len(q) < 2:
-        return jsonify([])
-
-    results = []
-    base_dialog_dir = security.BASE_DIR / "call of duty" / "dialog" / "class3"
-    
-    if base_dialog_dir.exists():
-        for char_dir in base_dialog_dir.iterdir():
-            if char_dir.is_dir():
-                pdata_file = char_dir / "project_data.json"
-                if pdata_file.exists():
-                    try:
-                        with open(pdata_file, 'r', encoding='utf-8') as f:
-                            pdata = json.load(f)
-                        for fname, info in pdata.items():
-                            orig = info.get('original', '')
-                            trans = info.get('translated', '')
-                            
-                            # Busca insensível a maiúsculas/minúsculas no texto original, traduzido ou nome do arquivo
-                            if q in orig.lower() or q in trans.lower() or q in fname.lower():
-                                results.append({
-                                    "folder": char_dir.name,
-                                    "filename": fname,
-                                    "original": orig,
-                                    "translated": trans,
-                                    "full_audio_path": str(char_dir / fname)
-                                })
-                                if len(results) >= 100: break # Limite de 100 resultados por busca para ser ultra rápido
-                    except Exception as e:
-                        logging.error(f"Erro ao ler pdata de {char_dir.name}: {e}")
-
-    return jsonify(results)
-
 @nexus_blueprint.route('/api/redub_single_segment', methods=['POST'])
-def redub_single_segment():
-    try:
-        data = request.json or {}
-        folder = data.get('folder', '').strip()
-        filename = data.get('filename', '').strip()
-        new_text = data.get('new_text', '').strip()
-
-        if not folder or not filename or not new_text:
-            return jsonify({"status": "error", "message": "Parâmetros incompletos."}), 400
-
-        target_file = security.BASE_DIR / "call of duty" / "dialog" / "class3" / folder / filename
-        pdata_file = security.BASE_DIR / "call of duty" / "dialog" / "class3" / folder / "project_data.json"
-        temp_dir = security.BASE_DIR / f"temp_{folder}_dub"
-
-        if not target_file.exists():
-            return jsonify({"status": "error", "message": f"Arquivo não encontrado: {target_file}"}), 404
-
-        # Determina a referência de áudio
-        ref_wav = temp_dir / f"{target_file.stem}_ref.wav"
-        if "lil" in folder.lower():
-            female_ref = temp_dir / f"{target_file.stem}_female_ref.wav"
-            if female_ref.exists(): ref_wav = female_ref
-
-        if not ref_wav.exists():
-            # Converte o MP3 original para WAV de referência
-            ref_wav.parent.mkdir(parents=True, exist_ok=True)
-            if "lil" in folder.lower():
-                cmd_ref = ["ffmpeg", "-y", "-i", str(target_file), "-af", "asetrate=24000*1.22,aresample=24000", str(ref_wav)]
-            else:
-                cmd_ref = ["ffmpeg", "-y", "-i", str(target_file), "-ar", "24000", "-ac", "1", str(ref_wav)]
-            subprocess.run(cmd_ref, capture_output=True, check=True)
-
-        dub_wav = temp_dir / f"{target_file.stem}_dub.wav"
-
-        from nexus.core.tts import gerar_audio_qwen3
-        res = gerar_audio_qwen3(
-            text=new_text,
-            ref_audio_path=str(ref_wav),
-            output_path=str(dub_wav),
-            language="Portuguese",
-            emotion="NORMAL"
-        )
-
-        if not res or not dub_wav.exists():
-            return jsonify({"status": "error", "message": "Falha ao gerar o novo áudio na GPU."}), 500
-
-        # Aplica volume equilibrado (-2.5dB / 0.78) e salva no arquivo do jogo
-        cmd_mp3 = ["ffmpeg", "-y", "-i", str(dub_wav), "-af", "volume=0.78", "-b:a", "192k", str(target_file)]
-        subprocess.run(cmd_mp3, capture_output=True, check=True)
-
-        # Atualiza o project_data.json do personagem
-        if pdata_file.exists():
-            try:
-                with open(pdata_file, 'r', encoding='utf-8') as f:
-                    pdata = json.load(f)
-                if filename in pdata:
-                    pdata[filename]['translated'] = new_text
-                    pdata[filename]['timestamp'] = time.time()
-                with open(pdata_file, 'w', encoding='utf-8') as f:
-                    json.dump(pdata, f, ensure_ascii=False, indent=2)
-            except Exception as e:
-                logging.error(f"Erro ao salvar pdata: {e}")
-
-        return jsonify({
-            "status": "success",
-            "message": f"Áudio {filename} re-dublado e atualizado com sucesso!",
-            "new_text": new_text
-        })
-
-    except Exception as e:
-        return jsonify({"status": "error", "message": f"Erro na re-dublagem: {str(e)}"}), 500
-
+def legacy_correction_route():
+    return jsonify({"status": "error", "message": "Reabra esta página para usar o novo painel de correção com prévia e exportação."}), 410

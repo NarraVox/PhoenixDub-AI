@@ -84,6 +84,7 @@ from nexus.dub.utils import (
     sanitize_archive_name,
     silent_subprocess
 )
+from nexus.dub.speech_trim import TRIM_CACHE_VERSION, trim_generated_speech
 
 
 # =================================================================
@@ -160,7 +161,7 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
     
     start_time = time.time()
     status_path = job_dir / "job_status.json"
-    etapas = ["Extraindo Áudio", "Transcrição/Diarização", "Tradução Agente (Gemma)", "Sincronização", "Geração de Voz (Titan Qwen3)", "Merge Final"]
+    etapas = ["Extraindo Áudio", "Transcrição/Diarização", "Tradução Agente (Qwen 3.5)", "Sincronização", "Geração de Voz (Titan Qwen3)", "Merge Final"]
 
     def cb(p, etapa_idx, s=None, **kwargs): 
         core.set_progress(job_id, p, etapa_idx, start_time, etapas, s, **kwargs)
@@ -326,13 +327,21 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
                     if cached_seg:
                         translated_batch.append(cached_seg)
             
-            cb(0, 2, "[Gemma 4] Preparando tradução...")
+            # [v2026.VRAM_PURGE] Libera 100% da VRAM do Whisper e TTS antes de instanciar o LLM
+            core.unload_whisper_model()
+            core.unload_qwen3_model()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+            gc.collect()
+
+            cb(0, 2, "[Qwen 3.5] Preparando tradução...")
             while True:
                 try:
                     if core.get_local_gemma_engine():
                         break
                     else:
-                        msg_alerta = "⚠️ ERRO: MODELO GGUF NÃO ENCONTRADO EM _MODELS_!"
+                        msg_alerta = "⚠️ ERRO: MODELO GGUF NÃO ENCONTRADO EM MODELS!"
                         cb(40, 2, msg_alerta)
                         time.sleep(4)
                 except Exception as e:
@@ -346,18 +355,14 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
                 
             if not lore_global:
                 while not core.get_local_gemma_engine():
-                    msg_alerta = "⚠️ COLOQUE O MODELO GEMMA GGUF NA PASTA _MODELS_ PARA GERAR A LORE!"
+                    msg_alerta = "⚠️ COLOQUE O MODELO QWEN 3.5 GGUF NA PASTA MODELS PARA GERAR A LORE!"
                     cb(40, 2, msg_alerta)
                     time.sleep(4)
 
-                cb(40, 2, "[Gemma 4] Analisando Lore Global...")
+                cb(40, 2, "[Qwen 3.5] Analisando Lore Global...")
                 video_title = os.path.basename(video_path) if video_path else None
                 lore_global = core.gerar_lore_global(segments, video_title=video_title)
                 core.safe_json_write({"lore": lore_global}, lore_file)
-            
-            core.unload_whisper_model()
-            core.unload_qwen3_model()
-            gc.collect()
             
         batch_size = 1
         consecutive_failures = 0
@@ -421,7 +426,7 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
             current_count = b_idx + len(batch)
             total_total = len(pending_segments)
             stage_p = (current_count / total_total * 100)
-            p_msg = f"[Gemma 4] Frase {current_count}/{total_total}"
+            p_msg = f"[Qwen 3.5] Frase {current_count}/{total_total}"
             cb(stage_p, 2, p_msg, current_seg=current_count, total_seg=total_total, translation_cache_hit=translation_cache_hit)
 
             if not core.get_local_gemma_engine():
@@ -441,7 +446,7 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
                         consecutive_failures = 0
                         status_info = res.get('status', '')
                         if status_info:
-                            p_msg_status = f"[Gemma 4] Frase {current_count}/{total_total} ({status_info})"
+                            p_msg_status = f"[Qwen 3.5] Frase {current_count}/{total_total} ({status_info})"
                             cb(stage_p, 2, p_msg_status, current_seg=current_count, total_seg=total_total, translation_cache_hit=translation_cache_hit)
                     else:
                         seg['text_pt'] = seg.get('original_text', seg.get('text', ''))
@@ -649,21 +654,11 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
         
         orig_vocals = AudioSegment.from_wav(str(job_dir / "vocals.wav"))
         
-        def trim_silence_logic(audio, threshold=-35, padding_ms_start=20, padding_ms_end=50):
-            duration = len(audio)
-            if duration < 100: return audio 
-            start_trim = 0
-            for i in range(0, duration, 10):
-                if audio[i:i+10].dBFS > threshold:
-                    start_trim = max(0, i - padding_ms_start)
-                    break
-            end_trim = duration
-            for i in range(duration, 0, -10):
-                if audio[i-10:i].dBFS > threshold:
-                    end_trim = min(duration, i + padding_ms_end)
-                    break
-            if start_trim >= end_trim: return audio
-            return audio[start_trim:end_trim]
+        trim_version_file = clean_dub_dir / ".speech_trim_version"
+        trim_cache_current = (
+            trim_version_file.exists()
+            and trim_version_file.read_text(encoding="utf-8").strip() == TRIM_CACHE_VERSION
+        )
 
         if instrumental_path.exists():
             orig_instrum = AudioSegment.from_wav(str(instrumental_path))
@@ -674,7 +669,7 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
         dub_windows = []
         segments_found = 0
         translated_batch = sorted(translated_batch, key=lambda x: x['start'])
-        speaker_last_end_ms = {}
+        trim_refresh_ok = True
 
         for i, seg in enumerate(translated_batch):
             seg_id = seg['id']
@@ -699,20 +694,31 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
                 continue
             
             try:
-                if not clean_wav.exists():
+                clean_is_stale = (
+                    not clean_wav.exists()
+                    or clean_wav.stat().st_mtime < raw_wav.stat().st_mtime
+                    or not trim_cache_current
+                )
+                if clean_is_stale:
                     raw_seg = AudioSegment.from_wav(str(raw_wav))
-                    clean_seg = trim_silence_logic(raw_seg)
+                    trim_result = trim_generated_speech(raw_seg, seg.get('emotion', 'NORMAL'))
+                    clean_seg = trim_result.audio
                     clean_seg = effects.normalize(clean_seg)
                     clean_seg.export(str(clean_wav), format="wav")
+                    logging.info(
+                        "[SPEECH_TRIM] %s detector=%s inicio=%dms fim=%dms motivo=%s",
+                        seg_id,
+                        trim_result.detector,
+                        trim_result.start_removed_ms,
+                        trim_result.end_removed_ms,
+                        trim_result.reason or "ok",
+                    )
                 
                 dub_seg = AudioSegment.from_wav(str(clean_wav))
                 dub_seg = effects.normalize(dub_seg)
                 
                 start_ms = int(seg['start'] * 1000)
                 spk = seg.get('speaker', 'default_speaker')
-                spk_last_end = speaker_last_end_ms.get(spk, 0)
-                if start_ms < spk_last_end:
-                    start_ms = spk_last_end
                 
                 next_same_spk_start_ms = len(orig_vocals)
                 for next_seg in translated_batch[i+1:]:
@@ -754,7 +760,7 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
                     available_space_ms = min(available_space_ms, next_any_start_ms - start_ms)
                 
                 orig_dur_ms = (seg['end'] - seg['start']) * 1000
-                target_dur_ms = min(orig_dur_ms + 500, available_space_ms)
+                target_dur_ms = min(orig_dur_ms + 150, available_space_ms)
                 
                 diff_ms = len(dub_seg) - target_dur_ms
                 if diff_ms > 50:
@@ -776,10 +782,13 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
                 cb(prog_mix, 5, f"[Mixer] Integrando {seg_id}...", current_seg=segments_found, total_seg=len(translated_batch))
                 
                 pt_vocals = pt_vocals.overlay(dub_seg, position=start_ms)
-                speaker_last_end_ms[spk] = start_ms + len(dub_seg)
                 dub_windows.append((start_ms, start_ms + len(dub_seg)))
             except Exception as mix_err:
+                trim_refresh_ok = False
                 logging.error(f"❌ Erro ao mixar segmento {seg_id}: {mix_err}")
+
+        if trim_refresh_ok:
+            trim_version_file.write_text(TRIM_CACHE_VERSION, encoding="utf-8")
 
         dub_windows.sort()
         vocal_mask = AudioSegment.silent(duration=len(orig_vocals))
@@ -1122,7 +1131,7 @@ def games_api_job_status(job_id):
                 data = json.load(f)
                 etapa = data.get('etapa', '').lower()
                 if "tradução" in etapa or "gemma" in etapa:
-                    data['tool_name'] = "Gemma (IA)"
+                    data['tool_name'] = "Qwen 3.5 (IA)"
                 elif "gerando" in etapa or "voz" in etapa or "tts" in etapa:
                     data['tool_name'] = "Qwen3-TTS (Voz)"
                 elif "finalizando" in etapa or "masterização" in etapa or "ffmpeg" in etapa:
@@ -1279,67 +1288,46 @@ def games_get_logs():
 
 @app_games.route('/api/get-projects')
 def games_api_get_projects():
-    projects = []
-    if os.path.exists(BACKUP_DIR):
-        for f in os.listdir(BACKUP_DIR):
-            if f.startswith('backup_') and f.endswith('.json'):
-                try:
-                    with open(os.path.join(BACKUP_DIR, f), 'r') as j:
-                        d = json.load(j)
-                        projects.append({
-                            'id': d['hash_sha1_original'], 
-                            'name': f"📦 {d['nome_arquivo']}",
-                            'date': datetime.datetime.fromtimestamp(os.path.getmtime(os.path.join(BACKUP_DIR, f))).strftime('%Y-%m-%d %H:%M:%S')
-                        })
-                except: pass
     upload_projects = []
-    class3_projects = []
-
     UPLOAD_DIR = str(UPLOAD_FOLDER)
+
     if os.path.exists(UPLOAD_DIR):
         for d_name in os.listdir(UPLOAD_DIR):
+            # Ignora pastas de sistema, temporárias e de vídeo
             if d_name.startswith('video_') or d_name in ["arch_manager_backups", "mods_finalizados", "_NEXUS_TEMP_", "watchdog_queue"]:
                 continue
+
             d_path = os.path.join(UPLOAD_DIR, d_name)
             if os.path.isdir(d_path):
                 status_file = os.path.join(d_path, "job_status.json")
+                data_file = os.path.join(d_path, "project_data.json")
+
+                # Aceita apenas se for uma pasta de projeto (possui status, data ou prefixo PROJETO_)
+                if not (os.path.exists(status_file) or os.path.exists(data_file) or d_name.startswith("PROJETO_")):
+                    continue
+
                 mtime = datetime.datetime.fromtimestamp(os.path.getmtime(d_path)).strftime('%d/%m/%Y %H:%M')
                 data = core.safe_json_read(status_file) or {}
                 
-                # Qualquer pasta em uploads que seja um job é listada no topo!
                 job_id_val = data.get('job_id', d_name)
                 prog = data.get('progress', 0)
                 st = data.get('status', 'in_progress')
                 
                 upload_projects.append({
                     'id': job_id_val,
+                    'folder_name': d_name,
                     'name': f"🎮 PROJETO: {d_name} ({prog}% - {mtime})",
                     'status': st,
                     'progress': prog,
+                    'etapa': data.get('etapa', 'Pronto'),
+                    'subetapa': data.get('subetapa', ''),
+                    'total_seg': data.get('total_seg', 0),
+                    'current_seg': data.get('current_seg', 0),
                     'date': mtime
                 })
 
-    # Varre as pastas de personagens de dialog/class3
-    class3_dir = core.BASE_DIR / "call of duty" / "dialog" / "class3"
-    if class3_dir.exists():
-        for cdir in class3_dir.iterdir():
-            if cdir.is_dir():
-                mp3_count = len(list(cdir.glob("*.mp3"))) + len(list(cdir.glob("*.wav")))
-                if mp3_count > 0:
-                    class3_projects.append({
-                        'id': str(cdir.absolute()),
-                        'name': f"🗣️ PERSONAGEM: {cdir.name.upper()} ({mp3_count} áudios)",
-                        'status': 'ready',
-                        'progress': 100,
-                        'date': datetime.datetime.fromtimestamp(cdir.stat().st_mtime).strftime('%d/%m/%Y %H:%M')
-                    })
-
     upload_projects.sort(key=lambda x: x['date'], reverse=True)
-    class3_projects.sort(key=lambda x: x['name'])
-    
-    # Jobs ativos do uploads vêm em primeiro lugar no menu!
-    projects = upload_projects + class3_projects
-    return jsonify(projects)
+    return jsonify(upload_projects)
 
 
 # =================================================================
@@ -1671,7 +1659,7 @@ class VideoQueueManager:
                             write_error_json(item, e, tb)
                             self.save_queue_state()
                 
-                logging.info("🧹 [QUEUE] Fim da etapa de Tradução. Descarregando Gemma...")
+                logging.info("🧹 [QUEUE] Fim da etapa de Tradução. Descarregando Qwen 3.5...")
                 core.unload_local_gemma_engine()
                 import gc; gc.collect()
                 if torch.cuda.is_available():

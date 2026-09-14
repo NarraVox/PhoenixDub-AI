@@ -626,11 +626,14 @@ def run_auto_diarization_batch(job_dir, job_id, cb):
         logging.info("Nenhum arquivo para processar.")
         return
 
-    run_batch_cleaning(source_dir, clean_audio_dir, cb)
+    # [v2026.FAST_AUDIO_PREP] Pré-conversão paralela multithread para WAV 16kHz Mono
+    from nexus.core.audio_batch_preparer import batch_preprocess_audio_to_16k_mono
+    clean_files = batch_preprocess_audio_to_16k_mono(source_dir, clean_audio_dir, cb=cb, sample_rate=16000)
     
-    clean_files = sorted(list(clean_audio_dir.rglob("*.wav")))
     if not clean_files:
-         clean_files = source_files
+        clean_files = sorted(list(clean_audio_dir.rglob("*.wav")))
+    if not clean_files:
+        clean_files = source_files
 
     status_path = job_dir / "job_status.json"
     status_data = safe_json_read(status_path) or {}

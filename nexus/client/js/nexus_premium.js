@@ -68,17 +68,19 @@ const glow = document.getElementById('mouse-glow');
         }
 
         async function restartServer() {
-            if (confirm("Deseja realmente reiniciar o servidor mestre? Isso interromperá todos os processos ativos (Whisper, Gemma, etc).")) {
-                try {
-                    // [v2026.KILL_SWITCH] Tenta parar os motores pesados antes de reiniciar
-                    console.log("🛑 [MASTER] Enviando comando de parada para os motores...");
-                    await fetch('http://127.0.0.1:5005/api/stop_job', { method: 'POST' }).catch(() => null);
-                    
-                    const res = await fetch('/api/restart_server', { method: 'POST' });
-                    alert("Comando de reinicialização total enviado. O sistema voltará em breve.");
-                } catch(e) {
-                    alert("Erro ao enviar comando de reinicialização.");
-                }
+            if (!confirm("Reiniciar o aplicativo? As tarefas em andamento serão interrompidas e a janela será reaberta.")) return;
+            const button = document.querySelector('.btn-restart');
+            button.disabled = true;
+            button.textContent = "Reiniciando...";
+            try {
+                const res = await fetch('/api/restart_server', { method: 'POST' });
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error(data.message || "Falha ao reiniciar.");
+                button.textContent = "Reabrindo aplicativo...";
+            } catch (error) {
+                button.disabled = false;
+                button.textContent = "⚡ Reiniciar Servidor";
+                alert(error.message || "Não foi possível confirmar a reinicialização.");
             }
         }
 

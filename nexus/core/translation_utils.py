@@ -412,7 +412,16 @@ def clean_ai_translation(text, original_text, segment_id=None):
         # Remove pontos, vírgulas e reticências de toda a string
         t_str = t_str.replace("...", " ").replace(".", " ").replace(",", " ").replace(";", " ")
         t_str = " ".join(t_str.split())
-        t = t_str + end_char
+
+        # [v2026.REPETITION_PACER] Se houver repetições excessivas de uma mesma palavra (ex: 'não não não não...'),
+        # comprime para no máximo 2 ocorrências consecutivas para preservar a emoção e caber no tempo do áudio.
+        pattern = r'\b(\w+)(?:\s+\1){2,}\b'
+        def repl(match):
+            word = match.group(1)
+            return f"{word} {word}"
+        t_str = re.sub(pattern, repl, t_str, flags=re.IGNORECASE)
+
+        t = t_str.strip() + end_char
 
     return t
 

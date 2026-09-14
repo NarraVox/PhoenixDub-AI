@@ -33,15 +33,21 @@ def unload_whisper_model():
     global whisper_model
     with model_lock:
         if whisper_model is not None:
-            logging.info("🧹 [VRAM_PURGE] Expulsando Whisper da GPU...")
+            logging.info("🧹 [VRAM_PURGE] Expulsando Whisper (CTranslate2) da GPU...")
             try:
+                if hasattr(whisper_model, 'model') and hasattr(whisper_model.model, 'unload_model'):
+                    try:
+                        whisper_model.model.unload_model()
+                    except Exception as ex_m:
+                        logging.debug(f"Aviso unload_model CTranslate2: {ex_m}")
                 del whisper_model
+            except Exception as e:
+                logging.warning(f"⚠️ Falha na limpeza de referência do Whisper: {e}")
+            finally:
                 whisper_model = None
                 gc.collect()
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
                     torch.cuda.ipc_collect()
                     torch.cuda.synchronize()
-                logging.info("✅ [VRAM_PURGE] Whisper descarregado com sucesso.")
-            except Exception as e:
-                logging.warning(f"⚠️ Falha na limpeza do Whisper: {e}")
+                logging.info("✅ [VRAM_PURGE] Whisper e CTranslate2 descarregados com sucesso.")

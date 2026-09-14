@@ -25,8 +25,8 @@ def get_qwen3_engine():
                 device = "cuda:0" if torch.cuda.is_available() else "cpu"
                 
                 # Caminho para o modelo PyTorch de 1.7B
-                model_dir_17b = "c:/IA_dublagem/_MODELS_/qwen3_1.7b_pytorch"
-                model_dir_06b = "c:/IA_dublagem/_MODELS_/qwen3_0.6b"
+                model_dir_17b = "c:/IA_dublagem/MODELS/qwen3_1.7b_pytorch"
+                model_dir_06b = "c:/IA_dublagem/MODELS/qwen3_0.6b"
                 
                 # Se o CUDA estiver ativo e não estiver forçado o uso do 0.6B, prioriza o de 1.7B
                 force_06b = os.path.exists("C:/IA_dublagem/usar_qwen_06b.txt")

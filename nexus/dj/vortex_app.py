@@ -199,11 +199,15 @@ def register_routes(app, dj_engine, UPLOAD_FOLDER):
         source_audio = data.get('source_audio', '')
         cover_strength = data.get('cover_strength', 0.6)
         extend_duration = data.get('extend_duration', 30)
-        enable_mastering = data.get('enable_mastering', True)
+        enable_mastering = data.get('enable_mastering', False)
         upscale_steps = int(data.get('upscale_steps', 25))
         steps = int(data.get('steps', 50))
         cfg_scale = float(data.get('cfg_scale', 4.0))
         duration = int(data.get('duration', 180))
+        if mode == 'extend':
+            if not 15 <= duration <= 180:
+                return jsonify(error='Escolha de 15 a 180 segundos para a música nova.'), 400
+            extend_duration = duration
         batch_count = int(data.get('batch_count', 1))
         
         if dj_engine.worker_busy:

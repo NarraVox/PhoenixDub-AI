@@ -180,8 +180,9 @@
             <div id="sentinel-led" style="width: 8px; height: 8px; border-radius: 50%; background: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan);"></div>
             <span style="font-size: 0.55rem; font-weight: 900; letter-spacing: 1px; color: #fff;">SENTINEL: <span id="sentinel-text">SISTEMA ÍNTEGRO</span></span>
         </div>
-        <button class="btn-utility btn-utility-support" onclick="openSupportModal()" style="border-color: #ffd700; color: #ffd700;">💖 Apoiar Projeto</button>
         <button class="btn-utility" onclick="runSecurityAudit()" style="border-color: var(--neon-pink); color: var(--neon-pink);">🛡️ Auditoria de Segurança</button>
+        <span id="hub-version"></span>
+        <button class="btn-utility" id="check-updates" type="button">↻ Verificar atualizações</button>
         <button class="btn-utility btn-restart" onclick="restartServer()">⚡ Reiniciar Servidor</button>
     </div>
 
@@ -193,7 +194,9 @@
         <div style="margin-top: 20px; padding: 15px 25px; background: rgba(255, 170, 0, 0.1); border: 1px solid var(--neon-orange); border-radius: 8px; display: inline-block; max-width: 750px; backdrop-filter: blur(5px);">
             <p style="color: var(--neon-orange); font-size: 0.95rem; font-weight: 700; text-transform: none; letter-spacing: 1px; line-height: 1.6; opacity: 1;">
                 ⚠️ <strong style="letter-spacing: 2px;">SISTEMA EM FASE BETA</strong><br>
-                Este programa é um projeto vivo e em constante evolução. Alguns recursos visíveis no painel são atualmente apenas demonstrativos (visuais) e serão testados e implementados em atualizações futuras.
+                O programa está em fase beta e pode apresentar erros ou instabilidades durante o uso. Estamos trabalhando em correções e melhorias. Se encontrar algum problema, envie seu relato para ajudar a aprimorar o projeto.
+                <br><br>
+                <strong>Sobre as traduções:</strong> Para funcionar em placas com 6 GB de VRAM, o programa utiliza modelos menores de inteligência artificial. Esses modelos podem cometer erros de tradução, perder contexto ou gerar resultados inconsistentes. Revise as traduções antes de finalizar a dublagem.
             </p>
         </div>
 
@@ -264,19 +267,6 @@
             </div>
         </a>
 
-        <!-- CINE GEN (MOCKUP VISUAL) -->
-        <a href="nexus_cine_gen.html" class="card-nexus cine" style="--accent-card: #ff00ff;">
-            <div class="glow-aura" style="background: var(--accent-card);"></div>
-            <div class="icon-vibe">🎞️</div>
-            <h2 style="color: var(--accent-card);">CINE GEN</h2>
-            <p class="desc">Geração autônoma de vídeos cinematográficos via IA (LTX 2.3).</p>
-            
-            <div class="telemetry-box" style="border-color: rgba(255, 0, 255, 0.2); background: rgba(255, 0, 255, 0.05);">
-                <div class="tele-title" style="color: var(--accent-card);">CINEMA ENGINE</div>
-                <div class="tele-status" style="color: #ff00ff; opacity: 0.8;">MÓDULO VISUAL // EM DESENVOLVIMENTO</div>
-            </div>
-        </a>
-
     </div>
 
     <!-- POPUP DE APOIO/DOAÇÃO -->
@@ -295,7 +285,6 @@
             </p>
             <div class="modal-actions">
                 <a href="https://apoia.se/narravox_studios" target="_blank" class="btn-primary-action">👉 Visitar Campanha no Apoia.se</a>
-                <a href="https://polar.sh/narravox_studios" target="_blank" class="btn-secondary-action">Apoiar via Polar.sh</a>
             </div>
         </div>
     </div>
@@ -319,5 +308,21 @@
         });
     </script>
 
+    <link rel="stylesheet" href="css/hub_updates.css">
+    <dialog id="updates-dialog" aria-labelledby="updates-title">
+        <h2 id="updates-title">Atualizações do PhoenixDub</h2>
+        <p id="updates-versions"></p>
+        <p id="updates-message" role="status" aria-live="polite"></p>
+        <progress id="updates-progress" max="100" value="0" hidden aria-label="Download da atualização"></progress>
+        <details><summary>Notas da versão</summary><pre id="updates-notes"></pre></details>
+        <p>Ao atualizar, o aplicativo será fechado e reaberto. Seus modelos, configurações e dublagens serão preservados.</p>
+        <div class="updates-actions">
+            <button id="install-update" type="button" hidden>Atualizar e reiniciar</button>
+            <a id="updates-release" target="_blank" rel="noopener noreferrer" hidden>Ver release no GitHub</a>
+            <button id="close-updates" type="button">Fechar</button>
+        </div>
+    </dialog>
+    <script src="js/hub_updates.js"></script>
+    <script src="js/donation_widget.js"></script>
 </body>
 </html>

@@ -133,16 +133,22 @@ async function generateMusic() {
     
     const title = document.getElementById('song-title').value.trim();
     const mode = document.getElementById('generation-mode').value;
-    const style = (mode === 'text2music') ? document.getElementById('song-style').value.trim() : "";
+    const style = mode === 'cover' ? '' : document.getElementById('song-style').value.trim();
     const lyrics = document.getElementById('song-lyrics').value.trim();
+    if (mode !== 'text2music' && document.getElementById('local-audio-file')?.files?.length) {
+        setLockdown(true);
+        const uploaded = await uploadLocalAudio();
+        setLockdown(false);
+        if (!uploaded) return;
+    }
     const sourceAudio = document.getElementById('source-audio-select').value;
     const coverStrength = parseFloat(document.getElementById('cover-strength').value);
-    const extendDuration = parseInt(document.getElementById('extend-duration').value);
-    const enableMastering = document.getElementById('enable-mastering') ? document.getElementById('enable-mastering').checked : true;
+    const enableMastering = document.getElementById('enable-mastering') ? document.getElementById('enable-mastering').checked : false;
     const upscaleSteps = parseInt(document.getElementById('upscale-steps')?.value || 25);
     const steps = parseInt(document.getElementById('gen-steps')?.value || 50);
     const cfgScale = parseFloat(document.getElementById('gen-cfg')?.value || 4.0);
     const duration = parseInt(document.getElementById('gen-duration')?.value || 180);
+    const extendDuration = duration;
     const batchCount = parseInt(document.getElementById('batch-count')?.value || 1);
     if (!title) {
         logBrain("⚠️ INSIRA O NOME DA MÚSICA!");
@@ -166,6 +172,7 @@ async function generateMusic() {
         resetFxLights();
         
         logBrain(`🚀 INICIANDO GERAÇÃO (${mode.toUpperCase()}): "${title}" | Qtd: ${batchCount} | Steps: ${steps} | Duração: ${duration}s | Upscale Steps: ${upscaleSteps}`);
+        if (mode !== 'text2music') logBrain(`🎧 REFERÊNCIA UTILIZADA: ${sourceAudio}`);
         document.querySelector('.btn-ignition').innerText = "PREPARANDO...";
         
         // Dispara a requisição de geração
@@ -299,9 +306,13 @@ function resetFxLights() {
 
 // --- HISTÓRICO DE MÚSICAS GERADAS ---
 let globalSongsList = [];
+let uploadedSourceFiles = [];
 
 function toggleGenerationMode() {
     const mode = document.getElementById('generation-mode').value;
+    const durationLabel = document.getElementById('duration-label');
+    if (durationLabel) durationLabel.textContent = mode === 'extend'
+        ? 'Duração da música nova — sem a referência (segundos)' : 'Duração da Música (segundos)';
     const container = document.getElementById('source-audio-container');
     const coverContainer = document.getElementById('cover-strength-container');
     const extendContainer = document.getElementById('extend-time-container');
@@ -314,24 +325,46 @@ function toggleGenerationMode() {
         if (styleInput) {
             styleInput.disabled = false;
             styleInput.style.opacity = '1';
-            styleInput.placeholder = "Ex: Arabic Deep House, Dark Arabic Bass House";
+            styleInput.placeholder = "Ex: Forró Perfeito, Djavu, Funk Bass House";
+            styleInput.title = '';
         }
     } else {
         container.style.display = 'block';
         if (styleInput) {
-            styleInput.disabled = true;
-            styleInput.style.opacity = '0.4';
-            styleInput.placeholder = "Ignorado (estilo herdado automaticamente do áudio original)";
+            styleInput.disabled = mode === 'cover';
+            styleInput.style.opacity = mode === 'cover' ? '0.4' : '1';
+            styleInput.title = mode === 'cover' ? 'Ignorado no Cover: estilo extraído do áudio original.' :
+                    (mode === 'extend'
+                        ? 'Define o estilo da NOVA música gerada. A referência usa seu próprio estilo.'
+                        : '');
+            styleInput.placeholder = mode === 'cover'
+                ? 'Ignorado: estilo extraído do áudio original'
+                : (mode === 'extend'
+                    ? 'Prompt Musical para a NOVA música (ex: Deep House, Afrobeat, Funk Bass)'
+                    : 'Estilo preferido: ex: Forró Perfeito, Djavu, Funk Bass House');
         }
         
         const select = document.getElementById('source-audio-select');
+        const previousSource = select.value;
+        const previousLabel = select.selectedOptions[0]?.textContent;
         select.innerHTML = '';
-        if (globalSongsList.length === 0) {
+        if (globalSongsList.length === 0 && uploadedSourceFiles.length === 0) {
             select.innerHTML = '<option value="">(Nenhuma música no histórico)</option>';
         } else {
             globalSongsList.forEach(song => {
-                select.innerHTML += `<option value="${song.filename}">${song.title}</option>`;
+                select.add(new Option(song.title, song.filename));
             });
+            uploadedSourceFiles.forEach(filename => {
+                if (![...select.options].some(option => option.value === filename)) {
+                    select.add(new Option(filename, filename));
+                }
+            });
+        }
+        if (previousSource) {
+            if (![...select.options].some(option => option.value === previousSource)) {
+                select.add(new Option(previousLabel || previousSource, previousSource));
+            }
+            select.value = previousSource;
         }
         
         if (mode === 'cover') {
@@ -341,6 +374,7 @@ function toggleGenerationMode() {
             coverContainer.style.display = 'none';
             extendContainer.style.display = 'block';
         }
+        updateSourceHint();
     }
 }
 
@@ -348,6 +382,7 @@ async function loadGeneratedSongs() {
     try {
         const res = await fetch('http://127.0.0.1:5005/api/list_uploads'); // Reutiliza endpoint para listar arquivos
         const data = await res.json();
+        uploadedSourceFiles = (data.files || []).filter(filename => !filename.startsWith('separated_'));
         
         const list = document.getElementById('track-list');
         list.innerHTML = '';
@@ -356,6 +391,7 @@ async function loadGeneratedSongs() {
         const songsData = await resSongs.json();
         
         globalSongsList = songsData.songs || [];
+        if (document.getElementById('generation-mode').value !== 'text2music') toggleGenerationMode();
         
         if (globalSongsList.length === 0) {
             list.innerHTML = '<div class="track-item" style="font-size:0.6rem; opacity:0.5;">Nenhuma música criada localmente.</div>';
@@ -513,7 +549,9 @@ async function uploadLocalAudio() {
                     select.value = data.filename;
                 }
             }
-            alert(`Áudio "${file.name}" carregado com sucesso! Agora você pode gerar o seu remix.`);
+            fileInput.value = '';
+            updateSourceHint();
+            return data.filename;
         } else {
             logBrain(`❌ ERRO NO UPLOAD: ${data.error || 'Falha ao processar o arquivo.'}`);
             alert(`Erro no upload: ${data.error || 'Falha ao processar o arquivo.'}`);
@@ -522,6 +560,15 @@ async function uploadLocalAudio() {
         logBrain("❌ ERRO CONEXÃO: Não foi possível realizar o upload do arquivo.");
         alert("Não foi possível conectar com o servidor para realizar o upload.");
     }
+}
+
+function updateSourceHint() {
+    const hint = document.getElementById('source-reference-note');
+    if (!hint) return;
+    const file = document.getElementById('local-audio-file')?.files?.[0];
+    const source = document.getElementById('source-audio-select')?.value;
+    hint.textContent = file ? `Será carregado antes de gerar: ${file.name}`
+        : source ? `Referência ativa: ${source}` : 'Selecione ou envie a música de referência.';
 }
 
 // --- COMANDOS DO SISTEMA ---

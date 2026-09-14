@@ -109,16 +109,15 @@ def processar_transcricao(job_dir, job_id, start_time):
         if not input_file:
             raise FileNotFoundError("Nenhum arquivo de entrada encontrado no diretório do job.")
 
-        backup_dir = job_dir / "_backup_transcricao_whisper"
+        backup_dir = job_dir / "_backup_transcricao"
         backup_dir.mkdir(exist_ok=True)
-        
+        # Qwen ASR foi apenas um experimento; o motor adotado é Whisper.
         cb(5, 1, "Carregando modelo Whisper...")
         model = get_whisper_model()
-        
-        cb(10, 1, "Iniciando transcrição...")
-        
+        cb(10, 1, "Iniciando transcrição com Whisper...")
         segments, info = model.transcribe(str(input_file))
         total_duration = info.duration
+        detected_language = getattr(info, "language", None)
         
         all_segments_data = []
         
@@ -131,7 +130,8 @@ def processar_transcricao(job_dir, job_id, start_time):
             segment_data = {
                 "start": round(segment.start, 3),
                 "end": round(segment.end, 3),
-                "text": segment.text.strip()
+                "text": segment.text.strip(),
+                "detected_language": detected_language,
             }
             all_segments_data.append(segment_data)
             

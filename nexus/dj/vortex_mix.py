@@ -76,7 +76,9 @@ def ignite_mix_lot_logic(dj, valid_metadata):
                         vocal_p = dj.stems_dir / f"{t_name}_vocals.mp3"
                         instr_p = dj.stems_dir / f"{t_name}_instrumental.mp3"
                         if not vocal_p.exists() or not instr_p.exists():
-                            dj.separate_stems(track['path'])
+                            is_super = False
+                            logging.info('Faixas separadas ausentes; usando mixagem comum.')
+                            break
                         track['vocal_path'] = str(vocal_p) if vocal_p.exists() else track['path']
                         track['instr_path'] = str(instr_p) if instr_p.exists() else track['path']
                 
@@ -84,8 +86,6 @@ def ignite_mix_lot_logic(dj, valid_metadata):
                     dj.project_state["current_task"] = f"🎙️ Isolando Instrumental: {track_b_name}..."
                     dj.save_status()
                     instr_path = dj.stems_dir / f"{track_b_name}_instrumental.mp3"
-                    if not instr_path.exists():
-                        dj.separate_stems(current_pair[1]['path'])
                     if instr_path.exists():
                         current_pair[1]['path'] = str(instr_path)
                 

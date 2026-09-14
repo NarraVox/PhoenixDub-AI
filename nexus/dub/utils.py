@@ -21,8 +21,9 @@ import re
 import hashlib
 from pydub import AudioSegment, effects
 
-def speedup_audio(audio_segment, speed_factor):
+def speedup_audio(audio_segment, speed_factor, max_speed_factor=1.20):
     """Acelera o áudio sem alterar o pitch usando o filtro profissional atempo do FFmpeg (sem cortes)."""
+    speed_factor = min(float(speed_factor), float(max_speed_factor))
     if speed_factor <= 1.0: return audio_segment
     try:
         temp_dir = "C:/IA_dublagem/uploads/_NEXUS_TEMP_"
@@ -90,12 +91,17 @@ def is_reaction_or_noise(seg):
             if pat in texto_limpo:
                 return True
         
-    only_letters = re.sub(r'[^a-zA-Z]', '', texto_bruto).lower()
-    if len(only_letters) > 3 and (
-        len(set(only_letters)) <= 2 or 
-        "aaa" in only_letters or "ooo" in only_letters or "uuu" in only_letters or "eee" in only_letters or "iii" in only_letters
-    ):
-        return True
+    # [v2026.REACTION_SHIELD_FIX] Detecta apenas alucinações reais de ruído/gritos (ex: 'aaaaa', 'uhhh', 'shhh')
+    # Não bloqueia palavras legítimas como 'esse', 'essa', 'isso'
+    for w in texto_limpo.split():
+        w_letters = re.sub(r'[^a-zA-Z]', '', w)
+        if len(w_letters) >= 3:
+            # 3 ou mais vogais/consoantes idênticas em sequência (ex: 'aaaa', 'eeee', 'uhhh')
+            if re.search(r'([a-zA-Z])\1{2,}', w_letters):
+                return True
+            # Palavra inteira feita de apenas 1 única letra repetida (ex: 'aaa')
+            if len(set(w_letters)) == 1:
+                return True
         
     REACTION_WORDS = {
         "yeah", "yes", "ah", "oh", "uh", "hmm", "hm", "wow", "haha", "ha ha", "huh", "hã", "é", "ok", "ops", "oops", "ah!", "oh!", "yeah!",

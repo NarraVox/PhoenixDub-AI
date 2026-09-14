@@ -4,8 +4,6 @@ import shutil
 import sys
 
 def build_all():
-    site_packages = "C:\\Users\\Paulo Henrik\\AppData\\Local\\Programs\\Python\\Python310\\lib\\site-packages"
-    
     print("="*50)
     print("INICIANDO BUILD TOTAL NEXUS AI PRO")
     print("="*50)

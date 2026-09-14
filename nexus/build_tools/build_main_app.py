@@ -18,6 +18,9 @@ def build_nexus_pro():
         if os.path.exists(folder):
             shutil.rmtree(folder, ignore_errors=True)
 
+    from build_runtime import build_runtime
+    runtime = build_runtime(root_dir)
+
     # Configurações do PyInstaller
     # Usamos --collect-all para evitar o bug de analise de bytecode (IndexError)
     params = [
@@ -66,8 +69,10 @@ def build_nexus_pro():
         '--exclude-module=pydub',
         '--exclude-module=av',
         # Incluindo a pasta client (interface) com caminhos absolutos para evitar erro de .spec no PyInstaller
-        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "client"))};client',
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "client"))};nexus/client',
+        f'--add-data={runtime};.',
         f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "requirements.txt"))};.',
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "update_worker.py"))};nexus',
     ]
 
     print(f"Empacotando recursos (Coleta Bruta) e gerando {app_name}.exe...")
@@ -75,7 +80,7 @@ def build_nexus_pro():
         PyInstaller.__main__.run(params)
     except Exception as e:
         print(f"Erro durante o build: {e}")
-        return
+        raise
 
     # Limpeza pós-build
     if os.path.exists(f"{app_name}.spec"):

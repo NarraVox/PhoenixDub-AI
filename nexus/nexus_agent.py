@@ -150,7 +150,7 @@ if __name__ == "__main__":
     teste = ask_gemma("Oi", "Responda apenas 'Olá'")
     if "Falha na conexão" in teste:
         print("\n❌ ERRO: O servidor local do Gemma não está respondendo.")
-        print("Certifique-se de que o arquivo 'ABRIR_AIDER_LOCAL.bat' está rodando.")
+        print("Certifique-se de que o servidor local de IA está em execução.")
         sys.exit(1)
         
     arquivo = input("📁 Caminho do arquivo a ser analisado (ex: nexus_core.py): ").strip()

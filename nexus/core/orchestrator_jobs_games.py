@@ -109,6 +109,12 @@ def trim_silence_logic(audio, threshold=-35, padding_ms_start=20, padding_ms_end
     if start_trim >= end_trim: return audio
     return audio[start_trim:end_trim]
 
+
+def copiar_saida_consolidada(job_dir, job_id):
+    from nexus.game_full_export import copy_full_output
+    return copy_full_output(job_dir, job_id)
+
+
 def processar_dublagem_jogos(job_dir, job_id, start_time, start_from_stage=1, stop_after_stage=10):
     with active_jobs_lock:
         if len(active_jobs) >= MAX_CONCURRENT_JOBS:
@@ -251,11 +257,16 @@ def processar_dublagem_jogos(job_dir, job_id, start_time, start_from_stage=1, st
         # wait_for_diarization_manual(job_id, cb) # Desativado
         unify_speaker_files(job_dir, cb)
 
-        all_files_to_process = [f for f in diarization_dir.rglob("*") if f.suffix.lower() in ('.wav', '.mp3', '.ogg', '.flac', '.m4a') and not f.name.startswith("_REF_")]
-        
-        # [FORMAT PRESERVATION] Mapeia dinamicamente os formatos originais dos arquivos
-        for f in all_files_to_process:
+        # [FORMAT PRESERVATION] Mapeia dinamicamente os formatos originais dos arquivos a partir da pasta de entrada original
+        source_raw_dir = job_dir / "_1_MOVER_OS_FICHEIROS_DAQUI"
+        raw_files = [f for f in source_raw_dir.rglob("*") if f.suffix.lower() in ('.wav', '.mp3', '.ogg', '.flac', '.m4a', '.wem', '.aac', '.wma')]
+        for f in raw_files:
             file_format_map[f.stem] = f.suffix.lower()
+
+        all_files_to_process = [f for f in diarization_dir.rglob("*") if f.suffix.lower() in ('.wav', '.mp3', '.ogg', '.flac', '.m4a') and not f.name.startswith("_REF_")]
+        for f in all_files_to_process:
+            if f.stem not in file_format_map:
+                file_format_map[f.stem] = f.suffix.lower()
         status['file_format_map'] = file_format_map
 
         # [FEATURE] Calculo Dinâmico de Duração Total do Projeto
@@ -507,6 +518,17 @@ def processar_dublagem_jogos(job_dir, job_id, start_time, start_from_stage=1, st
         safe_json_write(project_data, project_data_path)
 
         if files_to_process_gema:
+            # [v2026.PRE_TRANSLATE_PURGE] Limpeza profunda de VRAM (elimina resíduos de Whisper, Diarização e TTS)
+            logging.info("🧹 [VRAM_PURGE] Limpando resíduos de Whisper/Pyannote antes de iniciar a Tradução LLM...")
+            unload_whisper_model()
+            unload_qwen3_model()
+            import gc, torch
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+                torch.cuda.synchronize()
+
             cb(0, 3, f"Processando {len(files_to_process_gema)} textos com Gema...")
             wait_for_gema_service(lambda s: cb(0, 3, s))
             
@@ -533,7 +555,7 @@ def processar_dublagem_jogos(job_dir, job_id, start_time, start_from_stage=1, st
                 lore_data = safe_json_read(lore_file) or {}
                 lore_global = lore_data.get("lore", "")
             else:
-                cb(2, 3, "[Gemma 4] Analisando Lore Global do Jogo...")
+                cb(2, 3, "[Qwen 3.5] Analisando Lore Global do Jogo...")
                 lore_global = gerar_lore_global(project_data)
                 safe_json_write({"lore": lore_global}, lore_file)
                 logging.info(f"📜 [TITAN GAMES] Lore Global Gerada: {lore_global[:100]}...")
@@ -677,15 +699,14 @@ def processar_dublagem_jogos(job_dir, job_id, start_time, start_from_stage=1, st
                     # Recibo limpo no terminal (como o Alexandre sugeriu)
                     logging.info(f"   ✅ [{now_str}] Segmento {idx} finalizado ({seg_time:.1f}s)")
                     
-                    cb((completed_atomic / total_items) * 100, 3, f"[{now_str}] Traduzindo: {completed_atomic}/{total_items} ({seg_time:.1f}s)...", tool_name="Gemma 4 (IA)", current_seg=completed_atomic, total_seg=total_items)
+                    cb((completed_atomic / total_items) * 100, 3, f"[{now_str}] Traduzindo: {completed_atomic}/{total_items} ({seg_time:.1f}s)...", tool_name="Qwen 3.5 (IA)", current_seg=completed_atomic, total_seg=total_items)
 
             # Disparo em Paralelo (3 threads para 4-core i5 / 10 para GPU)
             # Deixa sempre 1 núcleo livre para o sistema não travar.
-            device_hw = get_optimal_device()
-            # [v20.15] Gemma 4 Optimization: Máximo 2 workers para não fritar o i5
-            # Se for CPU pura, 1 worker é mais estável. Se tiver GPU, 2 é o limite seguro.
-            max_pthreads = 1 if "cpu" in device_hw else 2
-            logging.info(f"   -> 🚀 [PARALELISMO] Iniciando tradução atômica com {max_pthreads} workers (Safe Mode).")
+            # [v2026.VRAM_EFFICIENCY] 1 worker sequencial atômico na GPU para manter estritamente 1 slot de KV-Cache
+            # impedindo transbordamento para a RAM e garantindo velocidade máxima de inferência.
+            max_pthreads = 1
+            logging.info(f"   -> 🚀 [MODO_TURBO_GPU] Tradução atômica sequencial (1 job por vez, 100% VRAM dedicada).")
             
             with ThreadPoolExecutor(max_workers=max_pthreads) as executor:
                 futures = [executor.submit(worker_traducao, i, f) for i, f in enumerate(unique_files)]
@@ -805,7 +826,7 @@ def processar_dublagem_jogos(job_dir, job_id, start_time, start_from_stage=1, st
             if "cuda" in current_device:
                 cb(2, 6, "🚀 Usando Placa de Vídeo (Modo Turbo)")
             else:
-                cb(2, 6, "🐢 Usando Processador (Gemma 4 ativo ou sem GPU)")
+                cb(2, 6, "🐢 Usando Processador (Qwen 3.5 ativo ou sem GPU)")
         except:
             pass
 
@@ -1077,28 +1098,30 @@ def processar_dublagem_jogos(job_dir, job_id, start_time, start_from_stage=1, st
             file_name = seg_data.get('file_name', f"{file_id}.wav")
             
             # [PRESERVAÇÃO DO FORMATO E EXTENSÃO ORIGINAL DO JOGO]
-            ext_orig = file_format_map.get(file_id)
+            ext_orig = None
+            orig_matches = list((job_dir / "_1_MOVER_OS_FICHEIROS_DAQUI").rglob(f"{file_id}.*"))
+            if orig_matches:
+                ext_orig = orig_matches[0].suffix.lower()
+            if not ext_orig:
+                ext_orig = file_format_map.get(file_id)
             if not ext_orig or ext_orig == '.wav':
-                if file_name and '.' in file_name:
-                    p_ext = Path(file_name).suffix.lower()
-                    if p_ext in ('.mp3', '.wav', '.ogg', '.flac', '.m4a'):
-                        ext_orig = p_ext
-                if not ext_orig or ext_orig == '.wav':
-                    matches = list(job_dir.rglob(f"{file_id}.*"))
-                    for m in matches:
-                        if m.suffix.lower() in ('.mp3', '.wav', '.ogg', '.flac', '.m4a') and not m.name.endswith('_dubbed.wav'):
-                            ext_orig = m.suffix.lower()
-                            break
+                if file_name and '.' in file_name and not file_name.endswith('.wav'):
+                    ext_orig = Path(file_name).suffix.lower()
             if not ext_orig:
                 ext_orig = '.wav'
                 
             file_format_map[file_id] = ext_orig
             final_path = final_output_dir / f"{file_id}{ext_orig}"
             
-            # [RESET] Sempre tenta re-processar para garantir que não fique inglês
+            # [RESET] Sempre tenta re-processar e limpa formatos antigos conflitantes
             if final_path.exists(): 
                 try: os.remove(final_path)
                 except: pass
+            if ext_orig != '.wav':
+                old_wav = final_output_dir / f"{file_id}.wav"
+                if old_wav.exists():
+                    try: os.remove(old_wav)
+                    except: pass
             
             speaker_id = seg_data.get('speaker', 'Unknown')
             cb((i / len(project_data)) * 100, 7, f"Finalizando: {file_name}", tool_name="FFMPEG (Master)", current_seg=i+1, total_seg=len(project_data))
@@ -1192,25 +1215,45 @@ def processar_dublagem_jogos(job_dir, job_id, start_time, start_from_stage=1, st
                     all_filters = filters_to_apply + master_chain
                     if all_filters: cmd.extend(['-af', ",".join(all_filters)])
 
-                # [v2026.8 FIX] Seleção Inteligente de Codec
-                # Se o destino for .mp3, usamos libmp3lame. Se for .wav, usamos pcm_s16le.
+                # [v2026.8 FIX] Seleção Inteligente de Codec e Preservação Universal de Formato
                 ext_final = str(final_path.suffix).lower()
-                codec_final = 'libmp3lame' if ext_final == '.mp3' else 'pcm_s16le'
+                codec_final = None
+                codec_args = []
+
+                if ext_final == '.mp3':
+                    codec_final = 'libmp3lame'
+                    codec_args = ['-b:a', '192k']
+                elif ext_final in ('.ogg', '.oga'):
+                    codec_final = 'libvorbis'
+                    codec_args = ['-q:a', '5']
+                elif ext_final == '.opus':
+                    codec_final = 'libopus'
+                    codec_args = ['-b:a', '128k']
+                elif ext_final == '.flac':
+                    codec_final = 'flac'
+                elif ext_final in ('.m4a', '.aac'):
+                    codec_final = 'aac'
+                    codec_args = ['-b:a', '192k']
+                elif ext_final == '.wma':
+                    codec_final = 'wmav2'
+                    codec_args = ['-b:a', '192k']
+                elif ext_final in ('.aif', '.aiff'):
+                    codec_final = 'pcm_s16be'
+                elif ext_final == '.wav':
+                    codec_final = 'pcm_s16le'
                 
                 output_profile = status.get('detected_profile', {})
                 native_ar = str(output_profile.get('ar', '44100'))
                 native_ac = str(output_profile.get('ac', '1'))
                 
+                if codec_final:
+                    cmd.extend(['-c:a', codec_final])
+                cmd.extend(codec_args)
                 cmd.extend([
-                    '-c:a', codec_final, 
                     '-ar', native_ar, 
                     '-ac', native_ac,
                     '-map_metadata', '-1' # Limpa metadados corrompidos do jogo original
                 ])
-                
-                # Para MP3, adicionamos o bitrate padrão de alta qualidade
-                if codec_final == 'libmp3lame':
-                    cmd.extend(['-b:a', '192k'])
 
                 cmd.append(str(final_path))
                 logging.debug(f"🔊 Masterizando ({codec_final}): {file_id}")
@@ -1507,7 +1550,15 @@ def processar_dublagem_jogos(job_dir, job_id, start_time, start_from_stage=1, st
             safe_json_write(project_data, job_dir / "project_data.json")
         # --- [FIM FALLBACK AUTOMÁTICO] ---
 
-        cb(100, 10, "Processo concluído! Arquivos finais auditados em '_saida_final'.")
+        consolidated_count, consolidated_path = copiar_saida_consolidada(job_dir, job_id)
+        if consolidated_path:
+            cb(
+                100,
+                10,
+                f"Processo concluído! {consolidated_count} áudio(s) também foram copiados para '{consolidated_path}'.",
+            )
+        else:
+            cb(100, 10, "Processo concluído! Arquivos finais auditados em '_saida_final'.")
 
     except Exception as e:
         import traceback

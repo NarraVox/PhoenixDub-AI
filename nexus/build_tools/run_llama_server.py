@@ -65,15 +65,16 @@ def find_alternative_model(current_path):
     # Caminhos para verificar
     root = Path("C:/IA_dublagem")
     possible_dirs = [
-        root / "_MODELS_",
+        root / "MODELS",
         root,
-        Path("_MODELS_"),
-        Path("uploads/_MODELS_"),
+        Path("MODELS"),
+        Path("uploads/MODELS/"),
         Path(".")
     ]
     
     # 1. Tenta nomes de arquivos conhecidos
     known_filenames = [
+        "Qwen3.5-9B-UD-IQ3_XXS.gguf",
         "Qwen3.5-4B-Q6_K.gguf",
         "Qwen3.5-4B-Q4_K_M.gguf",
         "gemma-4-E4B-it-qat-UD-Q4_K_XL.gguf",

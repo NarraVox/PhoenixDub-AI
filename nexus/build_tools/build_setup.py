@@ -49,7 +49,9 @@ def build_setup():
         '--clean',
         f'--workpath={work_dir}',
         f'--distpath={dist_dir}',
-        '--exclude-module=webview', # Evita o crash de analise
+        '--collect-all=webview',
+        '--collect-all=clr_loader',
+        '--collect-all=pythonnet',
         # EXCLUSÕES CRÍTICAS DE MÓDULOS DE ML E BIBLIOTECAS GRANDES (Evita que o instalador tente embutir bibliotecas pesadas)
         '--exclude-module=torch',
         '--exclude-module=torchaudio',
@@ -95,7 +97,8 @@ def build_setup():
         f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "Nexus_AI_Pro.exe"))};.',
         f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "nexus_app.py"))};.',
         f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "vpk_manager.py"))};.',
-        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "client"))};client',
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "nexus", "client"))};nexus/client',
+        f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "dist", "runtime.zip"))};.',
         f'--add-data={os.path.abspath(os.path.join(os.getcwd(), "requirements.txt"))};.',
         f'--add-data={os.path.abspath(webview_path)};webview', # Adiciona webview manualmente
     ]

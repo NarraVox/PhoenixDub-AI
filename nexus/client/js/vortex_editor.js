@@ -4,7 +4,126 @@ let shortsPhotos = [];
         const player = document.getElementById('main-player');
         const BASE_UPLOAD_PATH = "C:/IA_dublagem/uploads"; // [v2026.PATH]
 
+        // [v2026.UPLOAD_ZONE] Importa vídeos via diálogo nativo do Windows
+        async function importarVideos() {
+            try {
+                const res = await window.pywebview.api.open_file_dialog(
+                    "Vídeos (*.mp4;*.mkv;*.avi;*.mov)|Áudio (*.mp3;*.wav)|Todos (*.*)", true
+                );
+                if (!res) return;
+                const paths = Array.isArray(res) ? res : [res];
+                paths.forEach(p => {
+                    const ext = p.split('.').pop().toLowerCase();
+                    const type = ['mp4', 'mkv', 'avi', 'mov'].includes(ext) ? 'video' : 'audio';
+                    createClipCard(type, p.split(/[\\\/]/).pop(), p);
+                    logToTerminal(`IMPORTADO: ${p.split(/[\\\/]/).pop()}`);
+                });
+                // Pisca feedback na zona de upload
+                const dz = document.getElementById('upload-drop-zone');
+                dz.style.borderColor = 'limegreen';
+                dz.style.background = 'rgba(0,255,0,0.06)';
+                setTimeout(() => { dz.style.borderColor = ''; dz.style.background = ''; }, 800);
+            } catch(e) { console.error('[UPLOAD] Erro:', e); }
+        }
+
+        // [v2026.UPLOAD_ZONE] Drop direto na zona lateral
+        function handleUploadZoneDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList && this.classList.remove('dz-hover');
+            const files = e.dataTransfer.files;
+            if (!files || files.length === 0) return;
+            for (let i = 0; i < files.length; i++) {
+                const p = files[i].path || files[i].name;
+                const ext = p.split('.').pop().toLowerCase();
+                const type = ['mp4', 'mkv', 'avi', 'mov'].includes(ext) ? 'video' : 'audio';
+                createClipCard(type, p.split(/[\\\/]/).pop(), p);
+                logToTerminal(`DROP IMPORTADO: ${p.split(/[\\\/]/).pop()}`);
+            }
+        }
+
+        // ── [v2026.SLICER] Fatiador de Vídeo ─────────────────────────────
+        function atualizarSlicerLabel(val) {
+            val = parseInt(val);
+            const min = Math.floor(val / 60);
+            const sec = val % 60;
+            const label = sec === 0 ? `${min}:00 min` : `${min}:${String(sec).padStart(2,'0')} min`;
+            document.getElementById('slicer-val-display').textContent = label;
+            // Atualiza cor do track do slider
+            const pct = ((val - 30) / (1800 - 30) * 100).toFixed(1);
+            document.getElementById('slicer-duration-range').style.setProperty('--pct', pct + '%');
+        }
+
+        async function fatiarVideo() {
+            const videoPath = activeVideoPath;
+            if (!videoPath) {
+                alert('⚠️ Nenhum vídeo carregado no player.\nImporte um vídeo primeiro e clique nele para selecioná-lo.');
+                return;
+            }
+            const segSec = parseInt(document.getElementById('slicer-duration-range').value);
+            const min = Math.floor(segSec / 60);
+            const sec = segSec % 60;
+            const label = sec === 0 ? `${min} minuto(s)` : `${min}m ${sec}s`;
+
+            const btn = document.getElementById('btn-fatiar');
+            const status = document.getElementById('slicer-status');
+            btn.disabled = true;
+            btn.textContent = '⏳ Fatiando...';
+            status.style.display = 'block';
+            status.style.color = '#00c8ff';
+            status.textContent = `Cortando em pedaços de ${label}, aguarde...`;
+            logToTerminal(`[SLICER] Iniciando fatiamento: ${videoPath.split(/[\\\/]/).pop()} → blocos de ${label}`);
+
+            try {
+                const resp = await fetch('http://127.0.0.1:5000/api/fatiar_video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ video_path: videoPath, segment_seconds: segSec })
+                });
+                const responseText = await resp.text();
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (_) {
+                    throw new Error(`Servidor respondeu HTTP ${resp.status}. Feche e abra o Nexus para carregar a atualização do fatiador.`);
+                }
+                if (!resp.ok || !data.ok) {
+                    throw new Error(data.erro || data.error || `Erro HTTP ${resp.status}`);
+                }
+
+                if (data.ok) {
+                    status.style.color = '#00ff64';
+                    status.textContent = `✅ ${data.total} fatia(s) gerada(s) com sucesso!`;
+                    logToTerminal(`[SLICER] ✅ ${data.total} fatia(s) salvas em: ${data.pasta}`);
+                    // Abre a pasta no Explorer automaticamente
+                    if (window.pywebview && window.pywebview.api) {
+                        try {
+                            await window.pywebview.api.open_folder_explorer(data.pasta);
+                        } catch (folderError) {
+                            logToTerminal(`[SLICER] Fatias salvas, mas não foi possível abrir a pasta: ${data.pasta}`);
+                        }
+                    }
+                } else {
+                    status.style.color = '#ff4444';
+                    status.textContent = `❌ Erro: ${data.erro}`;
+                    logToTerminal(`[SLICER] ❌ ${data.erro}`);
+                }
+            } catch(e) {
+                status.style.color = '#ff4444';
+                const message = e instanceof TypeError
+                    ? 'Falha de conexão com o servidor. Verifique se o Nexus está aberto.'
+                    : e.message;
+                status.textContent = `❌ ${message}`;
+                logToTerminal(`[SLICER] ❌ ${message}`);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✂️  FATIAR AGORA';
+            }
+        }
+        // ── fim do Fatiador ───────────────────────────────────────────────
+
         function openShortsModal() { document.getElementById('shorts-modal').style.display = 'flex'; }
+
         function closeShortsModal() { document.getElementById('shorts-modal').style.display = 'none'; }
 
         async function selectShortsPhotos() {

@@ -2,12 +2,14 @@
 # Licensed under the Apache License, Version 2.0
 
 import os
+import sys
 import flask
 from flask import Flask as OriginalFlask, request, jsonify
 from pathlib import Path
 
 # --- CONFIGURAÇÃO GLOBAL DE DIRETÓRIOS ---
-BASE_DIR = Path(__file__).parent.parent.parent.resolve()
+BASE_DIR = (Path(sys.executable).parent if getattr(sys, 'frozen', False)
+            else Path(__file__).parent.parent.parent).resolve()
 UPLOAD_FOLDER = BASE_DIR / "uploads"
 
 # Conjunto de caminhos permitidos dinamicamente (selecionados pelo usuário via file dialog)

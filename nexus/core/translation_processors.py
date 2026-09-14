@@ -56,354 +56,51 @@ def gema_batch_processor_v2(batch, cenario_ctx, glossary={}, profile_id='padrao'
     if local_engine:
         return _process_with_local_engine(local_engine, batch, cenario_ctx, glossary, target_lang, job_dir=job_dir)
 
-    logging.warning("⚠️ AGUARDANDO MODELO GGUF NA PASTA _MODELS_...")
+    logging.warning("⚠️ AGUARDANDO MODELO GGUF NA PASTA MODELS...")
     time.sleep(5)
     return {}
 
+from nexus.core.tactical_dict import fast_tactical_translator
 
-def fast_tactical_translator(txt_en):
-    clean = txt_en.strip()
-    c_lower = re.sub(r'[\!\?\.\,]', '', clean.lower()).strip()
+def sanitize_prompt_metadata(text: str) -> str:
+    """
+    Remove nomes de pastas de jobs (PROJETO_...), timestamps (17AUG, 22H45),
+    caminhos de arquivo do Windows e extensões técnicas (.wav, .mp3, uploads/)
+    para que o LLM receba apenas o texto e contexto limpos.
+    """
+    if not text:
+        return ""
+    # Remove caminhos de arquivos absolutos ou uploads
+    text = re.sub(r'[A-Za-z]:\\[^\s\n]+', '', text)
+    text = re.sub(r'uploads[\\/][^\s\n]+', '', text)
+    # Remove padrões de Job / Projeto (ex: PROJETO_17AUG_22H45_ALN ou 17AUG22H45)
+    text = re.sub(r'PROJETO_[A-Za-z0-9_]+', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'\b\d{1,2}[A-Z]{3}\d{0,4}(?:_\d{1,2}[Hh]\d{2})?(?:_[A-Za-z0-9]+)?\b', '', text)
+    # Remove extensões de arquivo
+    text = re.sub(r'\.(?:wav|mp3|ogg|flac|m4a|json)\b', '', text, flags=re.IGNORECASE)
+    return re.sub(r'\s+', ' ', text).strip()
 
-    clock_map = {
-        "1": "uma hora", "one": "uma hora",
-        "2": "duas horas", "two": "duas horas",
-        "3": "três horas", "three": "três horas",
-        "4": "quatro horas", "four": "quatro horas",
-        "5": "cinco horas", "five": "cinco horas",
-        "6": "seis horas", "six": "seis horas",
-        "7": "sete horas", "seven": "sete horas",
-        "8": "oito horas", "eight": "oito horas",
-        "9": "nove horas", "nine": "nove horas",
-        "10": "dez horas", "ten": "dez horas",
-        "11": "onze horas", "eleven": "onze horas",
-        "12": "doze horas", "twelve": "doze horas"
+def is_isolated_reaction_or_grunt(text: str) -> bool:
+    """
+    Retorna True se o áudio for APENAS uma interjeição/grito/reação isolada sem fala real
+    (ex: 'No!', 'No, no, no!', 'Oh no!', 'Yeah!', 'Uh-huh', 'Ahhh!').
+    Todo mundo entende reações universais, então preserva o áudio original com a emoção do ator.
+    Se houver qualquer outra fala junto (ex: 'No, no, it can't be gone'), retorna False para traduzir a fala inteira.
+    """
+    if not text:
+        return True
+    words = [re.sub(r'[^\w]', '', w.lower()) for w in text.split()]
+    words = [w for w in words if w]
+    if not words:
+        return True
+
+    universal_reactions = {
+        "no", "nope", "nah", "yes", "yeah", "yep", "uh", "um", "uhhuh", "uhuh",
+        "oh", "ah", "ahh", "ahhh", "argh", "ugh", "urgh", "ouch", "oof", "hey",
+        "huh", "hmm", "hmmm", "ha", "haha", "hahaha", "shh", "shhh", "phew",
+        "whoa", "woah", "wow", "grr", "gasp"
     }
-
-    m_clock = re.search(r'contact(?:\s+at)?\s+(1[0-2]|[1-9]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?:\s+o\'?clock)?', c_lower)
-    if m_clock:
-        num = m_clock.group(1)
-        pt_time = clock_map.get(num, num)
-        return f"Contato às {pt_time}!", "URGENTE"
-
-    cardinal_map = {
-        "north": "ao Norte", "south": "ao Sul", "east": "a Leste", "west": "a Oeste",
-        "northeast": "a Nordeste", "northwest": "a Noroeste", "southeast": "a Sudeste", "southwest": "a Sudoeste"
-    }
-
-    for en_dir, pt_dir in cardinal_map.items():
-        if c_lower in [f"contact {en_dir}", f"contact to the {en_dir}", f"contact to {en_dir}", f"enemies to the {en_dir}", f"tigers to the {en_dir}", f"contact {en_dir}"]:
-            return f"Contato {pt_dir}!", "URGENTE"
-        if c_lower == en_dir:
-            return f"{pt_dir.replace('a ', '').replace('ao ', '').capitalize()}!", "URGENTE"
-
-    floor_map = {
-        "first floor": "no primeiro andar",
-        "1st floor": "no primeiro andar",
-        "second floor": "no segundo andar",
-        "2nd floor": "no segundo andar",
-        "third floor": "no terceiro andar",
-        "3rd floor": "no terceiro andar",
-        "ground floor": "no térreo",
-        "roof": "no telhado",
-        "rooftop": "no telhado",
-        "balcony": "na varanda",
-        "window": "na janela",
-        "doorway": "na porta"
-    }
-
-    for fl_en, fl_pt in floor_map.items():
-        if fl_en in c_lower:
-            if "contact" in c_lower:
-                return f"Contato {fl_pt}!", "URGENTE"
-            elif "movement" in c_lower or "moving" in c_lower:
-                return f"Movimento {fl_pt}!", "URGENTE"
-            elif "roger" in c_lower or "copy" in c_lower:
-                return f"Ciente, {fl_pt}!", "NORMAL"
-
-    ack_dict = {
-        "roger that": ("Copiado!", "NORMAL"),
-        "copy that": ("Copiado!", "NORMAL"),
-        "roger": ("Copiado!", "NORMAL"),
-        "copy": ("Copiado!", "NORMAL"),
-        "affirmative": ("Afirmativo!", "NORMAL"),
-        "negative": ("Negativo!", "NORMAL"),
-        "on it": ("Em andamento!", "URGENTE"),
-        "got it": ("Copiado!", "NORMAL")
-    }
-    if c_lower in ack_dict:
-        pt_t, emo = ack_dict[c_lower]
-        return pt_t, emo
-
-    tactical_dict = {
-        "противник, два часа дня!": ("Inimigo, 2 horas!", "URGENTE"),
-        "пехота, 12 часов!": ("Infanteria, 12 horas!", "URGENTE"),
-        "цель слева!": ("Alvo à esquerda!", "URGENTE"),
-        "атакуют слева!": ("Atacam pela esquerda!", "URGENTE"),
-        "цель 7 часов!": ("Alvo 7 horas!", "URGENTE"),
-        "обходят нас с тыла!": ("Eles nos flanqueiam pela retaguarda!", "URGENTE"),
-        "противник с тыла!": ("Inimigo pela retaguarda!", "URGENTE"),
-        "противник справа!": ("Inimigo à direita!", "URGENTE"),
-        "противник, час дня!": ("Inimigo 1 hora!", "URGENTE"),
-        "впереди враг!": ("Inimigo à frente!", "URGENTE"),
-        "противник 10 часов!": ("Inimigo 10 horas!", "URGENTE"),
-        "замечен противник на юго-западе!": ("Inimigo avistado ao Sudoeste!", "URGENTE"),
-        "противник северо-запад!": ("Inimigo Noroeste!", "URGENTE"),
-        "подходит с востока!": ("Aproxima-se pelo Leste!", "URGENTE"),
-        "вижу противника на два часа!": ("Vejo inimigo às 2 horas!", "URGENTE"),
-        "вражеская пехота на 12 часов!": ("Infanteria inimiga às 12 horas!", "URGENTE"),
-        "они атакуют слева!": ("Eles atacam pela esquerda!", "URGENTE"),
-        "враг сзади!": ("Inimigo atrás!", "URGENTE"),
-        "справа! справа!": ("À direita! À direita!", "URGENTE"),
-        "вижу противника справа!": ("Vejo inimigo à direita!", "URGENTE"),
-        "противник на один час!": ("Inimigo a 1 hora!", "URGENTE"),
-        "впереди солдаты противника!": ("Soldados inimigos à frente!", "URGENTE"),
-        "впереди враг! огонь!": ("Inimigo à frente! Fogo!", "URGENTE"),
-        "вижу противника на 10 часов!": ("Vejo inimigo às 10 horas!", "URGENTE"),
-        "вражеская цель на западе!": ("Alvo inimigo ao Oeste!", "URGENTE"),
-        "они атакуют с юго-востока!": ("Eles estão atacando pelo Sudeste!", "URGENTE"),
-        "противник на юге!": ("Inimigo ao Sul!", "URGENTE"),
-        "противник! северо-запад!": ("Inimigo! Noroeste!", "URGENTE"),
-        "противник на северо-востоке!": ("Inimigo ao Nordeste!", "URGENTE"),
-        "цель на севере!": ("Alvo ao Norte!", "URGENTE"),
-        "ходят с востока!": ("Eles vêm do Leste!", "URGENTE"),
-        "first floor, roger that!": ("Primeiro andar, copiado!", "URGENTE"),
-        "contact 7 o'clock!": ("Contato 7 horas!", "URGENTE"),
-        "contact 6 o'clock!": ("Contato 6 horas!", "URGENTE"),
-        "showtime, 12 o'clock!": ("Hora do show, 12 horas!", "URGENTE"),
-        "contact, you're 11 o'clock!": ("Contato, às 11 horas!", "URGENTE"),
-        "conte to the north east!": ("Contato ao Nordeste!", "URGENTE"),
-        "hey! check your fire!": ("Ei! Cuidado com os tiros!", "URGENTE"),
-        "contact at five o'clock!": ("Contato às 5 horas!", "URGENTE"),
-        "4 o'clock!": ("4 horas!", "URGENTE"),
-        "contact, three o'clock!": ("Contato, 3 horas!", "URGENTE"),
-        "contact at two o'clock!": ("Contato às 2 horas!", "URGENTE"),
-        "contact! 11 o'clock!": ("Contato! 11 horas!", "URGENTE"),
-        "10 o'clock!": ("10 horas!", "URGENTE"),
-        "contact west!": ("Contato a Oeste!", "URGENTE"),
-        "contact to the southwest!": ("Contato ao Sudoeste!", "URGENTE"),
-        "contact south east!": ("Contato ao Sudeste!", "URGENTE"),
-        "contact south!": ("Contato ao Sul!", "URGENTE"),
-        "contact northwest!": ("Contato ao Noroeste!", "URGENTE"),
-        "contact to the north east!": ("Contato ao Nordeste!", "URGENTE"),
-        "contact north!": ("Contato ao Norte!", "URGENTE"),
-        "contact east!": ("Contato a Leste!", "URGENTE"),
-        "friendly fire!": ("Fogo amigo!", "URGENTE"),
-        "contact at nine o'clock.": ("Contato às 9 horas.", "URGENTE"),
-        "contact 8 o'clock!": ("Contato 8 horas!", "URGENTE"),
-        "contact seven o'clock!": ("Contato 7 horas!", "URGENTE"),
-        "contact six o'clock.": ("Contato 6 horas.", "URGENTE"),
-        "contact at five o'clock.": ("Contato às 5 horas.", "URGENTE"),
-        "contact four o'clock!": ("Contato 4 horas!", "URGENTE"),
-        "contact three o'clock.": ("Contato 3 horas.", "URGENTE"),
-        "contact at two o'clock.": ("Contato às 2 horas.", "URGENTE"),
-        "contact at 10 o'clock.": ("Contato às 10 horas.", "URGENTE"),
-        "contact to the west!": ("Contato ao Oeste!", "URGENTE"),
-        "contact southwest!": ("Contato ao Sudoeste!", "URGENTE"),
-        "contact southeast!": ("Contato ao Sudeste!", "URGENTE"),
-        "contact north west!": ("Contato ao Noroeste!", "URGENTE"),
-        "contact to the north east.": ("Contato ao Nordeste.", "URGENTE"),
-        "contact to the north!": ("Contato ao Norte!", "URGENTE"),
-        "contact to the east.": ("Contato a Leste.", "URGENTE"),
-        "friendly fire! friendly fire!": ("Fogo amigo! Fogo amigo!", "URGENTE"),
-        "hey, check your fire!": ("Ei, cuidado com os tiros!", "URGENTE"),
-        "check your fire!": ("Cuidado com os tiros!", "URGENTE"),
-        "the tall blue one on the left!": ("O azul alto à esquerda!", "URGENTE"),
-        "contact! nine o'clock!": ("Contato! 9 horas!", "URGENTE"),
-        "contact, seven o'clock!": ("Contato, 7 horas!", "URGENTE"),
-        "contact! six o'clock!": ("Contato! 6 horas!", "URGENTE"),
-        "contact 4 o'clock!": ("Contato 4 horas!", "URGENTE"),
-        "contact! three o'clock!": ("Contato! 3 horas!", "URGENTE"),
-        "contact two o'clock!": ("Contato 2 horas!", "URGENTE"),
-        "contact one o'clock!": ("Contato 1 hora!", "URGENTE"),
-        "contact! 12 o'clock!": ("Contato! 12 horas!", "URGENTE"),
-        "contact 11 o'clock!": ("Contato 11 horas!", "URGENTE"),
-        "contact, 10 o'clock!": ("Contato, 10 horas!", "URGENTE"),
-        "coming from the west!": ("Vindo do Oeste!", "URGENTE"),
-        "enemy southwest.": ("Inimigo a sudoeste.", "URGENTE"),
-        "enemy to the south!": ("Inimigo ao sul!", "URGENTE"),
-        "enemies to the northwest!": ("Inimigos ao noroeste!", "URGENTE"),
-        "enemies to the northeast.": ("Inimigos ao nordeste.", "URGENTE"),
-        "to the north!": ("Ao Norte!", "URGENTE"),
-        "enemies in the white building!": ("Inimigos no edifício branco!", "URGENTE"),
-        "enemies on the roof of the tall building!": ("Inimigos no teto do edifício alto!", "URGENTE"),
-        "contact at 11 o'clock!": ("Contato às 11 horas!", "URGENTE"),
-        "contact at 10 o'clock!": ("Contato às 10 horas!", "URGENTE"),
-        "contact at 9 o'clock!": ("Contato às 9 horas!", "URGENTE"),
-        "contact at 8 o'clock!": ("Contato às 8 horas!", "URGENTE"),
-        "contact at 7 o'clock!": ("Contato às 7 horas!", "URGENTE"),
-        "contact at 6 o'clock!": ("Contato às 6 horas!", "URGENTE"),
-        "contact at 5 o'clock!": ("Contato às 5 horas!", "URGENTE"),
-        "contact at 4 o'clock!": ("Contato às 4 horas!", "URGENTE"),
-        "contact at 3 o'clock!": ("Contato às 3 horas!", "URGENTE"),
-        "contact at 2 o'clock!": ("Contato às 2 horas!", "URGENTE"),
-        "contact at 1 o'clock!": ("Contato a 1 hora!", "URGENTE"),
-        "contact at 12 o'clock!": ("Contato às 12 horas!", "URGENTE"),
-        "the west": ("Ao Oeste", "URGENTE"),
-        "i see enemies to the southwest!": ("Vejo inimigos ao sudoeste!", "URGENTE"),
-        "they're attacking from the southeast!": ("Estão atacando pelo sudeste!", "URGENTE"),
-        "the south!": ("Ao Sul!", "URGENTE"),
-        "northwest.": ("Noroeste.", "URGENTE"),
-        "i see enemies to the north east!": ("Vejo inimigos ao nordeste!", "URGENTE"),
-        "i see them to the north!": ("Estou vendo eles ao norte!", "URGENTE"),
-        "soldiers approaching from the east!": ("Soldados se aproximando pelo leste!", "URGENTE"),
-        "quit showing off.": ("Pare de se amostrar.", "URGENTE"),
-        "that's a new personal best.": ("Esse é um novo recorde pessoal.", "URGENTE"),
-        "you can do better than that.": ("Você pode fazer melhor que isso.", "URGENTE"),
-        "sprint to the finish!": ("Pique total para a chegada!", "URGENTE"),
-        "drop those tangos!": ("Derrube esses alvos!", "URGENTE"),
-        "on your go, frost.": ("Quando quiser, Frost.", "URGENTE"),
-        "dogs approaching!": ("Cães se aproximando!", "URGENTE"),
-        "move, move, move!": ("Mova-se, mova-se, mova-se!", "URGENTE"),
-        "no good. run it again.": ("Insuficiente. Faça de novo.", "URGENTE"),
-        "nicely done.": ("Belo trabalho.", "URGENTE"),
-        "we got stragglers!": ("Temos retardatários!", "URGENTE"),
-        "we're gonna need another way out of here!": ("Precisamos de outra saída daqui!", "URGENTE"),
-        "all clear!": ("Tudo limpo!", "URGENTE"),
-        "i see him!": ("Estou vendo ele!", "URGENTE"),
-        "i'm good!": ("Estou bem!", "URGENTE"),
-        "we're clear!": ("Tudo limpo!", "URGENTE"),
-        "the president is secure!": ("O Presidente está em segurança!", "URGENTE"),
-        "we gotta go now!": ("Temos que ir agora!", "URGENTE"),
-        "any bright ideas?": ("Alguma ideia brilhante?", "URGENTE"),
-        "there they are!": ("Eles estão ali!", "URGENTE"),
-        "contact 12 o'clock!": ("Contato às 12 horas!", "URGENTE"),
-        "watch the left flank!": ("Cuidado com o flanco esquerdo!", "URGENTE"),
-        "i hope this works.": ("Espero que isso funcione.", "URGENTE"),
-        "sniper in the tower!": ("Atirador na torre!", "URGENTE"),
-        "get down!": ("Se abaixa!", "URGENTE"),
-        "stay with me, son!": ("Fica comigo, garoto!", "URGENTE"),
-        "makarov knows yuri...": ("O Makarov... conhece o... Yuri...", "URGENTE"),
-        "price, we have to move!": ("Price, temos que sair daqui!", "URGENTE"),
-        "soap! no! no, no, no!": ("Soap! Não! Não, não, não!", "URGENTE"),
-        "perfect.": ("Perfeito!", "URGENTE"),
-        "move up.": ("Avançar!", "URGENTE"),
-        "do you like the smell of this place? come on, let's go!": ("Gosta do cheiro deste lugar? Vamos, mexam-se!", "URGENTE"),
-        "hurry, we don't have much time!": ("Rápido, não temos muito tempo!", "URGENTE"),
-        "give me your hand.": ("Me dá a sua mão.", "URGENTE"),
-        "what took you so long?": ("Por que demorou tanto?", "URGENTE"),
-        "cough cough cough": ("Cough Cough Cough", "URGENTE"),
-        "hold your fire!": ("Cessar fogo!", "URGENTE"),
-        "friendly forces in the area!": ("Aliados na área!", "URGENTE"),
-        "danger close!": ("Perigo próximo!", "URGENTE"),
-        "firing 40mm.": ("Disparando 40mm!", "URGENTE"),
-        "firing 105mm.": ("Disparando 105mm!", "URGENTE"),
-        "target destroyed!": ("Alvo destruído!", "URGENTE"),
-        "direct hit!": ("Impacto direto!", "URGENTE"),
-        "solid kill.": ("Baixa confirmada!", "URGENTE"),
-        "good kill.": ("Boa baixa!", "URGENTE"),
-        "good tone, fox 3.": ("Tom bom, Fox 3!", "URGENTE"),
-        "circling around to the north.": ("Circulando pelo norte.", "URGENTE"),
-        "take out those guys.": ("Elimina aqueles caras!", "URGENTE"),
-        "roger.": ("Copiado!", "URGENTE"),
-        "fire on that building.": ("Fogo naquele prédio!", "URGENTE"),
-        "flares, flares.": ("Flares, Flares!", "URGENTE"),
-        "light it up.": ("Abre fogo!", "URGENTE"),
-        "good job.": ("Bom trabalho!", "URGENTE"),
-        "roger, overlord. we're inbound.": ("Copiado, Overlord. Estamos a caminho.", "URGENTE"),
-        "roger that, 24.": ("Copiado, 24.", "URGENTE"),
-        "im hit!": ("Fui atingido!", "URGENTE"),
-        "man down!": ("Soldado abatido!", "URGENTE"),
-        "target neutralized!": ("Alvo neutralizado!", "URGENTE"),
-        "target down!": ("Alvo abatido!", "URGENTE"),
-        "tango down!": ("Inimigo abatido!", "URGENTE"),
-        "area clear!": ("Área limpa!", "URGENTE"),
-        "clear!": ("Limpo!", "URGENTE"),
-        "grenade!": ("Granada!", "URGENTE"),
-        "rpg!": ("RPG à vista!", "URGENTE"),
-        "cover me!": ("Me dá cobertura!", "URGENTE"),
-        "reloading!": ("Recarregando!", "URGENTE"),
-        "watch your fire!": ("Cuidado com o fogo amigo!", "URGENTE"),
-        "providing cover fire, move up!": ("Dando fogo de cobertura, avança!", "URGENTE"),
-        "adios.": ("Até mais.", "URGENTE"),
-        "the balcony's clear!": ("A varanda está limpa!", "URGENTE"),
-        "contact!": ("Contato!", "URGENTE"),
-        "got you covered!": ("Cobertura garantida!", "URGENTE"),
-        "i'm on it.": ("Deixa comigo!", "URGENTE"),
-        "raj.": ("Copiado!", "URGENTE"),
-        "contact memorial building to the north.": ("Contato no Edifício Memorial ao norte!", "URGENTE"),
-        "shooter's in the store below. switch them off.": ("Atirador na loja abaixo. Neutraliza ele!", "URGENTE"),
-        "we got company!": ("Temos companhia!", "URGENTE"),
-        "moving!": ("EM MOVIMENTO!", "URGENTE"),
-        "russian armor incoming!": ("Blindados russos se aproximando!", "URGENTE"),
-        "truck, you getting anything on your comms?": ("Truck, pegou alguma coisa no rádio?", "URGENTE"),
-        "i like it.": ("Assim que se faz!", "URGENTE"),
-        "frost, get in here!": ("Frost, vem pra cá!", "URGENTE"),
-        "contact front hostels in the open!": ("Contato à frente! Inimigos a campo aberto!", "URGENTE"),
-        "no shit!": ("Sério mesmo?!", "URGENTE"),
-        "move move move!": ("VAI! VAI! VAI!", "URGENTE"),
-        "we're good!": ("Estamos bem!", "URGENTE"),
-        "we got you loud and clear.": ("Copiado alto e claro!", "URGENTE"),
-        "good kill, good kill.": ("Alvo destruído, boa baixa!", "URGENTE"),
-        "good tone, fox 3, fox 3.": ("Tom bom! Fox 3, Fox 3!", "URGENTE"),
-        "check your fire": ("Cuidado com o fogo amigo!", "RAIVA"),
-        "jack your fire": ("Cuidado com o fogo amigo!", "RAIVA"),
-        "watch your fire": ("Cuidado com o fogo amigo!", "RAIVA"),
-        "friendly fire friendly fire": ("Fogo amigo! Fogo amigo!", "RAIVA"),
-        "friendly fire": ("Fogo amigo!", "RAIVA"),
-        "reloading": ("Recarregando!", "URGENTE"),
-        "im reloading": ("Tô recarregando!", "URGENTE"),
-        "reloading get cover": ("Recarregando, busca cobertura!", "URGENTE"),
-        "cover me": ("Me dá cobertura!", "URGENTE"),
-        "cover me im reloading": ("Me dá cobertura, tô recarregando!", "URGENTE"),
-        "grenade": ("Granada!", "URGENTE"),
-        "frag out": ("Lançando granada!", "URGENTE"),
-        "flashbang out": ("Lançando granada de luz!", "URGENTE"),
-        "smoke out": ("Lançando fumaça!", "URGENTE"),
-        "rpg": ("RPG à vista!", "URGENTE"),
-        "sniper": ("Atirador de elite!", "URGENTE"),
-        "sniper get down": ("Atirador de elite, se abaixa!", "URGENTE"),
-        "man down": ("Soldado abatido!", "DRAMATICO"),
-        "im hit": ("Fui atingido!", "URGENTE"),
-        "im hit im hit": ("Fui atingido! Fui atingido!", "URGENTE"),
-        "taking fire": ("Sob fogo inimigo!", "URGENTE"),
-        "under fire": ("Sob fogo inimigo!", "URGENTE"),
-        "clear": ("Limpo!", "NORMAL"),
-        "area clear": ("Área limpa!", "NORMAL"),
-        "all clear": ("Tudo limpo!", "NORMAL"),
-        "move move": ("VAI! VAI!", "URGENTE"),
-        "move up": ("Avançar!", "URGENTE"),
-        "move in": ("Entrando!", "URGENTE"),
-        "push forward": ("Avançar!", "URGENTE"),
-        "fall back": ("Recuar!", "URGENTE"),
-        "hold your ground": ("Mantenham a posição!", "RAIVA"),
-        "hold this position": ("Mantenham esta posição!", "RAIVA"),
-        "get down": ("Se abaixa!", "URGENTE"),
-        "get in cover": ("Busquem cobertura!", "URGENTE"),
-        "head down": ("Cabeça baixa!", "URGENTE"),
-        "area secure": ("Área limpa!", "NORMAL"),
-        "flash out": ("Lançando atordoante!", "URGENTE"),
-        "throwing frag": ("Lançando granada!", "URGENTE"),
-        "throw in c4": ("Instalando C4!", "URGENTE"),
-        "deploying c4": ("Instalando C4!", "URGENTE"),
-        "im bleeding out": ("Estou sangrando!", "DRAMATICO"),
-        "hurry im bleeding out": ("Rápido, estou sangrando!", "DRAMATICO"),
-        "on comms": ("Na frequência!", "NORMAL"),
-        "contacting hq": ("Contatando o Comando!", "NORMAL"),
-        "target neutralized": ("Alvo neutralizado!", "NORMAL"),
-        "target down": ("Alvo abatido!", "URGENTE"),
-        "tango down": ("Inimigo abatido!", "URGENTE"),
-        "enemy down": ("Inimigo no chão!", "URGENTE"),
-        "hes down": ("Ele caiu!", "URGENTE"),
-        "mark and drop zone": ("Marcando zona de pouso!", "NORMAL"),
-        "russian armor incoming": ("Blindados russos se aproximando!", "URGENTE"),
-        "move move move": ("VAI! VAI! VAI!", "URGENTE"),
-        "moving": ("EM MOVIMENTO!", "URGENTE"),
-        "we got company": ("Temos companhia!", "URGENTE"),
-        "got you covered": ("Cobertura garantida!", "NORMAL"),
-        "providing cover fire move up": ("Fogo de cobertura, avança!", "URGENTE"),
-        "the balconys clear": ("A varanda está limpa!", "NORMAL"),
-        "contact": ("Contato!", "URGENTE"),
-        "we got you loud and clear": ("Copiado alto e claro!", "NORMAL"),
-        "were good": ("Estamos bem!", "NORMAL"),
-        "im on it": ("Deixa comigo!", "NORMAL")
-    }
-
-    if c_lower in tactical_dict:
-        pt_t, emo = tactical_dict[c_lower]
-        return pt_t, emo
-
-    return None, None
+    return all(w in universal_reactions for w in words)
 
 def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_dir=None):
     results = {}
@@ -417,7 +114,9 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
     
     context_str = ""
     if context:
-        context_str = f"CONTEXTO DA CENA E TOM DE VOZ:\n{context}\n\n"
+        clean_ctx = sanitize_prompt_metadata(context)
+        if clean_ctx:
+            context_str = f"CONTEXTO DA CENA E TOM DE VOZ:\n{clean_ctx}\n\n"
         
     lore_str = ""
     if isinstance(glossary, dict) and 'lore_global' in glossary and glossary['lore_global']:
@@ -426,7 +125,7 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
             if tag in lore_cleaned.lower():
                 idx = lore_cleaned.lower().find(tag)
                 lore_cleaned = lore_cleaned[:idx]
-        lore_cleaned = lore_cleaned.strip()
+        lore_cleaned = sanitize_prompt_metadata(lore_cleaned)
         if lore_cleaned:
             lore_str = f"LORE GLOBAL DO PROJETO (Use para entender o tom, contexto e termos):\n{lore_cleaned}\n\n"
         
@@ -480,6 +179,18 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
         return ""
 
 
+    is_qwen = False
+    try:
+        from nexus.core.model_loader import find_gemma_model_path
+        p = find_gemma_model_path()
+        if p and "qwen" in p.name.lower():
+            is_qwen = True
+        elif llm and hasattr(llm, "model_path") and "qwen" in str(llm.model_path).lower():
+            is_qwen = True
+    except Exception:
+        pass
+    model_name = "Qwen 3.5" if is_qwen else "Gemma 4"
+
     for seg in batch:
         txt_en = seg.get('original_text', seg.get('text', '')).strip()
         if any(ord(char) > 0x3000 for char in txt_en):
@@ -492,11 +203,9 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
             results[str(seg['id']).lower()] = {"text": fast_pt, "emotion": fast_emo}
             continue
 
-        clean_txt = txt_en.lower().replace("!", "").replace("?", "").replace(".", "").replace(",", "").strip()
-        real_words = {"no", "yes", "yeah", "go", "we", "he", "me", "us", "hi", "in", "on", "it", "do", "up", "so", "to", "be", "if", "is"}
-        is_reaction = (clean_txt in vocal_noises or len(clean_txt) <= 2) and (clean_txt not in real_words)
-        
-        if is_reaction:
+        # [v2026.REACTION_FILTER] Se o áudio for APENAS uma interjeição/grito/reação isolada (ex: 'No!', 'No, no, no!', 'Yeah!'),
+        # preserva o áudio original com a atuação do ator. Se tiver diálogo junto, traduz a fala inteira.
+        if is_isolated_reaction_or_grunt(txt_en):
             results[str(seg['id']).lower()] = {"text": txt_en, "emotion": "CANTORIA"}
             continue
 
@@ -504,50 +213,28 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
         if duration <= 0:
             duration = 2.0
             
-        next_gap = seg.get('gap_to_next', 999.0)
-        min_chars = 18 if next_gap < 1.0 else 25
-        
-        # [v2026.TIGHT_TIME_CEILING] Limita o tamanho máximo de caracteres da tradução com base no tempo de tela real
-        # se o tempo for apertado, forçando o tradutor a resumir/encurtar a frase para que caiba no áudio.
-        max_duration_chars = max(min_chars, int(duration * 16.0))
-        base_limit = max(min_chars, int(len(txt_en) * 1.25))
-        char_limit = min(base_limit, max_duration_chars)
-        word_limit = max(8, int(char_limit / 4.5))
-        
-        is_qwen = False
-        from nexus.core.model_loader import find_gemma_model_path
-        p = find_gemma_model_path()
-        if p and "qwen" in p.name.lower():
-            is_qwen = True
-        elif llm and hasattr(llm, "model_path") and "qwen" in str(llm.model_path).lower():
-            is_qwen = True
-        model_name = "Qwen 3.5" if is_qwen else "Gemma 4"
+        # O limite é mecânico: 18 caracteres por segundo, contando espaços.
+        # A primeira tentativa recebe esse teto; só há uma segunda chamada se
+        # a resposta final exceder o valor calculado abaixo.
+        char_limit = max(1, int(duration * 18.0))
+        word_limit = max(1, int(char_limit / 4.5))
         system_instruction = (
-            "Você é um Tradutor e Adaptador de Dublagem profissional para Português Brasileiro (PT-BR).\n"
-            "Sua missão é adaptar a fala original de forma coloquial, fluida e natural para dublagem, mantendo a emoção e o limite de tempo.\n\n"
-            "REGRAS CRÍTICAS:\n"
-            "1. COLOQUIALISMO: Use linguagem falada e natural (ex: 'pra', 'tá', 'você'). Evite estruturas formais.\n"
-            "2. GÊNERO: Adapte adjetivos ao gênero gramatical do Locutor informado (Masculino/Feminino).\n"
-            "3. ESCRITA POR EXTENSO: Escreva todos os números e porcentagens por extenso em português (exemplo: escreva 'dez' em vez de '10').\n"
-            "4. EVITE LITERALIDADES: Traduza expressões e gírias pelo sentido cultural (ex: 'piece of cake' -> 'moleza'; 'bullshit' -> 'besteira').\n"
-            "5. TRADUÇÃO OBRIGATÓRIA DE GÍRIAS INGLÊSAS: NUNCA mantenha gírias em inglês como 'Bro', 'Man', 'Dude', 'Yeah', 'Okay', 'Shit'. Traduza-as OBRIGATORIAMENTE para termos coloquiais equivalentes em português brasileiro (ex: 'Bro/Dude' -> 'Cara/Mano/Velho'; 'Yeah/Okay' -> 'É/Sim/Beleza'; 'Shit' -> 'Merda/Porra').\n"
-            "6. EVITE REPETIR INGLÊS EM FRASES GARBLADAS: Se o texto original parecer confuso, estranho ou gramaticalmente incorreto em inglês (ex: 'fucking over simulate me'), deduza o sentido aproximado ou a fonética e traduza para o português de forma natural. NUNCA copie a frase em inglês ou repita termos em inglês na tradução.\n"
-            "7. PROIBIDO CHINÊS / MANDARIM: Você deve responder estritamente em PORTUGUÊS DO BRASIL. Nunca use caracteres chineses sob nenhuma circunstância. Não responda em chinês.\n"
-            "8. LIMITE DE CARACTERES: A tradução DEVE ter no máximo {char_limit} caracteres.\n"
-            "9. EMOÇÃO: Escolha uma emoção: [RAIVA, TRISTE, FELIZ, URGENTE, SUSPENSE, DRAMATICO, NORMAL, CANTORIA].\n"
-            "10. TRADUÇÃO COMPLETA: Nunca deixe o texto em inglês ou sem traduzir. Sempre adapte tudo.\n"
-            "11. FORMATO DE RETORNO OBRIGATÓRIO: Responda APENAS no formato abaixo. Nunca adicione explicações, aspas extras, notas ou prefixos/IDs:\n"
-            "Trad: <tradução final adaptada>\n"
-            "Emo: <EMOÇÃO>\n"
-            "12. EVITE INVASÃO DE FRASES SEGUINTES: O texto em 'Texto original' pode terminar abruptamente no meio de uma frase (ex: terminando com 'It' ou 'the'). Traduza APENAS as palavras que estão fisicamente presentes no 'Texto original'. NUNCA deduza ou complete a frase com palavras que viriam a seguir se elas não estiverem no texto original.\n"
-            "13. BLOQUEIO DE ALUCINAÇÕES (REPETIÇÕES): Se o texto original contiver repetições infinitas ou anormais causadas por falhas de transcrição (como 'I'm like, I'm like, I'm like...' repetido muitas vezes), NÃO traduza essas repetições. Em vez disso, retorne uma tradução vazia ou apenas uma ocorrência curta para evitar loops de áudio no TTS.\n"
-            "14. FALA CONTÍNUA (SEM PAUSAS): A tradução deve ser focada em falar sem parar, de forma corrida e em fluxo contínuo. NUNCA insira pontos (.), vírgulas (,) ou reticências (...) no meio do texto do segmento. Junte todas as palavras e frases em um fluxo único sem pontuação interna para que a IA leia tudo de uma só vez (exemplo: prefira 'Desumano demais imagine' em vez de 'Desumano demais. Imagine.').\n"
-            "15. PRESERVAÇÃO DE NOMES E CODINOMES DE PERSONAGENS: NUNCA altere ou traduza codinomes militares ou nomes próprios ingleses de pessoas (mantenha 'Frost', 'Sandman', 'Soap', 'Granite', 'Valkyrie', 'Roach' exatamente iguais se referirem a pessoas ou equipes, NUNCA mude para 'Frio', 'Fria', 'Sabão', 'Granito' ou traduções literais. Caso a palavra se refira ao objeto físico real em outro contexto, como 'sabonete/sabão' para a palavra 'soap', traduza normalmente).\n"
-            "16. RIGOR GRAMATICAL BRASILEIRO: NUNCA invente palavras no português (ex: não use 'expulsoar' em vez de 'expulsar'). Garanta a concordância gramatical correta e a naturalidade coloquial das expressões (ex: use 'desumano' em vez de 'inumano'; 'viver nas próprias fezes' em vez de 'na própria fezes'; 'acorrentados' em vez de 'encadeados').\n"
-            "17. CORREÇÃO DE TRANCRICAO (ASR REPAIR): O texto original em inglês foi gerado por um modelo de áudio (Whisper) e pode conter erros de audição (ex: transcrever 'root to port' em vez de 'ripped apart' em uma cena de guerra). Use o Contexto da Cena fornecido para deduzir o sentido correto do que o locutor quis dizer caso o texto original pareça estranho ou sem sentido, e gere a tradução baseada na fala corrigida."
+            "Você é um Diretor de Dublagem e Tradutor Profissional para Português Brasileiro (PT-BR).\n"
+            "Sua missão é traduzir a fala original em inglês adaptando-a para soar natural, coloquial e impactante para dublagem.\n\n"
+            "0. MODO DIRETO OBRIGATÓRIO: Não use <think>, não exponha raciocínio e não escreva explicações. Use os tokens apenas para Trad e Emo.\n"
+            "DIRETRIZES DE DUBLAGEM:\n"
+            "1. LINGUAGEM NATURAL (PT-BR): Use português coloquial e falado do Brasil (ex: 'pra', 'tá', 'você'). Traduza gírias e expressões pelo sentido cultural.\n"
+            "2. GÊNERO E PERSONAGEM: Mantenha a concordância gramatical com o gênero do Locutor e preserve nomes próprios e codinomes militares.\n"
+            "3. RITMO E TAMANHO: A fala adaptada deve ter no máximo {char_limit} caracteres para caber perfeitamente no tempo do áudio.\n"
+            "4. EMOÇÃO: Identifique a emoção predominante da cena: [RAIVA, TRISTE, FELIZ, URGENTE, SUSPENSE, DRAMATICO, NORMAL, CANTORIA].\n"
+            "5. FORMATO DE SAÍDA OBRIGATÓRIO: Responda APENAS no formato:\n"
+            "Trad: <sua tradução em português>\n"
+            "Emo: <EMOÇÃO>"
         )
 
-        speaker_id = seg.get('speaker', 'desconhecido')
+        raw_spk = str(seg.get('speaker', 'desconhecido'))
+        clean_spk = sanitize_prompt_metadata(raw_spk)
+        speaker_id = clean_spk if clean_spk and clean_spk.lower() not in ['desconhecido', 'unknown', 'none', ''] else "Locutor"
         user_content = (
             f"{lore_str}"
             f"{glossary_str}"
@@ -555,7 +242,7 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
             f"Locutor da fala atual: {speaker_id}\n"
             f"Limite de tamanho: A tradução deve ter no máximo {char_limit} caracteres (cerca de {word_limit} palavras).\n\n"
             f"Traduza o texto abaixo estritamente para Português Brasileiro (PT-BR):\n"
-            f"Texto original: \"{txt_en}\""
+            f"Texto original: \"{txt_en}\"\n/no_think"
         ).format(char_limit=char_limit)
 
         system_instruction_formatted = system_instruction.format(char_limit=char_limit)
@@ -579,8 +266,8 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
             )
             stop_tokens = ["<end_of_turn>"]
         
-        # max_tokens: 64 tokens e suficiente para Trad: + Emo: com prefill direto
-        max_tokens_to_use = 64
+        # max_tokens: 128 tokens é suficiente para frases longas + Trad: + Emo: com prefill direto
+        max_tokens_to_use = 128
         output_text = call_engine(prompt_tradutor, max_tokens=max_tokens_to_use, temperature=0.1, stop=stop_tokens)
         if not output_text or len(output_text) < 1:
             output_text = call_engine(prompt_tradutor, max_tokens=max_tokens_to_use, temperature=0.7, stop=stop_tokens)
@@ -627,7 +314,7 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
         traducao = clean_hallucination_wrapper(traducao_raw)
 
         was_contingency = False
-        if not traducao or len(traducao) < 2 or is_hallucinated_number_translation(traducao, txt_en):
+        if not traducao or len(traducao) < 2 or is_hallucinated_number_translation(traducao, txt_en) or traducao.lower().strip() == txt_en.lower().strip():
             was_contingency = True
             logging.info(f"[{model_name}] 🔄 {seg['id']} -> Tradução inválida ou alucinação ('{traducao_raw}'). Iniciando contingência...")
             user_content_relaxed = (
@@ -639,28 +326,10 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
                 f"Texto original: \"{txt_en}\""
             )
             system_instruction_relaxed = (
-                "Você é um Tradutor e Adaptador de Dublagem profissional para Português Brasileiro (PT-BR).\n"
-                "Adapte a fala original para que soe natural, coloquial e caiba no tempo.\n\n"
-                "REGRAS:\n"
-                "1. COLOQUIALISMO: Use linguagem falada e natural (ex: 'pra', 'tá', 'você').\n"
-                "2. GÊNERO: Adapte adjetivos/substantivos ao gênero do Locutor informado.\n"
-                "3. ESCRITA POR EXTENSO: Escreva tudo por extenso em português. Nunca use números ou símbolos de porcentagem.\n"
-                "4. EVITE LITERALIDADES: Traduza expressões pelo sentido cultural.\n"
-                "5. TRADUÇÃO OBRIGATÓRIA DE GÍRIAS INGLÊSAS: NUNCA mantenha gírias em inglês como 'Bro', 'Man', 'Dude', 'Yeah', 'Okay', 'Shit'. Traduza-as OBRIGATORIAMENTE para termos coloquiais equivalentes em português brasileiro (ex: 'Bro/Dude' -> 'Cara/Mano/Velho'; 'Yeah/Okay' -> 'É/Sim/Beleza'; 'Shit' -> 'Merda/Porra').\n"
-                "6. EVITE REPETIR INGLÊS EM FRASES GARBLADAS: Se o texto original parecer confuso ou gramaticalmente incorreto em inglês, deduza o sentido e traduza para o português de forma natural. NUNCA copie a frase em inglês ou repita termos em inglês.\n"
-                "7. PROIBIDO CHINÊS / MANDARIM: Responda estritamente em PORTUGUÊS DO BRASIL. Nunca use caracteres chineses sob nenhuma circunstância. Não responda em chinês.\n"
-                "8. EMOÇÃO: Escolha uma: [RAIVA, TRISTE, FELIZ, URGENTE, SUSPENSE, DRAMATICO, NORMAL, CANTORIA].\n"
-                "9. FORMATO DE RETORNO: Responda APENAS no formato:\n"
-                "Trad: <tradução final adaptada>\n"
-                "Emo: <EMOÇÃO>\n"
-                "10. EVITE INVASÃO DE FRASES SEGUINTES: Traduza APENAS as palavras fisicamente presentes no 'Texto original'.\n"
-                "11. BLOQUEIO DE ALUCINAÇÕES (REPETIÇÕES): Se o original contiver repetições anômalas, não as traduza.\n"
-                "12. FALA CONTÍNUA (SEM PAUSAS): A tradução deve ser focada em falar sem parar, de forma corrida e em fluxo contínuo. NUNCA insira pontos (.), vírgulas (,) ou reticências (...) no meio do texto do segmento. Junte todas as palavras em um fluxo único sem pontuação interna para evitar silêncios artificiais na IA de voz (exemplo: prefira 'Desumano demais imagine' em vez de 'Desumano demais. Imagine.').\n"
-                "13. PRESERVAÇÃO DE NOMES PRÓPRIOS: NUNCA altere a grafia de nomes próprios ingleses de pessoas, marcas ou lugares (mantenha 'Howie', 'Pennhurst', 'Home Depot' exatamente iguais, nunca mude para 'Howe' ou traduções literais).\n"
-                "14. RIGOR GRAMATICAL BRASILEIRO: NUNCA invente palavras no português (ex: não use 'expulsoar' em vez de 'expulsar'). Garanta a concordância gramatical correta e a naturalidade coloquial das expressões (ex: use 'desumano' em vez de 'inumano'; 'viver nas próprias fezes' em vez de 'na própria fezes'; 'acorrentados' em vez de 'encadeados')."
+                "Você é um Tradutor para Português Brasileiro. Modo direto: não use <think> nem explicações. "
+                "Traduza a frase para PT-BR falado e natural. Responda apenas: Trad: <sua tradução>"
             )
             if is_qwen:
-                # CORRIGIDO: Removido o prefill <think>\n</think> do retry
                 prompt_relaxed = (
                     f"<|im_start|>system\n{system_instruction_relaxed}<|im_end|>\n"
                     f"<|im_start|>user\n{user_content_relaxed}<|im_end|>\n"
@@ -671,7 +340,7 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
                     f"<start_of_turn>user\n{system_instruction_relaxed}\n\n{user_content_relaxed}<end_of_turn>\n"
                     f"<start_of_turn>model\nTrad: "
                 )
-            output_relaxed = call_engine(prompt_relaxed, max_tokens=max_tokens_to_use, temperature=0.7, stop=stop_tokens)
+            output_relaxed = call_engine(prompt_relaxed, max_tokens=max_tokens_to_use, temperature=0.3, stop=stop_tokens)
             if output_relaxed and not output_relaxed.lower().strip().startswith("trad:"):
                 output_relaxed = "Trad: " + output_relaxed.strip()
             trad_relaxed = ""
@@ -686,7 +355,7 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
                 trad_relaxed = output_relaxed.strip().strip('"')
                 
             traducao_relaxed = clean_hallucination_wrapper(trad_relaxed)
-            if traducao_relaxed and len(traducao_relaxed) >= 2 and not is_hallucinated_number_translation(traducao_relaxed, txt_en):
+            if traducao_relaxed and len(traducao_relaxed) >= 2 and not is_hallucinated_number_translation(traducao_relaxed, txt_en) and traducao_relaxed.lower().strip() != txt_en.lower().strip():
                 traducao = traducao_relaxed
                 logging.info(f"🔄 [RELAXED RETRY] Sucesso no retry de {seg['id']}: '{traducao}'")
 
@@ -697,8 +366,65 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
         if emocao not in ["RAIVA", "TRISTE", "FELIZ", "URGENTE", "SUSPENSE", "DRAMATICO", "NORMAL", "CANTORIA"]:
             emocao = "NORMAL"
 
+        # [v2026.ZERO_ENGLISH_SHIELD] Se tudo falhar, tenta um fallback direto de tradução rápida para não deixar em inglês
+        if not traducao or len(traducao) < 2 or traducao.lower().strip() == txt_en.lower().strip():
+            direct_prompt = f"<|im_start|>user\nModo direto, sem <think>. Traduza para português brasileiro: \"{txt_en}\"\n/no_think<|im_end|>\n<|im_start|>assistant\nTrad: " if is_qwen else f"<start_of_turn>user\nTraduza para português brasileiro: \"{txt_en}\"<end_of_turn>\n<start_of_turn>model\n"
+            out_direct = call_engine(direct_prompt, max_tokens=max_tokens_to_use, temperature=0.1, stop=stop_tokens).strip().strip('"')
+            if out_direct and len(out_direct) >= 2:
+                traducao = out_direct
+            else:
+                traducao = txt_en
+
         if not traducao or len(traducao) < 2:
             traducao = txt_en
+
+        # [v2026.CPS_GUARD] Validação determinística pós-tradução.  Não faz
+        # uma segunda chamada para os segmentos aprovados; somente a fala que
+        # ultrapassar 18 CPS volta uma vez ao mesmo Qwen para ser condensada.
+        if len(traducao) > char_limit:
+            current_chars = len(traducao)
+            logging.info(
+                f"⏱️ [CPS_GUARD] {seg['id']} excedeu 18 CPS "
+                f"({current_chars}/{char_limit} caracteres). Reescrevendo uma única vez..."
+            )
+            sync_system = (
+                "Você é um adaptador de dublagem PT-BR. MODO DIRETO: não use <think>, "
+                "não explique e não escreva metadados. Responda somente: Trad: <frase final>."
+            )
+            sync_user = (
+                f"Original EN: \"{txt_en}\"\n"
+                f"Tradução longa: \"{traducao}\"\n"
+                f"Duração disponível: {duration:.3f} segundos.\n"
+                f"LIMITE OBRIGATÓRIO: no máximo {char_limit} caracteres, contando espaços e pontuação.\n"
+                "Reescreva de forma natural em PT-BR, preservando o sentido essencial."
+            )
+            if is_qwen:
+                sync_prompt = (
+                    f"<|im_start|>system\n{sync_system}<|im_end|>\n"
+                    f"<|im_start|>user\n{sync_user}\n/no_think<|im_end|>\n"
+                    f"<|im_start|>assistant\nTrad: "
+                )
+            else:
+                sync_prompt = (
+                    f"<start_of_turn>user\n{sync_system}\n\n{sync_user}<end_of_turn>\n"
+                    f"<start_of_turn>model\nTrad: "
+                )
+            sync_raw = call_engine(sync_prompt, max_tokens=max_tokens_to_use, temperature=0.1, stop=stop_tokens)
+            sync_raw = re.sub(r'<think>.*?</think>', '', sync_raw, flags=re.DOTALL | re.IGNORECASE).strip()
+            sync_raw = re.sub(r'^trad\s*:\s*', '', sync_raw, flags=re.IGNORECASE).strip().strip('"')
+            sync_raw = re.split(r'\s+emo\s*:\s*', sync_raw, maxsplit=1, flags=re.IGNORECASE)[0].strip()
+            sync_text = clean_hallucination_wrapper(sync_raw)
+            is_leak = any(term in sync_text.lower() for term in ["segundos", "limite", "caracteres", "original en:", "tradução longa:"])
+            if 2 <= len(sync_text) <= char_limit and not is_leak:
+                traducao = sync_text
+                was_compressed = True
+                logging.info(f"✅ [CPS_GUARD] {seg['id']} sincronizada: {len(traducao)}/{char_limit} caracteres.")
+            else:
+                motivo = "vazamento de prompt" if is_leak else f"{len(sync_text)}/{char_limit}"
+                logging.warning(
+                    f"⚠️ [CPS_GUARD] Retry de {seg['id']} não gerou versão utilizável "
+                    f"({motivo}). Mantendo a primeira tradução."
+                )
 
         status_info = []
         if was_contingency: status_info.append("Contingência")

@@ -104,6 +104,17 @@ def dublar_jogos():
         job_id = request.form.get('job_id')
         job_dir = Path(app.config['UPLOAD_FOLDER']) / job_id
         if not job_dir.exists(): return jsonify({'error': f'Trabalho não encontrado.'}), 404
+        game_profile = request.form.get('game_profile', 'padrao')
+        game_names = {
+            'state_of_decay': 'State of Decay',
+            'cod': 'Call of Duty',
+            'xcom': 'XCOM',
+        }
+        status_data = safe_json_read(job_dir / "job_status.json") or {}
+        status_data['game_profile'] = game_profile
+        status_data['game_name'] = game_names.get(game_profile, 'Jogo sem nome')
+        status_data['project_name'] = status_data.get('project_name') or status_data.get('original_folder_name') or job_id
+        safe_json_write(status_data, job_dir / "job_status.json")
         threading.Thread(target=processar_dublagem_jogos, args=(job_dir, job_id, start_time)).start()
         return jsonify({'status': 'processing', 'job_id': job_id})
 
@@ -366,6 +377,13 @@ def dublar_lote_jogos():
     data = request.json or {}
     job_ids = data.get('job_ids', [])
     parent_folder = data.get('parent_folder', request.form.get('parent_folder'))
+    game_profile = data.get('game_profile', request.form.get('game_profile', 'padrao'))
+    game_names = {
+        'state_of_decay': 'State of Decay',
+        'cod': 'Call of Duty',
+        'xcom': 'XCOM',
+    }
+    game_name = game_names.get(game_profile, 'Jogo sem nome')
     
     if not job_ids and 'job_ids' in request.form:
         raw_jobs = request.form.get('job_ids', '')
@@ -410,7 +428,8 @@ def dublar_lote_jogos():
                     status_data = {
                         'job_id': sub_job_id, 'status': 'iniciando', 'progress': 0, 'etapa': 'Iniciando',
                         'subetapa': f'{len(audio_files)} arquivos preparados.', 'total_seg': len(audio_files),
-                        'file_format_map': file_format_map, 'game_profile': data.get('game_profile', 'padrao'),
+                        'file_format_map': file_format_map, 'game_profile': game_profile,
+                        'game_name': game_name, 'project_name': p_path.name,
                         'original_folder_name': p_path.name,
                         'original_folder_path': str(p_path.resolve())
                     }
@@ -424,6 +443,12 @@ def dublar_lote_jogos():
             if not j_dir.exists():
                 j_dir = Path("c:/IA_dublagem/jobs") / j_id
             if j_dir.exists() and not any(j['job_id'] == j_id for j in jobs_info_list):
+                status_path = j_dir / "job_status.json"
+                status_data = safe_json_read(status_path) or {}
+                status_data['game_profile'] = game_profile
+                status_data['game_name'] = game_name
+                status_data['project_name'] = status_data.get('project_name') or status_data.get('original_folder_name') or j_id
+                safe_json_write(status_data, status_path)
                 jobs_info_list.append({
                     'job_id': j_id,
                     'job_dir': j_dir,
@@ -469,6 +494,60 @@ def progress(job_id):
              })
     return jsonify({'progress': 0, 'status': 'iniciando', 'message': 'Aguardando início...'})
 
+@app.route('/api/active-batch-status')
+def active_batch_status():
+    from nexus.core.batch_orchestrator import get_batch_status
+    b_stat = get_batch_status()
+    if b_stat.get("is_running") and b_stat.get("active_job_id"):
+        active_id = b_stat["active_job_id"]
+        with progress_lock:
+            if active_id in progress_dict:
+                p_data = dict(progress_dict[active_id])
+                p_data.update(b_stat)
+                return jsonify(p_data)
+        status_path = Path(app.config['UPLOAD_FOLDER']) / active_id / "job_status.json"
+        if status_data := safe_json_read(status_path):
+            status_data.update(b_stat)
+            return jsonify(status_data)
+    return jsonify(b_stat)
+
+@app.route('/api/get-last-batch')
+def get_last_batch():
+    from nexus.core.batch_orchestrator import get_last_batch_manifest
+    manifest = get_last_batch_manifest()
+    if manifest:
+        return jsonify({"has_batch": True, "manifest": manifest})
+    return jsonify({"has_batch": False})
+
+@app.route('/api/resume-last-batch', methods=['POST'])
+def resume_last_batch():
+    import time
+    from nexus.core.batch_orchestrator import get_last_batch_manifest, enqueue_batch_jobs
+    manifest = get_last_batch_manifest()
+    if not manifest or not manifest.get("jobs"):
+        return jsonify({"success": False, "message": "Nenhuma fila anterior registrada."}), 400
+
+    jobs_info_list = []
+    for j in manifest["jobs"]:
+        j_id = j["job_id"]
+        j_dir = Path(j["job_dir"])
+        if j_dir.exists():
+            jobs_info_list.append({
+                "job_id": j_id,
+                "job_dir": j_dir,
+                "start_time": time.time()
+            })
+
+    if not jobs_info_list:
+        return jsonify({"success": False, "message": "As pastas da fila anterior não foram encontradas no disco."}), 400
+
+    enqueue_batch_jobs(jobs_info_list, parent_folder=manifest.get("parent_folder"))
+    return jsonify({
+        "success": True,
+        "message": f"Fila anterior retomada com sucesso ({len(jobs_info_list)} pastas no lote).",
+        "enqueued_jobs": [j["job_id"] for j in jobs_info_list]
+    })
+
 @app.errorhandler(Exception)
 def handle_exception(e):
     logging.error(f"Erro não tratado na rota: {request.url}\n{traceback.format_exc()}")
@@ -483,7 +562,8 @@ def favicon(): return make_response('', 204)
 @app.route('/uploads/<path:path>')
 def send_upload(path): return send_from_directory(app.config['UPLOAD_FOLDER'], path)
 
-CURRENT_APP_VERSION = "v0.6.0"
+from nexus.version import APP_VERSION
+CURRENT_APP_VERSION = "v" + APP_VERSION
 
 def get_local_build_hash():
     """Gera uma impressão digital (Hash SHA256 / Commit SHA) da build local atual."""
@@ -508,37 +588,8 @@ def get_local_build_hash():
 
 @app.route('/api/check-update', methods=['GET'])
 def check_update_route():
-    """Verifica no GitHub se há uma nova versão por Hash de Commit ou Release Tag."""
-    import urllib.request
-    import json
-    local_hash = get_local_build_hash()
-    try:
-        url = "https://api.github.com/repos/NarraVox/PhoenixDub-AI/releases/latest"
-        req = urllib.request.Request(url, headers={'User-Agent': 'NarraVox-App'})
-        with urllib.request.urlopen(req, timeout=5) as response:
-            if response.status == 200:
-                data = json.loads(response.read().decode())
-                latest_tag = data.get('tag_name', CURRENT_APP_VERSION)
-                has_update = (latest_tag != CURRENT_APP_VERSION)
-                return jsonify({
-                    'success': True,
-                    'current_version': CURRENT_APP_VERSION,
-                    'latest_version': latest_tag,
-                    'local_hash': local_hash,
-                    'has_update': has_update,
-                    'is_dev_build': not has_update,
-                    'download_url': 'https://github.com/NarraVox/PhoenixDub-AI/releases/latest'
-                })
-    except Exception as e:
-        return jsonify({
-            'success': True,
-            'current_version': CURRENT_APP_VERSION,
-            'latest_version': CURRENT_APP_VERSION,
-            'local_hash': local_hash,
-            'has_update': False,
-            'is_dev_build': True,
-            'note': 'Offline ou limite de API excedido.'
-        })
+    from nexus.updates import check_update
+    return check_update()
 
 # --- GERENCIAMENTO DE SISTEMA ---
 @app.route('/system_info')
@@ -596,3 +647,7 @@ del "%~f0"
     return jsonify({'status': 'uninstalling'})
 
 # [v2026.9 FIX] Aquecimento de Motor e Patch de Emergência
+
+# [v2026.SLICER] Fatiador de Vídeo
+from nexus.core.video_slicer_route import video_slicer_blueprint
+app.register_blueprint(video_slicer_blueprint)

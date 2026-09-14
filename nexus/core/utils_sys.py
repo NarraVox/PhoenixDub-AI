@@ -157,6 +157,25 @@ stubs = [
 for stub in stubs:
     sys.modules[stub] = MockModule(stub)
 
+# [v2026.WINDOWS_SPEECHBRAIN_FIX] Corrige bug de barra invertida (\inspect.py) do SpeechBrain no Windows
+try:
+    import inspect
+    import speechbrain.utils.importutils as sb_iu
+    _sb_orig_ensure = sb_iu.LazyModule.ensure_module
+    def _sb_fixed_ensure(self, stacklevel=0):
+        try:
+            frame = inspect.getframeinfo(sys._getframe(stacklevel + 1))
+            if frame is not None and frame.filename.replace('\\', '/').endswith('/inspect.py'):
+                raise AttributeError()
+        except AttributeError:
+            raise
+        except Exception:
+            pass
+        return _sb_orig_ensure(self, stacklevel)
+    sb_iu.LazyModule.ensure_module = _sb_fixed_ensure
+except Exception:
+    pass
+
 # --- LOGGING SETUP ---
 script_name = "nexus_generic"
 try:
@@ -255,7 +274,7 @@ def check_ffmpeg():
     return False
 
 def check_lm_studio():
-    model_path = Path("uploads/_MODELS_/gemma-4-E4B-it-Q4_K_M.gguf")
+    model_path = Path("uploads/MODELS/gemma-4-E4B-it-Q4_K_M.gguf")
     if model_path.exists():
         logging.info(f"Cérebro IA (Gemma 4) detectado localmente: {model_path}")
         return True

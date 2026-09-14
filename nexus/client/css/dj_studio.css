@@ -72,7 +72,7 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Scroll será interno nas listas */
+            overflow-y: auto; /* Formulário e projetos permanecem acessíveis em telas menores. */
         }
 
         .panel-tracks h3 {

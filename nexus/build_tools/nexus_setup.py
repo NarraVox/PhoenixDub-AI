@@ -10,6 +10,13 @@ from pathlib import Path
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import webview
 
+# Patch automático de compatibilidade para torchvision 0.18+ (GFPGAN / BasicSR)
+try:
+    import torchvision.transforms.functional as F
+    sys.modules['torchvision.transforms.functional_tensor'] = F
+except Exception:
+    pass
+
 token_submitted_event = threading.Event()
 current_token = None
 
@@ -72,6 +79,9 @@ class SetupAPI:
 
     def _execute_installation(self, mode, modules):
         try:
+            if getattr(sys, 'frozen', False):
+                from nexus.distribution import deploy_runtime
+                deploy_runtime(Path.cwd(), overwrite=True)
             self._log(f"Iniciando instalacao no modo {mode.upper()}...", "success")
             if not modules or mode != "modular":
                 modules = {"base": True, "voice": True, "llama": True, "video": True}
@@ -129,52 +139,6 @@ class SetupAPI:
             else:
                 self._log("ℹ️ Módulo Aceleração Llama-CPP não selecionado. Pulando.", "info")
 
-            # Instalação do Módulo Vídeo Generativo (Diffusers + transformers)
-            if modules.get("video"):
-                self._update(80, "🎬 Configurando dependências de Vídeo (Diffusers/Transformers)...")
-                video_libs = ["diffusers", "transformers", "accelerate", "sentencepiece"]
-                self._run_pip(python_exe, video_libs)
-                try:
-                    self._log("Tentando injetar Flash-Attention 2 (Turbo Mode)...", "info")
-                    self._run_pip(python_exe, ["flash-attn>=2.5.0", "--no-build-isolation"])
-                    self._log("✅ Flash-Attention 2 ATIVO!", "success")
-                except:
-                    self._log("⚠️ Flash-Attention 2 falhou na compilação. Usando modo estável padrão.", "warn")
-
-                # Verificação e download dos modelos de vídeo
-                models_dir_1 = Path(os.getcwd()) / "_MODELS_"
-                models_dir_2 = Path(os.getcwd()) / "models"
-                
-                # 1. Wan v2.2 GGUF
-                wan_filename = "Wan2.2-TI2V-5B-Q4_K_M.gguf"
-                if (models_dir_1 / wan_filename).exists():
-                    self._log("✅ Modelo Wan v2.2 detectado localmente em _MODELS_.", "success")
-                elif (models_dir_2 / wan_filename).exists():
-                    self._log("✅ Modelo Wan v2.2 detectado localmente em models.", "success")
-                else:
-                    self.download_model_with_retry(python_exe, repo_id='QuantStack/Wan2.2-TI2V-5B-GGUF', filename=wan_filename)
-
-                # 2. FLUX.2-klein GGUF
-                flux_filename = "flux-2-klein-4b-Q4_K_M.gguf"
-                if (models_dir_1 / flux_filename).exists():
-                    self._log("✅ Modelo FLUX.2-klein detectado localmente em _MODELS_.", "success")
-                elif (models_dir_2 / flux_filename).exists():
-                    self._log("✅ Modelo FLUX.2-klein detectado localmente em models.", "success")
-                else:
-                    self.download_model_with_retry(python_exe, repo_id='unsloth/FLUX.2-klein-4B-GGUF', filename=flux_filename)
-
-                # 3. Qwen3-TTS-CustomVoice
-                qwen_voice_dir_1 = models_dir_1 / "Qwen3-TTS-12Hz-0.6B-CustomVoice"
-                qwen_voice_dir_2 = models_dir_2 / "Qwen3-TTS-12Hz-0.6B-CustomVoice"
-                if qwen_voice_dir_1.exists():
-                    self._log("✅ Modelo Qwen3-TTS-CustomVoice detectado em _MODELS_.", "success")
-                elif qwen_voice_dir_2.exists():
-                    self._log("✅ Modelo Qwen3-TTS-CustomVoice detectado em models.", "success")
-                else:
-                    self.download_model_with_retry(python_exe, repo_id='Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice', is_snapshot=True)
-            else:
-                self._log("ℹ️ Módulo Vídeo Generativo não selecionado. Pulando.", "info")
-
             # Instalação do Módulo Dublagem / Áudio (Whisper/TTS)
             if modules.get("voice"):
                 self._update(90, "🎙️ Configurando Titan Qwen3, Audio-IA e Docs OCR...")
@@ -183,20 +147,19 @@ class SetupAPI:
                 self._log("Vocoder 12Hz injetado com sucesso.", "success")
                 self._log("💡 LEMBRETE: Acesse hf.co/pyannote/speaker-diarization-community-1 para aceitar os termos de uso e configure a variável HF_TOKEN para habilitar a diarização.", "warn")
 
-                models_dir_1 = Path(os.getcwd()) / "_MODELS_"
+                models_dir_1 = Path(os.getcwd()) / "MODELS"
                 models_dir_2 = Path(os.getcwd()) / "models"
 
                 # 1. Qwen-3.5 GGUF
+                qwen_9b_filename = "Qwen3.5-9B-UD-IQ3_XXS.gguf"
                 qwen_filename = "Qwen3.5-4B-Q4_K_M.gguf"
                 gemma_filename = "gemma-4-E4B-it-Q4_K_M.gguf"
-                if (models_dir_1 / qwen_filename).exists():
-                    self._log("✅ Modelo Qwen-3.5 detectado localmente em _MODELS_.", "success")
-                elif (models_dir_2 / qwen_filename).exists():
-                    self._log("✅ Modelo Qwen-3.5 detectado localmente em models.", "success")
-                elif (models_dir_1 / gemma_filename).exists():
-                    self._log("✅ Modelo Gemma-4 detectado localmente em _MODELS_.", "success")
-                elif (models_dir_2 / gemma_filename).exists():
-                    self._log("✅ Modelo Gemma-4 detectado localmente em models.", "success")
+                if (models_dir_1 / qwen_9b_filename).exists() or (models_dir_2 / qwen_9b_filename).exists():
+                    self._log("✅ Modelo Qwen-3.5 9B (IQ3_XXS) detectado localmente.", "success")
+                elif (models_dir_1 / qwen_filename).exists() or (models_dir_2 / qwen_filename).exists():
+                    self._log("✅ Modelo Qwen-3.5 4B detectado localmente.", "success")
+                elif (models_dir_1 / gemma_filename).exists() or (models_dir_2 / gemma_filename).exists():
+                    self._log("✅ Modelo Gemma-4 detectado localmente em MODELS.", "success")
                 else:
                     self.download_model_with_retry(python_exe, repo_id='unsloth/Qwen3.5-4B-GGUF', filename=qwen_filename)
 
@@ -204,7 +167,7 @@ class SetupAPI:
                 qwen_base_dir_1 = models_dir_1 / "qwen3_1.7b_pytorch"
                 qwen_base_dir_2 = models_dir_2 / "qwen3_1.7b_pytorch"
                 if (qwen_base_dir_1 / "model.safetensors").exists():
-                    self._log("✅ Modelo Qwen3-TTS-Base (1.7B PyTorch) detectado em _MODELS_.", "success")
+                    self._log("✅ Modelo Qwen3-TTS-Base (1.7B PyTorch) detectado em MODELS.", "success")
                 elif (qwen_base_dir_2 / "model.safetensors").exists():
                     self._log("✅ Modelo Qwen3-TTS-Base (1.7B PyTorch) detectado em models.", "success")
                 else:
@@ -255,12 +218,12 @@ class SetupAPI:
             local_dir_name = "qwen3_1.7b_pytorch" if "1.7B-Base" in repo_id else ("qwen3_0.6b" if "Qwen3-TTS-12Hz-0.6B-Base" in repo_id else repo_id.split('/')[-1])
             if allow_patterns:
                 patterns_str = ", ".join([f"'{p}'" for p in allow_patterns])
-                code = f"from huggingface_hub import snapshot_download; snapshot_download(repo_id='{repo_id}', local_dir='_MODELS_/{local_dir_name}', local_dir_use_symlinks=False, allow_patterns=[{patterns_str}])"
+                code = f"from huggingface_hub import snapshot_download; snapshot_download(repo_id='{repo_id}', local_dir='MODELS/{local_dir_name}', local_dir_use_symlinks=False, allow_patterns=[{patterns_str}])"
             else:
-                code = f"from huggingface_hub import snapshot_download; snapshot_download(repo_id='{repo_id}', local_dir='_MODELS_/{local_dir_name}', local_dir_use_symlinks=False)"
+                code = f"from huggingface_hub import snapshot_download; snapshot_download(repo_id='{repo_id}', local_dir='MODELS/{local_dir_name}', local_dir_use_symlinks=False)"
             desc = f"snapshot do repositório '{repo_id}'"
         else:
-            code = f"from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='{repo_id}', filename='{filename}', local_dir='_MODELS_')"
+            code = f"from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='{repo_id}', filename='{filename}', local_dir='MODELS')"
             desc = f"arquivo '{filename}' do repositório '{repo_id}'"
             
         while True:

@@ -44,6 +44,19 @@ engine_switch_lock = threading.Lock()
 from nexus.nexus_routes import nexus_blueprint, init_routes
 init_routes(active_engines, running_processes, engine_switch_lock)
 app.register_blueprint(nexus_blueprint)
+from nexus.updates import updates_blueprint
+app.register_blueprint(updates_blueprint)
+
+@app.before_request
+def pause_requests_during_update():
+    from nexus.updates import manager
+    from flask import jsonify
+    if manager.status()['status'] == 'installing':
+        return jsonify(success=False, message='Atualização em andamento. O aplicativo será reaberto.'), 503
+from nexus.core.video_slicer_route import video_slicer_blueprint
+app.register_blueprint(video_slicer_blueprint)
+from nexus.correction_routes import correction_blueprint
+app.register_blueprint(correction_blueprint)
 
 
 def is_port_free(port):

@@ -50,9 +50,8 @@ var pollInterval = null;
         }
 
         function calcTotalSize() {
-            var size = 2.1; // Base & Aceleração GPU module: ~2.10 GB
-            if (document.getElementById('mod-voice').checked) size += 9.00;
-            if (document.getElementById('mod-video').checked) size += 13.50;
+            var size = 2.1; // Base & Aceleração GPU: ~2.10 GB
+            if (document.getElementById('mod-voice') && document.getElementById('mod-voice').checked) size += 7.50;
             
             document.getElementById('total-size-label').innerText = "~" + size.toFixed(2) + " GB";
         }
@@ -61,8 +60,7 @@ var pollInterval = null;
             var modules = {
                 base: true,
                 llama: true, // Sempre obrigatório para aceleração GPU
-                voice: document.getElementById('mod-voice').checked,
-                video: document.getElementById('mod-video').checked
+                voice: document.getElementById('mod-voice') ? document.getElementById('mod-voice').checked : true
             };
             
             document.getElementById('selection-content').style.display = 'none';

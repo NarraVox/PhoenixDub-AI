@@ -12,6 +12,7 @@ import time
 import re
 import shutil
 import random
+import traceback
 from pathlib import Path
 import torch
 import requests
@@ -19,6 +20,9 @@ import numpy as np
 import soundfile as sf
 from scipy.signal import butter, lfilter
 from nexus.core.model_loader import unload_local_gemma_engine, unload_whisper_model
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("vortex_music")
 
 BASE_DIR = Path(__file__).parent.parent.parent.resolve()
 UPLOAD_FOLDER = BASE_DIR / "uploads"
@@ -122,7 +126,7 @@ def start_ace_server_helper(dj, acestep_tools_dir, models_dir, update_status):
     if not server_ready:
         raise Exception("Timeout ao iniciar ace-server.exe local na porta 8085.")
 
-def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music', source_audio='', cover_strength=0.6, extend_duration=30, enable_mastering=True, steps=30, cfg_scale=4.0, duration=60, batch_count=1, upscale_steps=25):
+def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music', source_audio='', cover_strength=0.6, extend_duration=30, enable_mastering=False, steps=30, cfg_scale=4.0, duration=60, batch_count=1, upscale_steps=25):
     """Orchestrates the temporally decoupled music generation flow."""
     def update_status(task_msg, log_msg=None):
         msg = log_msg or task_msg
@@ -152,7 +156,13 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
         except: pass
         return 0.0
 
+    reference_paths = []
+    temporary_references = []
     try:
+        if mode == 'extend':
+            extend_duration = float(duration)
+            if not np.isfinite(extend_duration) or not 15 <= extend_duration <= 180:
+                raise ValueError('Escolha de 15 a 180 segundos para a parte nova.')
         dj.generating_music = True
         update_status("🔍 [5%] Verificando ferramentas de música...", "[1/7] Verificando binários e modelos...")
         
@@ -261,7 +271,7 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
             except Exception as ex:
                 logging.warning(f"⚠️ Erro ao configurar DLLs CUDA: {ex}")
                 
-        models_dir = BASE_DIR / "_MODELS_"
+        models_dir = Path(f"{BASE_DIR}/MODELS/")
         models_dir.mkdir(parents=True, exist_ok=True)
         models_urls = {
             "vae-BF16.gguf": "https://www.serveurperso.com/temp/acestep.cpp-win64/models/vae-BF16.gguf",
@@ -296,7 +306,7 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
         gc.collect()
         if torch.cuda.is_available(): torch.cuda.empty_cache()
 
-        caption = style.strip()
+        caption = (style or '').strip()
         def normalize_lyrics(raw_lyrics):
             if not raw_lyrics: return raw_lyrics
             import re
@@ -328,6 +338,17 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                 source_path = dj.generated_music_dir / source_audio
                 if not source_path.exists(): source_path = UPLOAD_FOLDER / source_audio
                 if not source_path.exists(): raise Exception(f"Música de origem não encontrada: {source_audio}")
+                update_status('Analisando a referência selecionada...', f'Referência utilizada: {source_path.name}')
+                if mode == 'extend':
+                    import uuid
+                    from nexus.dj.music_request import prepare_extension_reference
+                    cropped = dj.generated_music_dir / ('reference_' + uuid.uuid4().hex + '.wav')
+                    temporary_references.append(cropped)
+                    start = prepare_extension_reference(source_path, cropped, get_audio_duration(source_path))
+                    update_status('Usando 30 segundos internos da música...',
+                                  f'Trecho da referência: {start:.2f}s até {start + 30:.2f}s; parte nova: {extend_duration:g}s.')
+                    source_path = cropped
+                reference_paths.append(source_path)
                 
                 with open(source_path, "rb") as f_audio:
                     files = {"audio": (source_path.name, f_audio, "audio/mpeg")}
@@ -367,19 +388,26 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                 if isinstance(lm_data, list) and len(lm_data) > 0: lm_data = lm_data[0]
                 
                 if mode == 'extend':
-                    codes = lm_data.get("audio_codes", [])
-                    precise_duration = len(codes) / 5.0 if isinstance(codes, list) else len(codes.strip().split()) / 5.0
-                    source_duration = precise_duration if precise_duration > 0 else get_audio_duration(source_path)
-                    if source_duration <= 0: source_duration = lm_data.get("duration", 60.0)
-                    repaint_start = max(0.0, source_duration - 1.5)
-                    total_duration = repaint_start + extend_duration
-                    lm_data["task_type"] = "repaint"
-                    lm_data["repainting_start"] = repaint_start
-                    lm_data["repainting_end"] = -1.0
-                    lm_data["duration"] = total_duration
+                    # Codes may be concatenated tokens, not space-separated words.
+                    # The decoded audio is the source of truth for extension timing.
+                    source_duration = get_audio_duration(source_path)
+                    if source_duration <= 0:
+                        raise ValueError("Não foi possível medir a duração da música base.")
+                    from nexus.dj.music_request import configure_extension
+                    configure_extension(lm_data, source_duration, extend_duration)
+                    if caption: lm_data["caption"] = caption
                     if lyrics_normalized: lm_data["lyrics"] = lyrics_normalized
                 else:
-                    if caption and caption.strip(): lm_data["caption"] = caption
+                    lm_data["task_type"] = "cover-nofsq"
+                    lm_data.pop("audio_codes", None)
+                    # Avoid guessed genres from /understand steering away from the source.
+                    # The style field remains ignored; audio provides style and timbre.
+                    lm_data["caption"] = (
+                        "Music preserving the source audio's rhythm, tempo, instrumentation "
+                        "and instrument timbres. "
+                        + ("Sung vocals with instrumental fills between vocal phrases."
+                           if lyrics_normalized else "Instrumental music.")
+                    )
                     lm_data["audio_cover_strength"] = cover_strength
                     if lyrics_normalized: lm_data["lyrics"] = lyrics_normalized
             elif mode == 'extend':
@@ -445,28 +473,27 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
             current_title = f"{title}_{idx+1}" if batch_count > 1 else title
             log_prefix = f"[{idx+1}/{batch_count}] " if batch_count > 1 else ""
             
-            lm_data["steps"] = steps
-            lm_data["cfg_scale"] = cfg_scale
-            lm_data["duration"] = duration
+            lm_data["inference_steps"] = steps
+            lm_data["guidance_scale"] = cfg_scale
+            if mode == 'text2music':
+                lm_data["duration"] = duration
             
             update_status(f"🎛️ {log_prefix}[70%] Sintetizando ondas sonoras (Difusora)...", f"{log_prefix}Renderizando áudio do lote...")
             
-            if mode == 'extend' and source_audio:
-                source_path = dj.generated_music_dir / source_audio
-                if not source_path.exists(): source_path = UPLOAD_FOLDER / source_audio
-                with open(source_path, "rb") as f_audio:
-                    files = {"audio": (source_path.name, f_audio, "audio/mpeg")}
-                    data = {"request": json.dumps(lm_data)}
-                    res_synth = requests.post("http://127.0.0.1:8085/synth", files=files, data=data, timeout=300)
-            else:
-                res_synth = requests.post("http://127.0.0.1:8085/synth", json=lm_data, timeout=300)
-                
+            from nexus.dj.music_request import submit_synthesis
+            source_path = None
+            if mode in ('cover', 'extend'):
+                source_path = reference_paths[idx]
+            res_synth = submit_synthesis(requests, lm_data, source_path)
+
             if res_synth.status_code != 200: raise Exception(f"Erro no /synth: {res_synth.text}")
             synth_job_id = res_synth.json().get("id")
             
             synth_done = False
-            for _ in range(720):
-                time.sleep(0.25)
+            synth_timeout = min(3600, max(600, float(lm_data.get('duration', duration)) * steps / 4))
+            synth_deadline = time.monotonic() + synth_timeout
+            while time.monotonic() < synth_deadline:
+                time.sleep(1)
                 try:
                     res_poll = requests.get(f"http://127.0.0.1:8085/job?id={synth_job_id}", timeout=5)
                     if res_poll.status_code == 200:
@@ -506,6 +533,13 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
             raw_temp_path = dj.generated_music_dir / f"temp_{idx}_{int(time.time())}.wav"
             with open(raw_temp_path, "wb") as f:
                 f.write(audio_bytes)
+            if mode == 'extend':
+                from nexus.dj.music_request import extract_continuation
+                continuation_path = raw_temp_path.with_name('continuation_' + raw_temp_path.name)
+                update_status('✂️ Exportando somente a continuação criada...', 'Retirando o trecho original antes da exportação.')
+                extract_continuation(raw_temp_path, continuation_path, source_duration, extend_duration)
+                raw_temp_path.unlink()
+                raw_temp_path = continuation_path
             generated_files.append((raw_temp_path, current_title))
 
         # Encerra o servidor e libera 100% de VRAM
@@ -546,7 +580,7 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                 # Converter para MP3 final via FFmpeg
                 update_status(f"✨ {log_prefix}[99%] Exportando áudio masterizado...", f"Exportando MP3: {final_filename}...")
                 ffmpeg_cmd = ["ffmpeg", "-y", "-i", str(temp_upscaled_path), "-c:a", "libmp3lame", "-q:a", "2", str(final_output_path)]
-                subprocess.run(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(ffmpeg_cmd, capture_output=True, check=True)
                 
                 # Limpa temporários da cirurgia e upscale
                 if filtered_temp_path.exists(): os.remove(filtered_temp_path)
@@ -555,7 +589,7 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
                 # Exportar sem masterização
                 update_status(f"💿 {log_prefix}[98%] Exportando áudio bruto...", f"Exportando MP3 bruto: {final_filename}...")
                 ffmpeg_cmd = ["ffmpeg", "-y", "-i", str(raw_temp_path), "-c:a", "libmp3lame", "-q:a", "2", str(final_output_path)]
-                subprocess.run(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run(ffmpeg_cmd, capture_output=True, check=True)
                 
             if raw_temp_path.exists(): os.remove(raw_temp_path)
             
@@ -578,14 +612,20 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
             
         update_status("✅ [100%] Lote de músicas processado com sucesso!", f"Pronto! Geração concluída com {batch_count} faixas.")
 
-    except Exception as e:
-        err_msg = f"❌ ERRO GERAÇÃO: {str(e)}"
-        logging.error(err_msg)
+    except Exception:
+        logger.exception("❌ ERRO GERAÇÃO")
+        import traceback
+        err_msg = f"{traceback.format_exc()}"
         dj.project_state.setdefault("logs", []).append(err_msg)
         dj.project_state["current_task"] = err_msg
         dj.save_status()
         dj.stop_ace_server()
     finally:
+        for reference in temporary_references:
+            try:
+                reference.unlink(missing_ok=True)
+            except OSError:
+                logging.warning('Não foi possível limpar referência temporária: %s', reference)
         dj.generating_music = False
         dj.worker_busy = False
         dj.save_status()

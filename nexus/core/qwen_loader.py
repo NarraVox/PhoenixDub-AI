@@ -7,6 +7,9 @@ import logging
 import requests
 import torch
 import gc
+import ctypes
+import sys
+from pathlib import Path
 from threading import RLock
 
 gema_instance = None  # Alias de compatibilidade
@@ -37,93 +40,98 @@ def start_llama_server_standalone(model_path, cb=None):
     if cb: cb(0, 1, "ERRO: O motor de IA Qwen 3.5 demorou demais para ligar.")
     return False
 
+_CACHED_MODEL_PATH = None
+_NATIVE_DLL_HANDLES = []
+
+
+def _prepare_llama_cuda_dlls():
+    """Load the CUDA llama.cpp dependencies in the order required on Windows.
+
+    The CUDA wheel ships its DLLs beside the Python package.  Windows does not
+    always search that folder for the transitive dependencies of llama.dll.
+    Keeping the handles alive makes the local GGUF engine usable by Nexus.
+    """
+    global _NATIVE_DLL_HANDLES
+    if os.name != "nt" or _NATIVE_DLL_HANDLES:
+        return
+    site_packages = Path(sys.prefix) / "Lib" / "site-packages"
+    llama_lib = site_packages / "llama_cpp" / "lib"
+    torch_lib = site_packages / "torch" / "lib"
+    if not (llama_lib / "llama.dll").exists():
+        return
+    for directory in (llama_lib, torch_lib):
+        if directory.exists():
+            os.add_dll_directory(str(directory))
+    for name in ("ggml-base.dll", "ggml-cpu.dll", "ggml.dll", "ggml-cuda.dll", "llama.dll"):
+        dll_path = llama_lib / name
+        if dll_path.exists():
+            _NATIVE_DLL_HANDLES.append(ctypes.CDLL(str(dll_path)))
+
 def find_gemma_model_path():
     """[v2026.FLEXIBLE_MODEL_SCAN] Busca o modelo Qwen 3.5 em caminhos conhecidos ou por padrão curinga (wildcard)"""
-    from pathlib import Path
+    global _CACHED_MODEL_PATH
+    selected_by_test = os.environ.get("NEXUS_QWEN_MODEL_PATH")
+    if selected_by_test:
+        selected_path = Path(selected_by_test)
+        if selected_path.exists():
+            _CACHED_MODEL_PATH = selected_path
+            logging.info(f"🔎 [NEXUS_SCAN] Modelo selecionado para esta execução: {selected_path.name}")
+            return _CACHED_MODEL_PATH
+    if _CACHED_MODEL_PATH and _CACHED_MODEL_PATH.exists():
+        return _CACHED_MODEL_PATH
+
     root = Path("C:/IA_dublagem")
     possible_paths = [
-        root / "_MODELS_" / "Qwen3.5-4B-Q4_K_M.gguf",
+        root / "MODELS" / "Qwen3.5-9B-Q3_K_M.gguf",
+        root / "Qwen3.5-9B-Q3_K_M.gguf",
+        Path("MODELS/Qwen3.5-9B-Q3_K_M.gguf"),
+        root / "MODELS" / "Qwen3.5-9B-UD-IQ3_XXS.gguf",
+        root / "Qwen3.5-9B-UD-IQ3_XXS.gguf",
+        Path("MODELS/Qwen3.5-9B-UD-IQ3_XXS.gguf"),
+        Path("Qwen3.5-9B-UD-IQ3_XXS.gguf"),
+        root / "MODELS" / "Qwen3.5-4B-Q4_K_M.gguf",
         root / "Qwen3.5-4B-Q4_K_M.gguf",
-        root / "_MODELS_" / "Qwen3.5-4B-Q6_K.gguf",
+        root / "MODELS" / "Qwen3.5-4B-Q6_K.gguf",
         root / "Qwen3.5-4B-Q6_K.gguf",
-        root / "_MODELS_" / "gemma-4-E4B-it-qat-UD-Q4_K_XL.gguf",
+        root / "MODELS/" / "gemma-4-E4B-it-qat-UD-Q4_K_XL.gguf",
         root / "gemma-4-E4B-it-qat-UD-Q4_K_XL.gguf",
-        root / "_MODELS_" / "gemma-4-E4B-it-Q4_K_M.gguf",
+        root / "MODELS/" / "gemma-4-E4B-it-Q4_K_M.gguf",
         root / "gemma-4-E4B-it-Q4_K_M.gguf",
-        Path("_MODELS_/Qwen3.5-4B-Q4_K_M.gguf"),
+        Path("MODELS/Qwen3.5-4B-Q4_K_M.gguf"),
         Path("Qwen3.5-4B-Q4_K_M.gguf"),
-        Path("_MODELS_/gemma-4-E4B-it-Q4_K_M.gguf"),
+        Path("MODELS/gemma-4-E4B-it-Q4_K_M.gguf"),
         Path("gemma-4-E4B-it-Q4_K_M.gguf"),
-        root / "uploads" / "_MODELS_" / "gemma-4-E4B-it-Q4_K_M.gguf",
-        Path("uploads/_MODELS_/gemma-4-E4B-it-Q4_K_M.gguf")
+        root / "uploads" / "MODELS" / "gemma-4-E4B-it-Q4_K_M.gguf",
+        Path("uploads/MODELS/gemma-4-E4B-it-Q4_K_M.gguf")
     ]
     for p in possible_paths:
         if p.exists():
+            _CACHED_MODEL_PATH = p
             return p
             
-    search_dirs = [root / "_MODELS_", root, Path("_MODELS_"), Path("uploads/_MODELS_"), Path(".")]
+    search_dirs = [root / "MODELS", root, Path("MODELS"), Path("uploads/MODELS"), Path(".")]
     for d in search_dirs:
         if d.exists() and d.is_dir():
             qwen_files = list(d.glob("*Qwen3.5*.gguf")) + list(d.glob("*qwen*.gguf"))
             qwen_files = [f for f in qwen_files if "tts" not in f.name.lower() and "embed" not in f.name.lower() and "acestep" not in f.name.lower()]
             if qwen_files:
                 logging.info(f"🔎 [NEXUS_SCAN] Modelo GGUF de Qwen 3.5 detectado e selecionado: {qwen_files[0].name}")
-                return qwen_files[0]
+                _CACHED_MODEL_PATH = qwen_files[0]
+                return _CACHED_MODEL_PATH
                 
             gguf_files = list(d.glob("*gemma-4*.gguf"))
             if gguf_files:
                 logging.info(f"🔎 [NEXUS_SCAN] Modelo GGUF de Gemma 4 alternativo detectado e selecionado: {gguf_files[0].name}")
-                return gguf_files[0]
+                _CACHED_MODEL_PATH = gguf_files[0]
+                return _CACHED_MODEL_PATH
                 
     return None
 
 find_qwen_model_path = find_gemma_model_path
 
 def get_gemma_model(cb=None):
-    """Retorna o motor Qwen 3.5 (Prioriza o Standalone B9093 Turbo)"""
-    global gema_instance, _LOCAL_LLM_INSTANCE, gema_lock
-    global qwen_instance, _LOCAL_QWEN_INSTANCE
-    
-    with gema_lock:
-        if gema_instance is not None:
-            return gema_instance
-        if _LOCAL_LLM_INSTANCE is not None:
-            gema_instance = _LOCAL_LLM_INSTANCE
-            return gema_instance
-            
-    model_path = find_gemma_model_path()
-    if not model_path:
-        logging.error("❌ Modelo Qwen 3.5 não encontrado em nenhuma das pastas de sistema.")
-        return None
-
-    if start_llama_server_standalone(model_path, cb=cb):
-        return "standalone_server"
-
-    with gema_lock:
-        try:
-            from llama_cpp import Llama
-            torch.cuda.empty_cache()
-            gc.collect()
-            logging.info("🚀 [NATIVO] Usando motor Qwen 3.5 local (Fallback)...")
-            gema_instance = Llama(
-                model_path=str(model_path),
-                n_gpu_layers=-1,
-                n_ctx=2048,  # [v2026.SAFETY_VRAM] Reduzido para 2048 para deixar 2GB de VRAM livre para YouTube/Navegador
-                n_threads=os.cpu_count() or 8,
-                flash_attn=True,
-                type_k=8,  # [v2026.KV_COMPRESS] Comprime Key-Cache para Q8_0 (Economiza 50% de VRAM!)
-                type_v=8,  # [v2026.KV_COMPRESS] Comprime Value-Cache para Q8_0 (Economiza 50% de VRAM!)
-                offload_kqv=True,
-                use_mmap=False,
-                main_gpu=0,
-                n_batch=512,
-                verbose=False
-            )
-            qwen_instance = gema_instance
-            return gema_instance
-        except Exception as e:
-            logging.error(f"❌ Falha crítica no carregamento do Qwen 3.5: {e}")
-            return None
+    """Retorna o motor Qwen 3.5 unificado (Singleton Global sem duplicatas de VRAM)"""
+    return get_local_gemma_engine()
 
 get_qwen_model = get_gemma_model
 
@@ -178,7 +186,7 @@ def check_or_load_gemma_model(progress_callback=None):
             return True
     except: pass
 
-    msg = "ERRO: IA não encontrada. Certifique-se de que o modelo 'Qwen3.5-4B-Q4_K_M.gguf' está baixado na pasta _MODELS_."
+    msg = "ERRO: IA não encontrada. Certifique-se de que o modelo 'Qwen3.5-4B-Q4_K_M.gguf' está baixado na pasta MODELS."
     logging.error(msg)
     progress_callback(msg)
     raise RuntimeError(msg)
@@ -234,6 +242,7 @@ def get_local_gemma_engine(model_path=None):
         return _LOCAL_LLM_INSTANCE
         
     try:
+        _prepare_llama_cuda_dlls()
         from llama_cpp import Llama
         if not model_path:
             p = find_gemma_model_path()
@@ -242,11 +251,13 @@ def get_local_gemma_engine(model_path=None):
         
         if not model_path or not os.path.exists(model_path):
             logging.error(f"❌ [ERRO] MODELO NÃO ENCONTRADO!")
-            logging.error(f"👉 Por favor, coloque um arquivo do Qwen 3.5 (ex: 'Qwen3.5-4B-Q4_K_M.gguf') em: C:/IA_dublagem/_MODELS_")
+            logging.error(f"👉 Por favor, coloque um arquivo do Qwen 3.5 (ex: 'Qwen3.5-4B-Q4_K_M.gguf') em: C:/IA_dublagem/MODELS/")
             return None
   
-        vram_before = 0
         if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
+            gc.collect()
             vram_before, _ = torch.cuda.mem_get_info()
 
         logging.info(f"🧠 [NEXUS_LOCAL] Carregando motor Qwen 3.5 interno: {model_path}...")
@@ -255,9 +266,10 @@ def get_local_gemma_engine(model_path=None):
         _LOCAL_LLM_INSTANCE = Llama(
             model_path=model_path,
             n_gpu_layers=-1,
-            n_ctx=8192,
-            n_threads=2,
-            f16_kv=True,
+            n_ctx=2048,  # [v2026.SAFETY_VRAM] 2048 tokens é perfeito para diálogos e mantém VRAM abaixo de 4.5GB
+            n_threads=os.cpu_count() or 4,
+            type_k=2,    # [v2026.KV_COMPRESS_4BIT] Comprime Key-Cache para Q4_0 (4 bits) para máxima leveza na RTX 3050!
+            type_v=2,    # [v2026.KV_COMPRESS_4BIT] Comprime Value-Cache para Q4_0 (4 bits) para máxima leveza na RTX 3050!
             flash_attn=True,
             offload_kqv=True,
             verbose=False,

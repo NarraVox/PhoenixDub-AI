@@ -123,11 +123,7 @@ class VortexDJ:
         from nexus.dj.vortex_utils import mix_tracks_professional_logic
         return mix_tracks_professional_logic(self, track_a_data, track_b_data, output_name, custom_output)
 
-    def separate_stems(self, track_path):
-        from nexus.dj.vortex_utils import separate_stems_logic
-        return separate_stems_logic(self, track_path)
-
-    def run_music_generation_flow(self, title, style, lyrics, mode='text2music', source_audio='', cover_strength=0.6, extend_duration=30, enable_mastering=True, steps=30, cfg_scale=4.0, duration=60, batch_count=1, upscale_steps=25):
+    def run_music_generation_flow(self, title, style, lyrics, mode='text2music', source_audio='', cover_strength=0.6, extend_duration=30, enable_mastering=False, steps=30, cfg_scale=4.0, duration=60, batch_count=1, upscale_steps=25):
         from nexus.dj.vortex_music import run_music_generation_flow_logic
         return run_music_generation_flow_logic(self, title, style, lyrics, mode, source_audio, cover_strength, extend_duration, enable_mastering, steps, cfg_scale, duration, batch_count, upscale_steps)
 
