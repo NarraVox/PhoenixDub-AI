@@ -81,4 +81,11 @@ class AssistantTests(unittest.TestCase):
                 assistant.prepare()
             self.assertEqual(assistant.report['verified_hashes'], 1)
             self.assertFalse(any('fetch' in command or 'push' in command for command in commands))
-            self.assertEqual(sum('unittest' in command for command in commands), 4)
+            self.assertEqual(sum('unittest' in command for command in commands), 5)
+
+    def test_personal_email_stops_preflight(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(module.shutil, 'which', return_value='tool'):
+            assistant = module.Assistant(Path(tmp), '0.9.2')
+            with patch.object(assistant, 'command', return_value='fixture@example.invalid'):
+                with self.assertRaisesRegex(ValueError, 'noreply'):
+                    assistant.preflight()

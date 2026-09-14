@@ -31,6 +31,11 @@ if '--wait-for-restart' in sys.argv:
                     raise SystemExit('O Hub anterior não encerrou a tempo da reinicialização.')
         time.sleep(0.2)
 
+# Torna o FFmpeg local visivel ao aplicativo e aos processos dos motores.
+from pathlib import Path
+from nexus.media_tools import activate
+activate(Path(sys.executable).parent if getattr(sys, 'frozen', False) else Path(__file__).resolve().parent)
+
 # Se for apenas um teste de importacoes do CI/CD, verifica e encerra
 if os.environ.get("TEST_IMPORTS") == "1":
     print("Verificando importacoes do aplicativo principal...")

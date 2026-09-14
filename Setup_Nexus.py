@@ -12,6 +12,11 @@ if getattr(sys, 'frozen', False):
 else:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Torna o FFmpeg local visivel ao aplicativo e aos processos dos motores.
+from pathlib import Path
+from nexus.media_tools import activate
+activate(Path(sys.executable).parent if getattr(sys, 'frozen', False) else Path(__file__).resolve().parent)
+
 # Se for apenas um teste de importacoes do CI/CD, verifica e encerra
 if os.environ.get("TEST_IMPORTS") == "1":
     print("Verificando importacoes do instalador...")

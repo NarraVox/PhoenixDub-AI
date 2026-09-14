@@ -1,65 +1,10 @@
-# PhoenixDub AI v0.8.1 — Edição manual de vídeos e jogos
+# PhoenixDub AI v0.8.2 — Correções do instalador
 
-### Principais mudanças
+- Instalador e instalação por pip compartilham requirements.txt, com versões compatíveis de Qwen3-TTS, Transformers, WhisperX e pyannote.audio.
+- TESTAR_SETUP.bat usa sua própria pasta, confere erros e deixa a configuração do token para a interface.
+- FFmpeg e ffprobe são verificados; quando ausentes, são baixados com conferência SHA-256 para o ambiente local.
+- Ambiente inválido não é apagado nem substituído por instalação global. pip check bloqueia conclusão com dependências incompatíveis.
+- Corrigida falha no download dos modelos causada por import local de subprocess.
+- Preparação de release exige endereço noreply do GitHub para evitar exposição de e-mail pessoal em novos commits.
 
-Esta atualização reúne as mudanças posteriores à v0.6.0, com destaque para a edição manual das dublagens de jogos e vídeos.
-
-#### Edição e correção manual
-
-- Painel compartilhado para encontrar e corrigir falas de diferentes projetos de jogos e vídeos, ampliando o antigo fluxo limitado a uma pasta específica.
-- Busca por texto original, tradução ou identificador, com filtro por projeto, paginação e tolerância a pequenas diferenças de escrita.
-- Rascunhos salvos automaticamente e controle de revisões para preservar o texto durante o processamento.
-- Correção de várias falas de uma vez: selecione resultados, escreva a tradução e gere cada fala com sua referência individual de voz.
-- Prévia de áudio, fila de redublagem em segundo plano, progresso geral e registro de falhas. As falas concluídas ficam salvas para permitir tentar novamente as pendentes.
-- Indicador de caracteres baseado na duração original, com referência de 18 caracteres por segundo. Textos maiores continuam permitidos; a prévia usa aceleração de até 1,20× e preserva falas que ainda excederem a duração original.
-- Exportação dos áudios corrigidos dos jogos e de uma nova cópia do vídeo com vozes corrigidas e fundo separado. Falas longas podem se sobrepor e precisam de revisão.
-
-#### Processamento e organização de jogos
-
-- Ajustes no lote por estágios, rotas de acompanhamento, identificação da pasta ativa e recuperação do último lote salvo.
-- Contagem acumulada dos áudios selecionados, cópia paralela dos arquivos e recuperação da pasta original quando a entrada do projeto está vazia.
-- Preparação paralela de áudios em WAV mono de 16 kHz para o fluxo de diarização em lote.
-- Botão de início unificado, cartões de projetos e atualização de progresso e estado na interface.
-- Ajustes na preservação da extensão e na escolha do codec de saída, evitando WAV antigo conflitante com o formato final.
-- Organização específica das saídas de State of Decay por jogo e personagem dentro de uploads, incluindo as correções.
-
-#### Áudio, tradução e modelos
-
-- Tratamento de silêncio nas falas de vídeo com detecção de voz e margens conservadoras; cache renovado quando a fonte ou a versão do tratamento muda.
-- Revisão dos prompts de tradução, limpeza de metadados e nova tentativa de condensação quando a tradução ultrapassa a referência de 18 caracteres por segundo.
-- Ajustes na preservação de reações isoladas e no tratamento de traduções vazias, repetitivas ou iguais ao original. A qualidade continua dependente do modelo e da revisão humana.
-- Carregamento unificado do Qwen, reconhecimento de variantes 9B/4B, ajustes das DLLs CUDA no Windows e liberação explícita do motor CTranslate2 usado pelo Whisper.
-
-#### Editor, aplicativo e instalação
-
-- Botão **Verificar atualizações** no Hub: mostra a versão instalada, consulta releases do GitHub e informa quando há uma nova versão. Para pacotes compatíveis, **Atualizar e reiniciar** baixa e verifica os arquivos, guarda uma cópia de recuperação e reabre o aplicativo. Checkouts Git e versões que alteram dependências exigem atualização pelo procedimento correspondente. O ciclo com executáveis empacotados ainda está em validação.
-- Proteção de desenvolvimento e contra regressão: cópias Git ou marcadas como desenvolvimento permitem somente consulta; pacotes com versão igual ou anterior à local são bloqueados antes da instalação.
-- Fatiador de vídeos com duração configurável e divisão via FFmpeg sem recodificação; os cortes efetivos dependem dos quadros-chave do arquivo.
-- Ajustes na reinicialização para reabrir a janela após a liberação da porta do Hub.
-- Ajustes no diretório de modelos e na detecção de modelos pelo instalador; título da release associado à tag de publicação.
-- Inclusão de acesso ao apoio do projeto nas interfaces.
-- Remoção de motores antigos de Cine Gen/GodoGen, painel Aider e forge local desta distribuição. Ainda existem interfaces e dependências remanescentes que precisam de revisão.
-- Documentação reorganizada e histórico contínuo em ATUALIZACOES.md.
-
-#### Vortex DJ e preparação da distribuição
-
-- Correções no envio de áudio de referência em Normal, Cover e Extended; falhas de upload e exportação interrompem a operação.
-- Cover fiel experimental com referência de timbre, instrução neutra e campo de estilo ignorado. AudioSR/masterização desativada por padrão.
-- Extended exporta somente a continuação após a referência. Projetos de separação antigos permanecem preservados no disco, fora do painel ativo.
-- Novo comando `python PREPARAR_RELEASE.py --version VERSAO` para preparação guiada, com relatório resumido, modo offline e bloqueio em caso de falha. Não carrega modelos nem publica automaticamente.
-- Preparação da release inclui alterações locais já commitadas e exclusões, usa o ancestral comum e normaliza CRLF/LF nos temporários do merge. Reconciliações explícitas ficam no relatório.
-
-### Validação desta preparação da v0.8.1
-
-- Suíte completa: 80 testes Python aprovados em 43,075 s, incluindo o novo assistente de preparação.
-- Três arquivos JavaScript aprovados: progresso (5 cenários), contagem (9 verificações) e referência musical (3 testes).
-- Conferência de hashes, sintaxe Python, padrões de credenciais e `git diff --check` aprovados. O teste de versão agora acompanha `APP_VERSION`.
-- README reconciliado explicitamente com a base remota; diferenças locais de links e metadados preservadas. Versão pública preparada: v0.8.1.
-- GitHub Actions concluiu o build dos executáveis, os testes de inicialização fora do checkout e a publicação dos três anexos da v0.8.1. Instalação completa com modelos e dublagem real em GPU permanecem sem validação nesta publicação.
-- Publicação: https://github.com/NarraVox/PhoenixDub-AI/releases/tag/v0.8.1; commit da tag: `0bea94de00c4305eeaa0be4ed144636891ebcc4f`.
-
-### Validação realizada na preparação
-
-- Em 2026-09-10, passaram **57 testes Python**, incluindo correções, busca, fila em grupo, duração, progresso, exportação, atualização, distribuição e política de publicação.
-- Passaram também os **2 arquivos de testes JavaScript**, com 5 cenários de progresso e 9 verificações de contagem de caracteres.
-- Os testes usam projetos temporários, áudio de teste e síntese substituta. Instalação limpa, executáveis, qualidade dos modelos e dublagem completa em GPU não foram validados nesta revisão.
+Validação em andamento: testes do instalador e resolução de dependências. Build e publicação ainda não concluídos. Dublagem em GPU e instalação completa com modelos não validadas nesta correção.

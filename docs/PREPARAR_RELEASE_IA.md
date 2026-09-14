@@ -6,6 +6,8 @@ Não carrega modelos nem usa CUDA. Não instala dependências e não publica.
 
 ## Comando
 
+Antes de preparar, confirme `git config user.email`: deve terminar em `@users.noreply.github.com`. O assistente bloqueia e-mail pessoal. Para mudar dependências do setup, siga [INSTALAR_OU_REPARAR.md](INSTALAR_OU_REPARAR.md).
+
 No PowerShell, dentro de `C:\IA_dublagem`:
 
 ```powershell

@@ -23,6 +23,11 @@ Este é o mapa cronológico das mudanças do projeto. Consulte-o no início do t
 
 ### Mudanças desta sessão
 
+- Correção do setup em preparação para v0.8.2: BAT com diretório fixo e checagem de erros; dependências centralizadas, matriz de Qwen3-TTS/WhisperX reconciliada; FFmpeg/ffprobe locais com SHA-256; corrigido import local de subprocess que interrompia downloads. Nenhum ambiente de desenvolvimento foi reinstalado.
+- Privacidade: Git local configurado com noreply da conta; AGENTS.md e assistente passam a impedir e-mail pessoal em novas preparações. Histórico antigo não reescrito; aguardando decisão sobre alcance dessa limpeza.
+- Validação até aqui: 89 testes Python aprovados (52,735 s), oito específicos do setup; download real e execução de FFmpeg/ffprobe aprovados em pasta temporária. Resolução de dependências revelou MixingBear 0.1.2 indisponível; retirado da instalação obrigatória, mantendo fallback FFmpeg existente. Nova resolução e validação de instalação limpa no CI em andamento.
+
+
 - Publicação da v0.8.1 autorizada pelo responsável. Worktree revisado inclui o assistente de preparação; passaram 80 testes Python em 43,075 s, três arquivos JavaScript, análise de sintaxe/padrões de credenciais e git diff --check. Base remota 692bd6e reconferida. Build em nuvem e publicação ainda pendentes neste registro.
 
 - Criada a entrada `PREPARAR_RELEASE.py` na raiz para preparação guiada por IA local. Aceita a versão escolhida, verifica pré-requisitos e metadados, fixa a base remota e usa o preparador existente em destino novo. Modos `--check-only` e `--offline` explícitos; sem carregamento de modelos, instalação, commit, push, tag ou publicação.

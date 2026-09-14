@@ -108,3 +108,6 @@ tools/*
 .agents/
 /_updates/
 /.nexus-development
+
+# Instalador local distribuido com o codigo fonte
+!/TESTAR_SETUP.bat

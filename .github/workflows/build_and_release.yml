@@ -33,6 +33,24 @@ jobs:
         python -m unittest discover -s tests -p test_distribution.py
         python -m unittest discover -s tests -p test_release_preparation.py
         python -m unittest discover -s tests -p test_release_assistant.py
+        python -m unittest discover -s tests -p test_setup_support.py
+
+    - name: Validar dependencias em ambiente limpo sem modelos
+      timeout-minutes: 30
+      shell: pwsh
+      run: |
+        $setupTestRoot = Join-Path $env:RUNNER_TEMP "phoenix-clean-setup"
+        python -m venv $setupTestRoot
+        if ($LASTEXITCODE -ne 0) { throw "Falha ao criar ambiente de teste" }
+        $setupTestPython = Join-Path $setupTestRoot "Scripts/python.exe"
+        & $setupTestPython -m pip install --upgrade pip
+        if ($LASTEXITCODE -ne 0) { throw "Falha no pip de teste" }
+        & $setupTestPython -m pip install -r requirements.txt
+        if ($LASTEXITCODE -ne 0) { throw "Dependencias nao instalaram em ambiente limpo" }
+        & $setupTestPython -m pip check
+        if ($LASTEXITCODE -ne 0) { throw "Dependencias incompativeis" }
+        & $setupTestPython -c "import torch, transformers, faster_whisper, qwen_tts, faster_qwen3_tts, pyannote.audio; print('Imports dos motores OK; nenhum modelo carregado')"
+        if ($LASTEXITCODE -ne 0) { throw "Falha nas importacoes dos motores" }
 
     - name: Gerar Executável do Aplicativo Principal (Nexus AI Pro)
       run: python nexus/build_tools/build_main_app.py

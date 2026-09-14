@@ -100,6 +100,12 @@ var pollInterval = null;
                             updateProgress(parts[0], parts[1]);
                         } else {
                             addLog(item.msg, item.type);
+                            if (item.msg.indexOf("[SETUP_FAILED]") !== -1) {
+                                clearInterval(pollInterval);
+                                document.getElementById('progress-container').setAttribute('data-status', 'failed');
+                                updateProgress(0, "Instalação interrompida. Confira o erro acima.");
+                                return;
+                            }
                             if (item.msg.indexOf("CONCLUIDA") !== -1 || item.msg.indexOf("FINALIZADO") !== -1) {
                                 clearInterval(pollInterval);
                                 updateProgress(100, "Instalação Finalizada!");

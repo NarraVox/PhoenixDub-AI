@@ -13,7 +13,7 @@ import sys
 import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON_TESTS = ('test_release_preparation.py', 'test_release_assistant.py', 'test_updates.py', 'test_distribution.py')
+PYTHON_TESTS = ('test_release_preparation.py', 'test_release_assistant.py', 'test_updates.py', 'test_distribution.py', 'test_setup_support.py')
 JS_TESTS = ('tests/test_correction_progress.mjs', 'tests/test_correction_timing.mjs',
             'tests/test_music_source.mjs')
 
@@ -67,6 +67,9 @@ class Assistant:
         for executable in ('git', 'node'):
             if not shutil.which(executable):
                 raise ValueError(f'{executable} nao encontrado no PATH. Configure a ferramenta e repita.')
+        email = self.command('Conferir email privado do Git', ['git', 'config', 'user.email'])
+        if not re.fullmatch(r'[^\s@]+@users\.noreply\.github\.com', email):
+            raise ValueError('Configure user.email com o endereco noreply da sua conta GitHub antes de preparar. Nao use email pessoal.')
         policy = json.loads((self.root/'release/policy.json').read_text(encoding='utf-8'))
         remote = self.command('Conferir repositorio', ['git', 'remote', 'get-url', 'origin'])
         if remote != policy['repository']:

@@ -10,13 +10,6 @@ from pathlib import Path
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import webview
 
-# Patch automático de compatibilidade para torchvision 0.18+ (GFPGAN / BasicSR)
-try:
-    import torchvision.transforms.functional as F
-    sys.modules['torchvision.transforms.functional_tensor'] = F
-except Exception:
-    pass
-
 token_submitted_event = threading.Event()
 current_token = None
 
@@ -25,6 +18,7 @@ current_token = None
 class SetupAPI:
     def __init__(self, logs_container):
         self.logs = logs_container
+        self.installation_failed = False
         self.env_path = Path(os.getcwd()) / "env"
 
     def run_setup(self, mode="cpu", modules=None):
@@ -78,6 +72,7 @@ class SetupAPI:
             self._log(f"FALHA NO DIAGNÓSTICO: {e}", "error")
 
     def _execute_installation(self, mode, modules):
+        self.installation_failed = False
         try:
             if getattr(sys, 'frozen', False):
                 from nexus.distribution import deploy_runtime
@@ -86,66 +81,15 @@ class SetupAPI:
             if not modules or mode != "modular":
                 modules = {"base": True, "voice": True, "llama": True, "video": True}
                 
-            # [SURVIVAL] Criação do ENV ou Download de Python Portátil
-            if not self.env_path.exists():
-                self._update(10, "Preparando Ambiente...")
-                try:
-                    self._log("Tentando criar ambiente virtual...")
-                    subprocess.run(["python", "-m", "venv", "env"], check=True)
-                except:
-                    self._log("Baixando motor portatil...", "warn")
-                    self._update(15, "Baixando Python (25MB)...")
-                    py_url = "https://www.python.org/ftp/python/3.10.11/python-3.10.11-embed-amd64.zip"
-                    zip_path = os.path.join(os.getcwd(), "python_base.zip")
-                    urllib.request.urlretrieve(py_url, zip_path)
-                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                        zip_ref.extractall("env")
-                    os.remove(zip_path)
-                    with open(os.path.join("env", "python310._pth"), "w") as f:
-                        f.write(".\npython310.zip\nimport site\n")
-                    pip_script = os.path.join("env", "get-pip.py")
-                    urllib.request.urlretrieve("https://bootstrap.pypa.io/get-pip.py", pip_script)
-                    subprocess.run([os.path.join("env", "python.exe"), pip_script, "--quiet"], check=True)
-                    os.remove(pip_script)
-
-            # [v2026.PYTHON_PATH] Localiza o executável do Python no ambiente
-            python_options = [os.path.join("env", "Scripts", "python.exe"), os.path.join("env", "python.exe")]
-            python_exe = next((p for p in python_options if os.path.exists(p)), "python")
-
-            # [v2026.BUILD_TOOLS] Garante que as ferramentas de construção estejam atualizadas
-            self._update(20, "🛠️ Atualizando ferramentas de build (Pip/Wheel/Setuptools)...")
-            subprocess.run([python_exe, "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel", "--quiet"], check=True)
-
-            # Instalação do Módulo Base / Core (Sempre instalado)
-            self._update(30, "🚀 Instalando Módulo Base / Core...")
-            base_libs = ["Flask", "Flask-Cors", "requests", "psutil", "python-dotenv", "tqdm", "Jinja2", "Pillow", "PyYAML", "pdfplumber>=0.11.0"]
-            self._run_pip(python_exe, base_libs)
-
-            # Se áudio ou vídeo forem selecionados, precisamos de PyTorch
-            precisa_pytorch = modules.get("video") or modules.get("voice")
-            if precisa_pytorch:
-                self._update(50, "🧠 Sincronizando PyTorch e CUDA...")
-                torch_libs = ["torch==2.6.0+cu124", "torchvision==0.21.0+cu124", "torchaudio==2.6.0+cu124", "--extra-index-url", "https://download.pytorch.org/whl/cu124"]
-                self._run_pip(python_exe, torch_libs)
-            else:
-                self._log("ℹ️ Módulos de Áudio e Vídeo não selecionados. Pulando PyTorch.", "info")
-
-            # Instalação do Llama-CPP (Opcional)
-            if modules.get("llama"):
-                self._update(70, "🏎️ Compilando Aceleração RTX (Llama-CPP)...")
-                self._log("⚠️ Esta etapa é pesada e pode parecer lenta, mas a GPU está trabalhando!", "warn")
-                llama_libs = ["llama-cpp-python==0.3.23", "--extra-index-url", "https://abetlen.github.io/llama-cpp-python/whl/cu124"]
-                self._run_pip(python_exe, llama_libs)
-            else:
-                self._log("ℹ️ Módulo Aceleração Llama-CPP não selecionado. Pulando.", "info")
-
-            # Instalação do Módulo Dublagem / Áudio (Whisper/TTS)
+            from nexus.build_tools.setup_support import ensure_environment, ensure_ffmpeg, requirement_plan
+            python_exe = ensure_environment(Path.cwd())
+            self._update(20, "Preparando dependencias...")
+            subprocess.run([python_exe, "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], check=True)
+            self._run_pip(python_exe, requirement_plan(Path.cwd(), modules))
+            subprocess.run([python_exe, "-m", "pip", "check"], check=True)
+            ensure_ffmpeg(Path.cwd(), self._log)
             if modules.get("voice"):
-                self._update(90, "🎙️ Configurando Titan Qwen3, Audio-IA e Docs OCR...")
-                audio_libs = ["faster-qwen3-tts[ggml]", "qwen-tts>=0.0.1", "faster-whisper==1.2.1", "pyannote.audio==3.3.1", "whisperx", "librosa", "soundfile", "pydub", "easyocr>=1.7.1", "--extra-index-url", "https://download.pytorch.org/whl/cu124"]
-                self._run_pip(python_exe, audio_libs)
-                self._log("Vocoder 12Hz injetado com sucesso.", "success")
-                self._log("💡 LEMBRETE: Acesse hf.co/pyannote/speaker-diarization-community-1 para aceitar os termos de uso e configure a variável HF_TOKEN para habilitar a diarização.", "warn")
+                self._log("Diarizacao: aceite os termos de pyannote/speaker-diarization-3.1 e configure HF_TOKEN.", "warn")
 
                 models_dir_1 = Path(os.getcwd()) / "MODELS"
                 models_dir_2 = Path(os.getcwd()) / "models"
@@ -186,9 +130,9 @@ class SetupAPI:
                 audit_path = os.path.join(os.getcwd(), "env", "Scripts", "pip-audit.exe")
                 if not os.path.exists(audit_path):
                     subprocess.run([python_exe, "-m", "pip", "install", "pip-audit", "--quiet"], check=True)
-                audit_res = subprocess.run([audit_path], capture_output=True, text=True)
+                audit_res = subprocess.run([python_exe, "-m", "pip_audit"], capture_output=True, text=True)
                 if audit_res.returncode == 0:
-                    self._log("SENTINEL: Ambiente verificado e 100% SEGURO.", "success")
+                    self._log("SENTINEL: Nenhuma vulnerabilidade conhecida apontada nesta auditoria.", "success")
                 else:
                     self._log("SENTINEL: ALERTA! Vulnerabilidades detectadas. Comunique o dev.", "error")
             except:
@@ -208,8 +152,8 @@ class SetupAPI:
             self._log("PROCESSO FINALIZADO!", "success")
             
         except Exception as e:
-            print(f"ERRO NO BACKEND: {e}")
-            self._log(f"ERRO: {str(e)}", "error")
+            self.installation_failed = True
+            self._log(f"[SETUP_FAILED] Instalacao interrompida: {e}", "error")
 
     def download_model_with_retry(self, python_exe, repo_id, filename=None, is_snapshot=False, allow_patterns=None):
         global token_submitted_event, current_token
@@ -270,7 +214,6 @@ class SetupAPI:
                          os.environ["HF_TOKEN"] = current_token
                          # Persiste o token de forma definitiva no sistema Windows do usuário
                          try:
-                             import subprocess
                              subprocess.run(["setx", "HF_TOKEN", current_token], capture_output=True)
                              self._log("✅ Token do Hugging Face salvo permanentemente no Windows!", "success")
                          except Exception as token_err:
@@ -423,6 +366,8 @@ def main():
                                    width=1280, height=800, background_color='#050505')
     window.events.shown += lambda: window.maximize()
     webview.start()
+    if api.installation_failed:
+        raise SystemExit(1)
 
 if __name__ == '__main__':
     main()

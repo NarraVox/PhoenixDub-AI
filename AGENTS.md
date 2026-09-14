@@ -1,5 +1,7 @@
 # Registro permanente de atualizações
 
+- Privacidade em publicações: use o e-mail `noreply` do GitHub e o nome público da conta em commits/tags. Antes de publicar, confira `git config user.email`; nunca use e-mail pessoal. Não inclua dados pessoais novos em documentação ou relatórios públicos. Remover dados do histórico exige escopo explícito e cópia de segurança isolada.
+
 - Para preparar versões, use a entrada simples `python PREPARAR_RELEASE.py --version VERSAO` e siga `docs/PREPARAR_RELEASE_IA.md`. Leia `_updates/release-assistant/LEIA_PRIMEIRO.txt` e `ULTIMO_RESULTADO.json`; se FALHOU, pare e siga `next_action`. O comando não publica. Não contorne conflitos nem presuma sucesso por ausência de saída.
 
 - Para pedidos de publicação no GitHub, siga `docs/PUBLICAR_RELEASE.md` e `release/policy.json`. Prepare a release com `release/prepare_release.py` em worktree separado; revise o relatório antes de commit/push. Nunca adicione toda a pasta de desenvolvimento ao Git indiscriminadamente.

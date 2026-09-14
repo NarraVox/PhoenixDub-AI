@@ -16,6 +16,8 @@ import psutil
 import gc
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
+from nexus.media_tools import activate
+activate(Path(__file__).resolve().parents[2])
 
 # Força o terminal a aceitar UTF-8 no Windows para evitar quedas por emojis
 if sys.platform == "win32" and not getattr(sys.stdout, '_utf8_wrapped', False):
@@ -43,6 +45,7 @@ try:
     dll_paths = [
         site_packages / "llama_cpp" / "lib",
         site_packages / "nvidia" / "cublas" / "bin",
+        site_packages / "nvidia" / "cudnn" / "bin",
         site_packages / "nvidia" / "cuda_runtime" / "bin",
         site_packages / "nvidia" / "cuda_nvrtc" / "bin"
     ]
