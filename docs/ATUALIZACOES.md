@@ -13,6 +13,14 @@ Este é o mapa cronológico das mudanças do projeto. Consulte-o no início do t
 
 ## 0.8.2 — 2026-09-14 — Desenvolvimento / não publicada
 
+### Publicação confirmada — v0.8.1
+
+- Publicada em **2026-09-14 00:35:46 (Brasília)**: [PhoenixDub AI v0.8.1](https://github.com/NarraVox/PhoenixDub-AI/releases/tag/v0.8.1). Commit da tag: `0bea94de00c4305eeaa0be4ed144636891ebcc4f`. Consolida os marcos internos 0.8.0, 0.8.1 e 0.8.2; numeração interna e versão pública são independentes.
+- GitHub Actions: [validação prévia](https://github.com/NarraVox/PhoenixDub-AI/actions/runs/34802937966) e [publicação](https://github.com/NarraVox/PhoenixDub-AI/actions/runs/34803042393) concluídas com sucesso. Confirmados build dos dois executáveis, testes de inicialização fora do checkout e pacote de atualização.
+- Anexos conferidos pela API: `Nexus_AI_Pro.exe` (14.867.405 bytes), `Setup_Nexus.exe` (28.084.512 bytes) e `PhoenixDub_Update.zip` (14.995.920 bytes), todos em estado uploaded, com SHA-256 informado pelo GitHub.
+- Revisão final excluiu `nexus/test_api.py`, `nexus/test_api_simple.py` e `nexus/dj/vortex_music_fixed.py`: scripts experimentais/cópia alternativa sem referências no código ativo. Preservados no desenvolvimento e incluídos nas exclusões de `release/policy.json`. Limpeza de espaços feita somente na cópia de release, sem alteração da AST Python.
+- Desenvolvimento preservado no HEAD `096c783`; README original e `.nexus-development` intactos. Nenhum atualizador aplicado. Instalação completa com modelos e dublagem real em GPU não foram executadas nesta publicação.
+
 ### Mudanças desta sessão
 
 - Publicação da v0.8.1 autorizada pelo responsável. Worktree revisado inclui o assistente de preparação; passaram 80 testes Python em 43,075 s, três arquivos JavaScript, análise de sintaxe/padrões de credenciais e git diff --check. Base remota 692bd6e reconferida. Build em nuvem e publicação ainda pendentes neste registro.

@@ -1,8 +1,17 @@
 # Notas de atualização para o GitHub — v0.8.1
 
+### Publicação confirmada — v0.8.1
+
+- Publicada em **2026-09-14 00:35:46 (Brasília)**: [PhoenixDub AI v0.8.1](https://github.com/NarraVox/PhoenixDub-AI/releases/tag/v0.8.1). Commit da tag: `0bea94de00c4305eeaa0be4ed144636891ebcc4f`. Consolida os marcos internos 0.8.0, 0.8.1 e 0.8.2; numeração interna e versão pública são independentes.
+- GitHub Actions: [validação prévia](https://github.com/NarraVox/PhoenixDub-AI/actions/runs/34802937966) e [publicação](https://github.com/NarraVox/PhoenixDub-AI/actions/runs/34803042393) concluídas com sucesso. Confirmados build dos dois executáveis, testes de inicialização fora do checkout e pacote de atualização.
+- Anexos conferidos pela API: `Nexus_AI_Pro.exe` (14.867.405 bytes), `Setup_Nexus.exe` (28.084.512 bytes) e `PhoenixDub_Update.zip` (14.995.920 bytes), todos em estado uploaded, com SHA-256 informado pelo GitHub.
+- Revisão final excluiu `nexus/test_api.py`, `nexus/test_api_simple.py` e `nexus/dj/vortex_music_fixed.py`: scripts experimentais/cópia alternativa sem referências no código ativo. Preservados no desenvolvimento e incluídos nas exclusões de `release/policy.json`. Limpeza de espaços feita somente na cópia de release, sem alteração da AST Python.
+- Desenvolvimento preservado no HEAD `096c783`; README original e `.nexus-development` intactos. Nenhum atualizador aplicado. Instalação completa com modelos e dublagem real em GPU não foram executadas nesta publicação.
+
+
 O registro contínuo de trabalho está em [Atualizações — Diário de evolução](ATUALIZACOES.md). Ao preparar a publicação, consolide aqui os marcos internos ainda não lançados. A numeração interna não define automaticamente a versão pública.
 
-Versão escolhida: **v0.8.1**, em preparação local. Consolida as mudanças ainda não publicadas dos marcos internos 0.8.0, 0.8.1 e 0.8.2. Publicação autorizada pelo responsável; build dos instaladores será conferido no GitHub Actions. Teste funcional em GPU não integra este build.
+Versão escolhida: **v0.8.1**, em preparação local. Consolida as mudanças ainda não publicadas dos marcos internos 0.8.0, 0.8.1 e 0.8.2. Publicação concluída; build e inicialização dos instaladores conferidos no GitHub Actions. Teste funcional em GPU não integra este build.
 
 ## Texto para colar na release do GitHub
 
@@ -65,7 +74,7 @@ Esta atualização reúne as mudanças posteriores à v0.6.0, com destaque para 
 - Três arquivos JavaScript aprovados: progresso (5 cenários), contagem (9 verificações) e referência musical (3 testes).
 - Conferência de hashes, sintaxe Python, padrões de credenciais e `git diff --check` aprovados. O teste de versão agora acompanha `APP_VERSION`.
 - README reconciliado explicitamente com a base remota; diferenças locais de links e metadados preservadas. Versão pública preparada: v0.8.1.
-- Build dos executáveis, instalação limpa e fluxo completo com GPU não executados nesta preparação. Nenhum commit, push, tag ou publicação realizado no projeto.
+- Build dos executáveis, inicialização fora do checkout e publicação concluídos no GitHub Actions. Instalação completa com modelos e dublagem real em GPU permanecem sem validação nesta publicação.
 
 ### Validação realizada na preparação
 

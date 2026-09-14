@@ -55,7 +55,8 @@ Esta atualização reúne as mudanças posteriores à v0.6.0, com destaque para 
 - Três arquivos JavaScript aprovados: progresso (5 cenários), contagem (9 verificações) e referência musical (3 testes).
 - Conferência de hashes, sintaxe Python, padrões de credenciais e `git diff --check` aprovados. O teste de versão agora acompanha `APP_VERSION`.
 - README reconciliado explicitamente com a base remota; diferenças locais de links e metadados preservadas. Versão pública preparada: v0.8.1.
-- Build dos executáveis, instalação limpa e fluxo completo com GPU não executados nesta preparação. Nenhum commit, push, tag ou publicação realizado no projeto.
+- GitHub Actions concluiu o build dos executáveis, os testes de inicialização fora do checkout e a publicação dos três anexos da v0.8.1. Instalação completa com modelos e dublagem real em GPU permanecem sem validação nesta publicação.
+- Publicação: https://github.com/NarraVox/PhoenixDub-AI/releases/tag/v0.8.1; commit da tag: `0bea94de00c4305eeaa0be4ed144636891ebcc4f`.
 
 ### Validação realizada na preparação
 
