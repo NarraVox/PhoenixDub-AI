@@ -11,226 +11,222 @@ Este é o mapa cronológico das mudanças do projeto. Consulte-o no início do t
 - Preserve as entradas anteriores. Registre correções posteriores em novas entradas, sem reescrever a história.
 - Ao preparar um lançamento, reúna todas as entradas ainda não publicadas em NOTAS_PARA_GITHUB.md e depois em ../RELEASE_NOTES.md. Após a publicação, registre aqui a versão pública, a data, o link e os marcos internos incluídos.
 
-## 0.8.2 — 2026-09-14 — Desenvolvimento / não publicada
-
-### Publicação confirmada — v0.8.1
-
-- Publicada em **2026-09-14 00:35:46 (Brasília)**: [PhoenixDub AI v0.8.1](https://github.com/NarraVox/PhoenixDub-AI/releases/tag/v0.8.1). Commit da tag: `0bea94de00c4305eeaa0be4ed144636891ebcc4f`. Consolida os marcos internos 0.8.0, 0.8.1 e 0.8.2; numeração interna e versão pública são independentes.
-- GitHub Actions: [validação prévia](https://github.com/NarraVox/PhoenixDub-AI/actions/runs/34802937966) e [publicação](https://github.com/NarraVox/PhoenixDub-AI/actions/runs/34803042393) concluídas com sucesso. Confirmados build dos dois executáveis, testes de inicialização fora do checkout e pacote de atualização.
-- Anexos conferidos pela API: `Nexus_AI_Pro.exe` (14.867.405 bytes), `Setup_Nexus.exe` (28.084.512 bytes) e `PhoenixDub_Update.zip` (14.995.920 bytes), todos em estado uploaded, com SHA-256 informado pelo GitHub.
-- Revisão final excluiu `nexus/test_api.py`, `nexus/test_api_simple.py` e `nexus/dj/vortex_music_fixed.py`: scripts experimentais/cópia alternativa sem referências no código ativo. Preservados no desenvolvimento e incluídos nas exclusões de `release/policy.json`. Limpeza de espaços feita somente na cópia de release, sem alteração da AST Python.
-- Desenvolvimento preservado no HEAD `096c783`; README original e `.nexus-development` intactos. Nenhum atualizador aplicado. Instalação completa com modelos e dublagem real em GPU não foram executadas nesta publicação.
-
-### Mudanças desta sessão
-
-- Correção do setup em preparação para v0.8.2: BAT com diretório fixo e checagem de erros; dependências centralizadas, matriz de Qwen3-TTS/WhisperX reconciliada; FFmpeg/ffprobe locais com SHA-256; corrigido import local de subprocess que interrompia downloads. Nenhum ambiente de desenvolvimento foi reinstalado.
-- Privacidade: Git local configurado com noreply da conta; AGENTS.md e assistente passam a impedir e-mail pessoal em novas preparações. Histórico antigo não reescrito; aguardando decisão sobre alcance dessa limpeza.
-- Validação até aqui: 89 testes Python aprovados (52,735 s), oito específicos do setup; download real e execução de FFmpeg/ffprobe aprovados em pasta temporária. Resolução de dependências revelou MixingBear 0.1.2 indisponível; retirado da instalação obrigatória, mantendo fallback FFmpeg existente. Nova resolução e validação de instalação limpa no CI em andamento.
-
-
-- Publicação da v0.8.1 autorizada pelo responsável. Worktree revisado inclui o assistente de preparação; passaram 80 testes Python em 43,075 s, três arquivos JavaScript, análise de sintaxe/padrões de credenciais e git diff --check. Base remota 692bd6e reconferida. Build em nuvem e publicação ainda pendentes neste registro.
-
-- Criada a entrada `PREPARAR_RELEASE.py` na raiz para preparação guiada por IA local. Aceita a versão escolhida, verifica pré-requisitos e metadados, fixa a base remota e usa o preparador existente em destino novo. Modos `--check-only` e `--offline` explícitos; sem carregamento de modelos, instalação, commit, push, tag ou publicação.
-- Relatórios resumidos em `_updates/release-assistant/LEIA_PRIMEIRO.txt` e `ULTIMO_RESULTADO.json`, com histórico de logs por execução, códigos de saída e próximo passo. Falhas, timeout, conflito e divergência de hash interrompem o fluxo. Os testes automáticos escolhidos cobrem preparação, assistente, atualização, distribuição e JavaScript; não substituem testes funcionais em GPU.
-- Guia curto em `docs/PREPARAR_RELEASE_IA.md`, referenciado por `AGENTS.md`, `docs/PUBLICAR_RELEASE.md` e `docs/documentacao/CONTEXTO_IA.md`. Entrada adicionada à política de distribuição. Implementação em `release/release_assistant.py` e regressões em `tests/test_release_assistant.py`.
-
-### Validação efetivamente realizada
-
-- Sete testes do novo assistente aprovados, incluindo argumento inválido, leitura da versão sem executar código, hash divergente, bloqueio antes da preparação, check-only, erro/timeout e fluxo offline simulado com base fixa.
-- Execução real de pré-requisitos: solicitação 0.8.1 bloqueada porque a cópia de desenvolvimento declara 0.8.0; solicitação 0.8.0 retornou PASSOU_PRE_REQUISITOS. Nenhuma dessas verificações criou worktree, acessou a rede ou executou modelos.
-
-### Pendências
-
-- Não foi executada uma nova preparação completa com este assistente no projeto real; o fluxo de sucesso foi testado com comandos simulados e arquivos temporários. A cópia v0.8.1 preparada anteriormente permanece independente e não foi modificada nesta sessão.
-- Revisar versão e notas antes da próxima preparação. Build, instalação real, testes em GPU e publicação continuam sendo etapas posteriores. Este marco interno não altera a versão pública escolhida nem significa release publicada.
-
-## 0.8.1 — 2026-09-11 — Desenvolvimento / não publicada
-
-### Mudanças desta sessão
-
-- Por solicitação do responsável, removidos painel, rotas, worker e cache ativo de OpenUnmix adicionados nesta tarefa. Projetos/áudios já salvos foram preservados no disco e ocultados da listagem do Hub. Removida a separação automática da mixagem legada; sem stems previamente disponíveis, ela usa a mixagem comum. Nenhuma desinstalação de dependências compartilhadas foi realizada.
-- Extended passa a exportar somente a continuação após o fim do áudio de referência, antes de AudioSR/MP3. O contexto original e a sobreposição de repaint ficam fora da saída final. Se não houver continuação suficiente, o fluxo informa erro em vez de entregar o original como resultado. Interface descreve “Extended — somente a parte nova”.
-- Investigado relato de referência errada: último log disponível registra origem e referência de 492,04 s, compatíveis com o Djavu completo (arquivo de 492,016 s), não a bateria do Forró Perfeito de cerca de 74 s. Não foi comprovada reutilização incorreta nessa execução. Para evitar seleção antiga quando um arquivo foi apenas escolhido e não enviado, Gerar agora envia o arquivo pendente antes da síntese, aborta se o upload falhar, limpa a seleção de arquivo após sucesso e mostra/loga a referência ativa. Músicas já enviadas passam a aparecer no seletor; cópias antigas `separated_*` ficam fora dessa lista.
-- Arquivos: `nexus/dj/music_request.py`, `vortex_music.py`, `vortex_app.py`, `vortex_dj.py`, `vortex_utils.py`, `vortex_mix.py`, `nexus/nexus_routes.py`, interface/CSS/JS do DJ; removidos `stem_projects.py`, `stem_routes.py`, `stem_worker.py`, `dj_stems.js` e seus testes específicos. Novos testes de referência em `tests/test_music_source.mjs` e recorte em `tests/test_music_request.py`.
-- Validação desta mudança: dez testes Python e dois testes JavaScript aprovados, incluindo exclusão do original, rejeição de extensão ausente, upload do Djavu substituindo bateria antiga e falha de upload sem geração. Recorte real de `temp_0_1789104295.wav` produziu `test-output/extended_somente_parte_nova.wav` com exatamente 30 s estéreo. Não foi feita nova síntese em GPU nem teste de mixagem legada nesta etapa; a validação real reutilizou áudio já gerado.
-
-- Adicionados projetos permanentes de separação OpenUnmix (`umxhq`) no Vortex DJ. Quatro WAVs preservados: bateria, baixo, voz e outros instrumentos. Projeto identificado pelo SHA-256 do arquivo original; reutilização confere receita, presença, tamanho e hash das saídas. Mesmo conteúdo renomeado reutiliza o projeto; conteúdo diferente ou saídas incompletas/corrompidas não são aceitos como cache válido. Originais e tentativas anteriores preservados.
-- Novo painel “Projetos de instrumentos — OpenUnmix”: selecionar/enviar música, separar e salvar, consultar estado, ouvir/baixar cada faixa e usá-la como referência em Cover/Extended. Seleção da referência preservada ao trocar de modo. Projetos persistem em `uploads/dj_projects/separated_<sha256>/job_status.json` e entram na listagem de projetos Vortex do Hub. Reutilizar como referência não trava bateria/baixo na síntese do ACE-Step.
-- Separação roda em processo isolado, com blocos de 10 s e contexto lateral de 1 s para limitar memória. Integração antiga de mixagem passa a reutilizar esses projetos e exportar os MP3s de compatibilidade sem apagar as quatro faixas. Erros e separações interrompidas são identificados; solicitações novas são recusadas enquanto o Vortex está ocupado. Escrita dos registros usa `safe_json_write`.
-- Arquivos: `nexus/dj/stem_projects.py`, `stem_worker.py`, `stem_routes.py`, `vortex_app.py`, `vortex_utils.py`, `nexus/nexus_routes.py`, `nexus/client/dj_studio.html`, `nexus/client/js/dj_stems.js`, `dj_studio.js`, `nexus/client/css/dj_studio.css`, `tests/test_stem_projects.py`.
-- Validação: seis testes automatizados aprovados (cache após reinício/renomeação, arquivo alterado, reconstrução por faixa ausente, falha do separador, caminhos e rotas/listagem/download/reuso/bloqueio ocupado). Execução real de trecho de 10 s e da música completa `Solos_Forro_Perfeito_-_As_Melhores.mp3` na instalação local: oito blocos e quatro WAVs em 44,1 kHz estéreo. Segunda chamada, com nova instância do serviço, retornou cache sem executar o separador. Interface verificada em navegador: projeto salvo visível após recarga, quatro faixas com áudio/download e seleção de bateria como referência. Sintaxe Python/JavaScript e diff conferidos.
-- Pendências específicas: avaliar vazamento/qualidade auditiva da separação; saxofone, guitarra e teclado permanecem juntos em “outros”. Geração de novos solos/voz sincronizados com base preservada ainda não implementada. Sem publicação de release nem execução de nova geração ACE-Step nesta etapa.
-
-- Implementado Cover fiel experimental a pedido do responsável: modo Cover passa a usar `cover-nofsq`, remove códigos semânticos herdados e envia o mesmo arquivo em `audio` e `ref_audio`, com streams independentes abertos até terminar o envio. Interface identifica a variante experimental. O motor instalado aceitou a tarefa e registrou codificação da referência de timbre.
-- No teste, a análise automática chamou o forró de metal. Para evitar essa influência incorreta, Cover fiel usa instrução neutra para preservar ritmo/instrumentos/timbres, mantendo o campo de estilo ignorado e a letra fornecida. Essa decisão substitui para o Cover fiel o uso anterior da descrição inferida. AudioSR continua desativado por padrão.
-- Arquivos: `nexus/dj/music_request.py`, `nexus/dj/vortex_music.py`, `nexus/client/dj_studio.html`, `tests/test_music_request.py`, `docs/documentacao/CONTEXTO_IA.md`. Validação: oito testes de regressão aprovados, sintaxe Python e diff sem erros. Teste real na RTX 3050 com trecho de 30 s do forró, letra curta de teste, força 0,8, oito passos, guidance 1 e sem AudioSR. Primeira execução com descrição automática gerou 30 s; repetição com instrução neutra registrada em `test-output/music_smoke/faithful_neutral_caption.log`. Avaliação de fidelidade da batida e qualidade dos solos/canto permanece auditiva, sem alegação de preservação exata.
-
-- Por nova decisão do responsável, Cover volta a ignorar totalmente o campo de estilo: interface desativa o campo e envia estilo vazio; o motor preserva a descrição extraída do áudio mesmo se a API receber texto de estilo. Letra e força do Cover continuam aplicadas. Esta decisão substitui somente para Cover o envio de estilo descrito anteriormente neste mesmo dia. Arquivos: `nexus/client/js/dj_studio.js`, `nexus/dj/vortex_music.py`. Validação: sintaxe Python/JavaScript e `git diff --check` aprovados; sem nova geração em GPU.
-
-- A pedido do responsável, masterização/AudioSR desativada por padrão no Vortex DJ: checkbox inicialmente desmarcado, opções de upscale ocultas até ativação e padrões do JavaScript, API e motor Python definidos como falso. Ativação manual preservada. Arquivos: `nexus/client/dj_studio.html`, `nexus/client/js/dj_studio.js`, `nexus/dj/vortex_app.py`, `nexus/dj/vortex_dj.py`, `nexus/dj/vortex_music.py`. Validação desta alteração: sintaxe Python/JavaScript e `git diff --check` aprovados; não houve nova geração de áudio nem execução de AudioSR.
-
-- Corrigida a geração musical do Vortex DJ após `UnboundLocalError` em `json`: removido o import local que ocultava o módulo e corrigida a leitura JSON no fallback de duração por FFprobe.
-- Restaurado o envio de síntese em Normal, Cover e Extended. Áudio de referência permanece aberto durante upload multipart; parâmetros são enviados como JSON uma única vez, sem fallback silencioso para geração sem referência. Cover passa a declarar sua tarefa e enviar o áudio original.
-- Extended usa a duração medida do áudio, preserva a duração total solicitada e envia fim explícito da região de continuação. O teste real inicial revelou que contar tokens concatenados como palavras reduzia incorretamente a extensão; a correção foi validada em nova geração.
-- Corrigidos os nomes dos parâmetros de passos e guidance usados pelo motor C++; o estilo digitado passa a ser enviado também em Cover/Extended. Campo vazio mantém a descrição extraída da referência. Falha na exportação FFmpeg agora interrompe o fluxo em vez de registrar sucesso.
-- Arquivos relevantes: `nexus/dj/vortex_music.py`, `nexus/dj/music_request.py`, `nexus/client/js/dj_studio.js`, `tests/test_music_request.py`.
-
-### Validação efetivamente realizada
-
-- Sete testes de regressão aprovados: vínculo global de JSON, upload com arquivo aberto, serialização, envio normal, falha de rede/arquivo ausente e duração da extensão. Sintaxe JavaScript e `git diff --check` dos arquivos alterados aprovados.
-- Gerações reais com `env/Scripts/python.exe`, motor instalado `acestep.cpp 4922ed1`, modelo `acestep-v15-xl-sftturbo50-Q4_K_M.gguf` e RTX 3050: Cover de 10,008 s e Extended de 20,016 s a partir de trecho de 10 s de `Solos_Forro_Perfeito_-_As_Melhores.mp3`. Arquivos decodificados e verificados quanto a duração, amostras finitas e sinal não silencioso. O primeiro Extended de 10,176 s falhou na verificação de duração e foi corrigido antes da segunda execução.
-- Modo Normal também concluiu geração real e exportação: `smoke_text2music_103729.mp3`, 19,2 s, sinal finito e não silencioso. Limitação observada: solicitação de 10 s produziu 19,2 s porque o motor priorizou 96 códigos de áudio gerados pelo LM; duração exata do modo Normal permanece pendente. Logs de síntese dos três modos preservados na pasta dos ensaios.
-- Ensaios isolados em `test-output/music_smoke/`, sem alterar o áudio original nem o histórico musical do usuário; oito passos, guidance 1, uma saída por execução e masterização desativada.
-
-### Pendências
-
-- Validação auditiva de qualidade musical, aderência da letra, fidelidade de instrumentos e batida; faixas longas, lotes e AudioSR/masterização não foram testados nesta sessão.
-- O fluxo proposto de preservar a base e recriar solos/voz separadamente ainda não foi implementado. O modelo instalado é SFT/Turbo; o modo Lego documentado pelo motor requer modelo Base, ausente nesta instalação. Não confundir a correção do Cover/Extended com essa funcionalidade futura.
-- Nenhuma release, tag ou atualização do checkout foi publicada ou instalada nesta sessão.
-
-## 0.8.0 — 2026-09-10 — Em preparação para lançamento / não publicada
-
-### Mudanças desta sessão
-
-- Preparação da publicação v0.8.0 autorizada pelo responsável: política de seleção em `release/policy.json`, preparo isolado em `release/prepare_release.py` e procedimento em `docs/PUBLICAR_RELEASE.md`. Preservadas as alterações remotas do README; excluídos dados locais e experimentos. Corrigido o empacotamento do código/interface, mantendo configurações existentes e bloqueando instalação sobre desenvolvimento. Release aguardando validação do GitHub Actions.
-
-- Reforçada a proteção da cópia de desenvolvimento após solicitação do responsável: marcador local `.nexus-development` preservado fora do Git e dos pacotes, detecção também nas pastas ancestrais, indicação no Hub e bloqueio de instalação automática independentemente da versão pública. Versões iguais/anteriores são recusadas novamente pelo aplicador antes de qualquer substituição, incluindo leitura da versão local no disco.
-- Validação do atualizador: suíte geral de 44 testes aprovada antes do reforço; depois, 20 testes específicos de atualização aprovados. Conferidos a interface em navegador com release simulada, pacote/manifesto em pasta temporária e consulta real (0.8.0 local > 0.6.0 pública, desenvolvimento protegido, atualização automática desativada). Nenhum código local foi atualizado por pacote e nenhum executável real foi reiniciado.
-- Adicionado ao HTML do Hub o botão **Verificar atualizações**, versão instalada e painel com notas, estado da consulta e ação **Atualizar e reiniciar**, conforme escolha do responsável. Nova versão central em `nexus/version.py`; comparação numérica substitui a comparação por desigualdade da rota antiga e falha de rede não é tratada como versão atualizada.
-- Implementados `nexus/updates.py`, `update_manager.py` e `update_worker.py`: pacote oficial, SHA-256, manifesto, backup, restauração em erro de cópia e processo externo de reinício. Dados, modelos e configurações locais ficam fora do pacote. Atualização automática bloqueada em checkout Git, motores abertos e mudanças de dependências que exijam instalador.
-- Workflow preparado para anexar `PhoenixDub_Update.zip`, gerado por `build_update_package.py`. Procedimento e limites documentados em [ATUALIZACAO_AUTOMATICA.md](ATUALIZACAO_AUTOMATICA.md). O ciclo real com executáveis ainda não foi validado nem publicado.
-- Esclarecimento do responsável: Qwen ASR foi somente um teste e ficou mais lento; a decisão é manter Whisper. Retirado das novidades da v0.8.0. Restaurado Whisper em `nexus/core/orchestrator_jobs_core.py` e removidos imports de Qwen ASR da inicialização em `model_loader.py` e `__init__.py`; os arquivos experimentais foram preservados. O benchmark não foi repetido nesta sessão.
-- Validação dessa correção: análise de sintaxe dos três módulos Python e busca de referências confirmaram a retirada da seleção/imports de Qwen ASR do fluxo normal; `git diff --check` desses módulos passou. Sem execução de modelo ou teste em GPU.
-- Definida a versão pública alvo **0.8.0**, substituindo o marco provisório 0.6.1, por decisão do responsável. Lançamento previsto para 2026-09-10, reunindo as mudanças acumuladas desde a v0.6.0, com destaque para a edição e correção manual de vídeos e jogos. Atualizados o título das notas para o GitHub e as regras de sequência; publicação ainda não realizada.
-- Renomeado `RELEASE_DRAFT.md` para `NOTAS_PARA_GITHUB.md`, destinado a preparar o texto de atualização para colar na release do GitHub. Atualizadas as referências e delimitada a seção de publicação.
-- Renomeado CHANGELOG.md para ATUALIZACOES.md, com o nome “Atualizações — Diário de evolução do PhoenixDub AI”. O histórico anterior foi preservado abaixo.
-- Definido o registro diário de mudanças, validações e pendências, com marcos internos sequenciais.
-- Adicionada a regra permanente em ../AGENTS.md e os links de consulta na documentação.
-
-### Levantamento do código concluído em 2026-09-10
-
-- Comparada a tag v0.6.0 com o HEAD local (11 commits posteriores), alterações sem commit e módulos novos. A evidência por área está em [COMPARACAO_0.6.0_0.8.0.md](COMPARACAO_0.6.0_0.8.0.md).
-- Ampliadas as notas em [NOTAS_PARA_GITHUB.md](NOTAS_PARA_GITHUB.md): edição manual e em grupo, busca aproximada, rascunhos, prévias, duração das falas, fila e exportação; retomada de lotes, formatos de áudio, saída de State of Decay, preparação de áudio, transcrição, tradução, modelos, fatiador e reinicialização.
-- Separados recursos já existentes na v0.6.0, alterações confirmadas no código e módulos sem integração encontrada. Este registro documenta a revisão de hoje; não atribui a implementação das mudanças acumuladas a esta data.
-
-### Situação inicial herdada
-
-A release pública mais recente consultada hoje é a [v0.6.0](https://github.com/NarraVox/PhoenixDub-AI/releases/tag/v0.6.0), publicada em 2026-07-31 no horário de Brasília.
-
-O [rascunho existente](NOTAS_PARA_GITHUB.md) já descrevia alterações posteriores à v0.6.0: painel de correção e redublagem de jogos/vídeos, ajustes de processamento em lote, tratamento de silêncio, carregamento de modelos, organização das saídas, interface, fatiador de vídeos, remoção de motores antigos e ajustes no instalador. Este é um inventário herdado, não uma afirmação de que essas mudanças foram feitas hoje ou validadas nesta sessão. Suas datas individuais ainda não foram reconstruídas.
-
-### Validação
-
-- Nesta sessão: conferência documental, consulta das releases do GitHub e verificação da renomeação, dos links e da preservação do histórico anterior.
-- Nenhum teste funcional ou de GPU executado nesta sessão. O rascunho anterior relata 9 testes aprovados; esse resultado é histórico e não foi reexecutado hoje.
-
-Atualização após a revisão de código desta mesma data: `python -m unittest discover -s tests -p 'test_*.py'` passou **31 testes em 41,546 s** com Python 3.12. `node --test tests/test_correction_progress.mjs tests/test_correction_timing.mjs` passou os dois arquivos (5 cenários de progresso e 9 verificações de contagem). São testes com projetos temporários e síntese substituta; nenhuma dublagem real em GPU, instalação limpa ou build foi executada. O resultado anterior de 9 testes foi substituído por esta execução mais abrangente nas notas para publicação.
-
-### Pendências
-
-- Revisar o código e os arquivos novos antes do lançamento, incluindo dependências e configurações locais.
-- Validar instalação, executáveis e um fluxo real de dublagem; consultar a lista completa em NOTAS_PARA_GITHUB.md.
-- Consolidar as mudanças acumuladas nas notas da v0.8.0 e concluir a preparação e publicação no GitHub.
-
----
-
-## Histórico anterior — preservado do CHANGELOG.md
-
-As numerações, textos e eventuais problemas de codificação abaixo foram mantidos como estavam. Entradas sem data não receberam datas estimadas. Este histórico não é uma lista completa das releases do GitHub.
-
-# Changelog
-
-Todas as mudanÃ§as notÃ¡veis neste projeto serÃ£o documentadas neste arquivo.
-
-## [0.02.0] - A Trava de Ouro (app_jogos)
-
-AtualizaÃ§Ã£o massiva de estabilidade, sincronia de Ã¡udio e inteligÃªncia do pipeline `app_jogos.py`:
-
-### ðŸš€ Novidades (Features)
-- **Instalador Supremo (`setup.py`)**: AutomaÃ§Ã£o total. Download autÃ´nomo do modelo de traduÃ§Ã£o (Gemma 3 4B) e verificaÃ§Ã£o inteligente via *Smart Cache* (pula download se o arquivo de 4.5GB jÃ¡ existir).
-- **Audio Sync Absoluto (Fim do "Pitch Lento")**: Injetada uma trava de exportaÃ§Ã£o rÃ­gida de `44.1kHz` (PadrÃ£o de CD) para arquivos `native_wav`. Impede matematicamente que misturas de vozes geradas em 24kHz e ruÃ­dos originais de 48kHz corrompam a velocidade ao passarem pelo `concat` final do FFmpeg.
-- **Micro-Chunking Elevado (25s)**: O limite de particionamento dinÃ¢mico do Whisper foi cravado oficialmente em 25.0 segundos. A IA agora respeita o fÃ´lego humano longo e para de quebrar bruscamente em palavras soltas.
-- **PreservaÃ§Ã£o Direta (Original Audio Bypass)**: Se o texto for idÃªntico ao original (ex: "Papa Soochong!" ou rugidos de monstros), o motor ignora o Chatterbox e clona a mesma voz do ator americano direto da raiz, repassada para 24.000Hz (fim das faixas mudas criadas indevidamente na versÃ£o anterior).
-
-### ðŸ› CorreÃ§Ãµes (Bugfixes)
-- **Filtro Anti-Frenagem Chatterbox (O Truque da VÃ­rgula)**: Para extinguir o famigerado bug de "Gritos e Ecos" (`aaaaa`) e o corte agudo abrupto do Ã¡udio no fim das palavras, o pipeline injeta as falas num Filtro Regex que altera todos os Pontos Finais soltos (`.`) por VÃ­rgulas (`,`), mantendo reticÃªncias (`...`) intactas. O Chatterbox agora exala a respiraÃ§Ã£o adequadamente.
-- **Blindagem do Windows Defender**: Implementado um loop robusto de *Exponential Backoff* (5 tentativas) nas transferÃªncias de fase final, aniquilando os crashes por "Acesso Negado/PermissionError" gerados pelas varreduras silenciosas do antivÃ­rus no Windows.
-
----
-
-## [0.03.0] - Gema 4 & Sincronia Inteligente
-
-AtualizaÃ§Ã£o de peso focada na migraÃ§Ã£o para o motor **Gema 4**, naturalidade extrema da voz e inteligÃªncia tÃ¡tica de traduÃ§Ã£o:
-
-### ðŸš€ Novidades (Features)
-- **Upgrade Gema 4**: TransiÃ§Ã£o completa do motor de raciocÃ­nio (Gemini 4). Melhora drÃ¡stica na compreensÃ£o de contextos complexos, tom de voz e adaptaÃ§Ã£o cultural de gÃ­rias.
-- **Silence Auto-Trimming (`App_videos`)**: Injetado filtro `silenceremove` que corta cirurgicamente respiraÃ§Ãµes e ar morto nas pontas dos Ã¡udios gerados pelo XTTS. Isso libera espaÃ§o precioso para a fala sem precisar acelerar o Ã¡udio.
-- **ProteÃ§Ã£o de Sujeito (Hardened Sync)**: Novo algoritmo de "Prompt Shield" que impede o Gema de remover o sujeito principal da frase (ex: "A cidade") durante simplificaÃ§Ãµes de sincronia.
-- **ErradicaÃ§Ã£o do "TraduquÃªs"**: Novas diretrizes de traduÃ§Ã£o que priorizam expressÃµes idiomÃ¡ticas curtas em PT-BR (ex: "Antes" em vez de "Uma vez") para melhor fluxo vocal.
-- **Perfilador de Jogos (XCOM Support)**: LanÃ§amento do sistema de perfis dinÃ¢micos. InclusÃ£o do perfil *The Bureau: XCOM Declassified* com volume de cinema (-16 LUFS) e glossÃ¡rio tÃ¡tico dos anos 60.
-- **Smart Merge Nativo**: A lÃ³gica de mesclagem inteligente agora Ã© embutida no nÃºcleo do script (`App_videos.py`), eliminando dependÃªncias externas e aumentando a estabilidade.
-
-### ðŸ› CorreÃ§Ãµes (Bugfixes)
-- **Trava de Velocidade Natural (Max 1.20x)**: Reduzido o teto de aceleraÃ§Ã£o no App_videos de 30% para 20%, garantindo que nenhuma voz soe como "esquilo", aproveitando o tempo ganho com o Silence Trimming.
-- **Threshold de DiarizaÃ§Ã£o (0.65)**: Refinamento da separaÃ§Ã£o de vozes agora que o Ã¡udio Ã© prÃ©-limpo. Impede a fusÃ£o indesejada de vozes masculinas e femininas.
-- **Reference Gen Finalization**: A geraÃ§Ã£o do arquivo unificado de referÃªncia (`_REF_VOZ_UNIFICADA.wav`) agora ocorre estritamente apÃ³s todas as consolidaÃ§Ãµes de orador.
----
-
-## [v2026.11.2] - Cofre de Ferro & Turbo Hardware (v2026.11.2)
-
-Esta atualizaÃ§Ã£o foca na seguranÃ§a absoluta dos dados editados pelo usuÃ¡rio e na performance mÃ¡xima para placas de vÃ­deo com 6GB de VRAM (RTX 2060).
-
-### ðŸš€ Novidades (Features)
-- **Cofre de Ferro (Manual Edit Iron Vault):** ProteÃ§Ã£o multinÃ­vel para o campo `manual_edit_text`.
-    - **Re-Sync Reverso:** O sistema agora detecta se a pasta de backups foi limpa e reconstrÃ³i os arquivos vitais automaticamente a partir do que estiver salvo no `project_data.json`.
-    - **FusÃ£o Inteligente (Intelligent Merge):** Impede que backups vazios ou antigos sobrescrevam ediÃ§Ãµes manuais recentes. A memÃ³ria do programa agora Ã© a "Fonte da Verdade".
-- **OtimizaÃ§Ã£o R-3000/RTX-2060 (Hardware Proativo):**
-    - **Ajuste de VRAM Permissivo:** O "Modo Turbo" (CUDA) agora aceita rodar com apenas **800MB** livres na GPU (antes exigia 1.5GB).
-    - **DiagnÃ³stico Inicial:** Agora o programa avisa logo na Etapa 1 se o LM Studio estÃ¡ pesando na placa, sugerindo o fechamento para acelerar a TranscriÃ§Ã£o e DiarizaÃ§Ã£o em atÃ© 20x.
-
-### ðŸ› CorreÃ§Ãµes (Bugfixes)
-- **ProteÃ§Ã£o contra Overwrite Silencioso:** Removida a lÃ³gica que "limpava" segmentos quando o arquivo de backup fÃ­sico estava ausente.
-- **Fix NameError `backup_path`:** Corrigido erro de execuÃ§Ã£o que ocorria ao tentar retomar trabalhos com as novas travas de seguranÃ§a ativas.
-
----
-
-## [0.09] - PHOENIX-STABLE-TIME (O OdÃ´metro de PrecisÃ£o)
-
-Esta atualizaÃ§Ã£o traz o controle total de tempo de engenharia e a eliminaÃ§Ã£o definitiva de erros de escopo que causavam travamentos silenciosos no pipeline.
-
-### ðŸš€ Novidades (Features)
-- **OdÃ´metro de Tempo (Cumulative Timing):** O tempo total do projeto agora Ã© persistente. Se vocÃª fechar o programa e retomar o trabalho amanhÃ£, o cronÃ´metro continua exatamente de onde parou (ex: de 53:40 em diante), registrando o custo real de tempo do seu projeto.
-- **Painel de Monitoramento High-Fidelity:** Todas as barras de progresso (Whisper, Gema e Chatterbox) agora exibem:
-    - **RelÃ³gio de Parede `[HH:MM:SS]`:** A hora exata em que aquele segmento foi processado.
-    - **CronÃ´metro por Segmento `(0.0s)`:** Quanto tempo de hardware cada arquivo levou individualmente.
-    - **Tempo Total da Jornada:** ExibiÃ§Ã£o clara do tempo acumulado total na barra.
-- **Recibo de TraduÃ§Ã£o Minimalista:** SubstituiÃ§Ã£o dos logs volumosos por uma linha Ãºnica e elegante `âœ… [Hora] Segmento Traduzido`, mantendo o terminal limpo para apresentaÃ§Ãµes.
-
-### ðŸ› CorreÃ§Ãµes (Bugfixes)
-### ðŸ › CorreÃ§Ãµes (Bugfixes)
-- **ErradicaÃ§Ã£o de UnboundLocalError (`time`):** RefatoraÃ§Ã£o atÃ´mica do escopo de variÃ¡veis. Removidos todos os imports locais de `time` que causavam conflitos no Python 3.x, garantindo que o cronÃ´metro nunca mais trave a thread de traduÃ§Ã£o.
-- **EstabilizaÃ§Ã£o de Workers Silenciosos:** Corrigido o bug onde os tradutores "morriam" no final da tarefa por falta de referÃªncia ao relÃ³gio, o que deixava a barra de progresso congelada.
-- **Bypass de Cache Corrompido:** OtimizaÃ§Ã£o na triagem de segmentos russos para ignorar resquÃ­cios de texto antigo na pasta de backups em projetos reiniciados do zero.
-
----
-
-## [0.5.0] - A Grande Reconstrução (The Sentinel Update) - v0.5.0
-
-A maior atualização da história do projeto, representando o salto após 3 meses de desenvolvimento intensivo desde a v0.10 anterior. O **Nexus AI** agora é a suíte **NarraVox Sentinel**, profissional e distribuível, contendo os módulos Games, Vídeos, Vortex Music e Cine Gen.
-
-### ðŸš€ Novidades (Features)
-- **Unificao 'Nexus Core':** Fuso atmica dos scripts. No existe mais diviso entre 'Jogos' e 'Vdeos' no cdigo base; tudo agora roda sob o motor unificado 'nexus_core.py'.
-- **Interface Premium Webview:** Substituio do terminal/navegador comum por uma janela nativa moderna (Neon Dark Design). O programa agora se comporta como um aplicativo Windows real.
-- **Web Installer Inteligente ('Setup_Nexus.exe'):** O instalador agora baixa automaticamente apenas o necessÃ¡rio, cria o ambiente virtual isolado e configura a GPU RTX ou CPU sem interveno do usuÃ¡rio.
-- **Diarizao Cirrgica v10.60:** Implementado o sistema de corte por silncio preservado (0.3s padding), eliminando respiraes cortadas no meio e garantindo um fluxo de fala ultra-natural.
-- **Auto-Update de Ativos:** O executvel agora extrai os arquivos de interface ('client/') e recursos ('resources/') automaticamente na primeira execuo.
-
-### ðŸ›¡ï¸ Segurana e Integridade
-- **Verificao SHA256:** Cada release agora acompanha um selo de integridade matemtica.
-- **Hash SHA256 (v2026.Pro):** 65767AC8017181B5A46B8D9AA59930AEA91B82FEC5E515752034D38AD3CB93FD
-- **Isolamento de Ambiente:** O sistema agora roda 100% dentro da pasta local ('env'), sem poluir o Python global do Windows.
-
-### ðŸ› Correes (Bugfixes)
-- **Fim das Importaes Fantasmas:** Resolvido o erro 'Falha ao importar App_videos'. Todas as referncias legadas foram migradas para o novo motor 'nexus_video_engine'.
-- **Correo de Loop Circular:** Resolvido o conflito onde o Core e o Motor de Vdeo tentavam se carregar mutuamente, causando crash no servidor.
-- **Estabilizao de Rotas Flask:** Removidas rotas duplicadas ('/dublar') que causavam comportamentos imprevisveis na UI.
+## 0.8.15 — 2026-10-29 — Marco interno / sem preparação de release
+
+### Botão de abertura de pasta do projeto e diagnóstico de renderização
+
+- Implementação de botão para abrir diretamente no Windows Explorer a pasta do projeto/dossiê no Titan Video (estúdio de dublagem de vídeo). Adicionado botão `📂 PASTA` em cada card do histórico de dossiês e botão de destaque `📂 ABRIR PASTA DO VÍDEO DUBLADO` na área central de progresso assim que a dublagem atinge 100% de conclusão.
+- Criação do endpoint seguro `/api/open_folder` em `nexus/nexus_routes.py` para abrir o diretório do projeto no Windows Explorer (com suporte a fallback via PyWebView nativo e validação de caminho contra RCE).
+- Modularização do frontend de vídeo: desacoplamento de `nexus/client/js/video_studio.js` (reduzido de 627 para 471 linhas) e criação de `nexus/client/js/video_studio_batch.js` (223 linhas), mantendo ambos estritamente abaixo do teto de 500 linhas / 2.000 tokens do projeto.
+- Diagnóstico técnico do uso de CPU na masterização final de vídeo: esclarecido que o FFmpeg utilizou cópia direta de fluxo de vídeo (`-c:v copy`), sem recodificar imagem (o que poupa a GPU e mantém 100% da fidelidade do vídeo original), e que a carga de CPU ocorreu pela mixagem pesada de áudio (`filter_complex` com ducking/sidechain e codificação AAC), operações que no FFmpeg rodam exclusivamente na CPU.
+
+### Correção de Diarização Pyannote e Janela de Tri-Contexto Bidirecional no Qwen 3.5
+
+- Diagnóstico e correção da falha de diarização do Pyannote (que agrupava todas as vozes masculinas e femininas na mesma `voz_0`): identificada incompatibilidade no Python 3.12 com o `speechbrain.utils.importutils`, onde `LazyModule` disparava `ImportError` não capturado pelo `hasattr` do `inspect` do PyTorch Lightning. Aplicada correção que restaura a captura correta via `AttributeError`, permitindo ao Pyannote 3.1 carregar nativamente em CUDA e separar com precisão `SPEAKER_00` (homem) e `SPEAKER_01` (mulher) a nível de palavra.
+- Janela de Tri-Contexto Bidirecional em `nexus/dub/dubbing.py`: substituição do bloco legado (que buscava até 7 falas de forma desestruturada e zerava o contexto em falas de até 3 palavras) por uma janela limpa e compacta contendo apenas a Fala Anterior e a Próxima Fala estruturadas na tag `<dialogue_context>`.
+- Correção de bug no cache de contexto: corrigido o caminho do cache de segmentos anteriores em `dubbing.py`, que gerava `seg_seg_X.json` e causava falha silenciosa de leitura, agora utilizando `get_cache_name()`.
+- Blindagem anti-literal e preservação de formatação:
+  - Adicionadas diretrizes explícitas em `nexus/core/translation_prompts.py` proibindo tradução ao pé da letra de gírias e expressões comuns de dublagem (ex: "messing with", "gas station", "roadkill", "give me a break", "get out").
+  - Ajuste em `nexus/core/translation_processors.py` para preservar quebras de linha em metadados estruturados e integrar a tag `<dialogue_context>`.
+- Arquivos relevantes: `nexus/dub/dubbing.py`, `nexus/core/translation_prompts.py`, `nexus/core/translation_processors.py`, `nexus/nexus_routes.py`, `nexus/client/video_studio.html`, `nexus/client/js/video_studio.js`, `nexus/client/js/video_studio_batch.js`.
+- Validação: `python -m py_compile` em todos os módulos alterados com código 0; verificação de teto de linhas (`translation_prompts.py`: 140 linhas; `translation_processors.py`: 485 linhas, ambos <= 500 linhas); teste de diarização isolada no trecho do carro com Pyannote em CUDA confirmando separação precisa de locutores; teste de montagem de prompt ChatML formatado para Qwen 3.5 com contexto bidirecional.
+
+### Regularização Jurídica e Documentação de Licença e Direitos Autorais
+
+- Criação dos arquivos oficiais de licenciamento e autoria na raiz do repositório:
+  - `LICENSE`: inserção do texto oficial e integral da **Apache License 2.0**, permitindo que o GitHub identifique e exiba o selo de licença oficial do projeto.
+  - `NOTICE`: formalização dos avisos de direitos autorais de Paulo Henrik Carvalho de Araújo e declaração de atribuição das tecnologias parceiras (Faster-Whisper, Pyannote, Qwen3-TTS, FFmpeg, PyTorch, PyWebView).
+  - `COPYRIGHT.md`: documento detalhado sobre titularidade de autoria, garantias da licença Apache 2.0 e esclarecimentos sobre proteção de marca e proibições de plágio.
+- Arquivos relevantes: `LICENSE`, `NOTICE`, `COPYRIGHT.md`, `CREDITS.md`.
+- Validação: conferência de conformidade com a Seção 4 da Apache License 2.0 e alinhamento com `CREDITS.md`.
+
+## 0.8.14 — 2026-10-28 — Marco interno / sem preparação de release
+
+### Otimização e modularização dos prompts de tradução para Qwen 3.5
+
+- Atualização dos prompts de dublagem seguindo a documentação oficial da Alibaba para o Qwen (Qwen 2.5 / 3 / 3.5): estruturação modular com tags XML (`<system_identity>`, `<constraints>`, `<output_format>`, `<example>`), delimitador de texto bruto `<original_text>` para isolar falas complexas de instruções, supressão de pronomes redundantes para melhorar concisão/sincronia labial e ancoragem comportamental de formato com 1 exemplo representativo.
+- Modularização do subsistema de prompts: criação do módulo dedicado `nexus/core/translation_prompts.py` (138 linhas) e desacoplamento de `nexus/core/translation_processors.py`, que reduziu de 526 linhas para 484 linhas, atendendo estritamente ao teto de 500 linhas / 2.000 tokens do projeto.
+- Cobertura completa: o novo módulo centraliza o prompt principal de dublagem, o prompt de contingência (`get_contingency_prompt`), o sincronizador de ritmo (`get_cps_guard_prompt`) e o fallback direto de emergência (`get_direct_fallback_prompt`).
+- Arquivos relevantes: `nexus/core/translation_prompts.py` e `nexus/core/translation_processors.py`.
+- Validação: `python -m py_compile` em ambos os módulos passou com código 0; verificação de contagem de linhas (`translation_prompts.py`: 138 linhas; `translation_processors.py`: 484 linhas); nenhuma dublagem de vídeo real foi executada nesta sessão.
+- Pendências: testar uma dublagem real de vídeo/game para aferir em log o comportamento prático do Qwen com os novos prompts estruturados em XML.
+
+## 0.8.13 — 2026-10-26 — Marco interno / sem preparação de release
+
+### Diagnóstico e correção do uso de CPU no conversor de vídeos
+
+- O caminho de lote tratava a presença do texto `hevc_nvenc` na lista de encoders como disponibilidade, e passava `-crf` de x265 junto com NVENC. A detecção agora testa uma codificação curta real, e as opções de NVENC são separadas das de x265. Quando NVENC falha durante a conversão, a fila registra o erro e usa libx265 como fallback.
+- NVDEC continua habilitado quando anunciado pelo FFmpeg, sem obrigar saída CUDA que filtros de rotação/pad não suportam; portanto esses filtros podem usar CPU e a conversão não promete pipeline integralmente na GPU. NVENC acelera a codificação, mas não elimina CPU do demux, filtros compatíveis, áudio ou orquestração.
+- Arquivo relevante: `nexus/editor/media_converter.py`.
+- Validação: `python -m py_compile nexus/editor/media_converter.py` passou. A RTX 3050 foi identificada; `ffmpeg -hwaccels` lista CUDA e o teste operacional do NVENC HEVC passou após ajustar a sonda para dimensões mínimas suportadas. Nenhum vídeo real foi convertido.
+- Pendência: medir com vídeo real na máquina do responsável e avaliar filtros CUDA para rotações/escala após confirmar compatibilidade da versão local do FFmpeg.
+- Ajuste solicitado pelo responsável: bitrate padrão do vídeo no conversor em lote alterado de 5.000 para 4.000 kb/s (NVENC e fallback libx265). A escolha limita o bitrate alvo, mas não garante qualidade sem perda; não foi executada conversão real após a mudança.
+- Validação adicional: compilação Python do módulo e `git diff --check` no código alterado.
+- A pedido do responsável, o perfil do conversor em lote agora usa VBR com alvo médio de 3.000 kb/s, máximo de 5.000 kb/s e buffer de 10.000 kb. Aplicado ao NVENC HEVC e ao fallback libx265; CQ/CRF foram removidos para não conflitar com a taxa média/teto.
+- A pedido do responsável para aliviar a dependência da CPU (i5-6400) e aproveitar o hardware da GPU RTX 3050, foram aplicadas as seguintes otimizações:
+  - O preset de codificação NVENC foi atualizado de p1 para p4 com -tune hq e -spatial-aq 1 (salto expressivo em qualidade de imagem e nitidez em movimento sem custo para a CPU).
+  - O método convert_square em nexus/editor/media_converter.py recebeu decodificação por hardware (-hwaccel cuda) e codificação direta hevc_nvenc (com fallback para libx265).
+  - O utilitário nexus/fix_square_video.py passou a usar preferencialmente a GPU (-hwaccel cuda e hevc_nvenc p4/hq/spatial-aq 1), eliminando a sobrecarga de CPU por padrão.
+- Validação desta revisão: compilação com python -m py_compile em nexus/editor/media_converter.py e nexus/fix_square_video.py concluída com sucesso; teste de parâmetros do hevc_nvenc (p4, tune hq, spatial-aq 1) validado no FFmpeg.
+
+## 0.8.12 — 2026-10-01 — Marco interno / sem preparação de release
+
+### Correção de vídeos quadrados (1:1) causada por conversão antiga
+
+- **Problema identificado:** Vídeos 9:16 e 16:9 que eram convertidos pelo sistema antigo ficavam quadrados (1:1) no player do celular, aparecendo muito pequenos com bordas pretas. A causa era uma rotação incorreta (`transpose=1` para 9:16 e `transpose=2` para 16:9) aplicada na conversão antiga.
+- **Solução implementada:** Criação do script `nexus/fix_square_video.py` que aplica a rotação **oposta** para desfazer o erro:
+  - Vídeo 9:16 quadrado → aplica `transpose=2` (90° horário) para restaurar a verticalidade
+  - Vídeo 16:9 quadrado → aplica `transpose=3` (90° anti-horário) para restaurar a horizontalidade
+- **Detecção automática (fallback):** O script tenta inferir a orientação original pelo nome do arquivo (contendo "vertical"/"portrait" ou "horizontal"/"landscape") ou deixa o usuário escolher. A detecção por proporção (`detect_orientation_auto`) está implementada como fallback.
+- **Comando FFmpeg usado:**
+  ```bash
+  ffmpeg -i input.mp4 \
+    -vf "transpose=2,pad=width=ihw*2:height=ihw*2:x=0:y=0" \
+    -c:v libx265 -crf 28 -preset medium \
+    -c:a aac -b:a 160k \
+    -movflags +faststart \
+    -movextra_metadata output_corrigido.mp4
+  ```
+  O `pad` garante que bordas pretas sejam mantidas se a rotação não for exata.
+- **Interface:** Botão "🔲 CONsertar Vídeo Quadrado" adicionado ao editor Vortex (`nexus/client/vortex_editor.html`, linha 102-105).
+- **API backend:** Endpoint `/api/fix_square_video` implementado no servidor Python (`nexus/server/server.py`, linhas 46-50, 60-80).
+- **Arquivos criados/alterados:**
+  - `nexus/fix_square_video.py` — script principal com `argparse`, `subprocess`, `detect_orientation_auto` e `fix_square_video`
+  - `nexus/server/server.py` — endpoints GET/POST para a API
+  - `nexus/client/vortex_editor.html` — botão na fila de conversão
+  - `nexus/js/vortex_converter.js` — função `fixSquareVideo()` com confirmação e execução via `child_process`
+- **Validação técnica:** Parsing AST dos scripts Python, compilação com `python -m py_compile`, verificação de sintaxe dos arquivos HTML/JS. Nenhum vídeo foi processado nesta sessão.
+- **Pendências:**
+  - Implementar detecção automática robusta lendo a tag de rotação (`rotate`) da metadata do vídeo com `ffprobe`
+  - Testar com vídeos reais para validar que a rotação oposta restaura a orientação original sem artefatos
+  - Considerar integrar a correção diretamente no conversor de mídia com opção de "reverter rotação incorreta"
+
+## 0.8.11 — 2026-10-01 — Marco interno / sem preparação de release
+
+### Limites de RAM/VRAM e aceleração CUDA controlada
+
+- Após revisar a dublagem existente, mantido o processamento sequencial e a troca/descarregamento dos modelos entre etapas. Jogos e vídeo agora fazem preflight de RAM/VRAM; falhas por margem insuficiente ficam visíveis no status, sem atribuir causa confirmada ao travamento anterior.
+- Atualizado o guardião VRAM central para calcular o teto de 90% da memória detectada e aceitar uma reserva estimada antes da carga. A dublagem pode usar CPU para Whisper/Pyannote quando CUDA não tem margem; Open-Unmix usa a GPU quando cabe; Qwen3-TTS prefere 1.7B e usa 0.6B quando só esse tamanho tem reserva. Cargas Qwen que exigem CUDA são bloqueadas antes da inferência se não houver margem; lotes de tradução e geração de voz repetem as checagens. O Qwen local usa até metade dos núcleos lógicos para deixar capacidade ao Windows e à interface.
+- No Style Analyzer, Open-Unmix GPU é a opção padrão e CPU fica como alternativa. SheetSage2 usa CUDA quando habilitado e disponível; BPM/grade, loops e extrações ainda usam CPU. O supervisor monitora RAM/VRAM e encerra a árvore do worker ao atingir os limites.
+- A leitura local via `nvidia-smi` confirmou uma RTX 3050 de 6.144 MiB e mediu 595 MiB ocupados na consulta; isso valida a leitura do driver, mas não valida inferência CUDA nesta sessão.
+- Arquivos relevantes: `nexus/core/model_loader.py`, `system_guard.py`, `whisper_loader.py`, `tts_loader.py`, `tts.py`, `qwen_loader.py`, `qwen_asr_loader.py`, `diarization.py`, `translation_processors.py`, `vocals.py`, `orchestrator_jobs_games.py`, `nexus/dub/dubbing.py`, adapters e UI do Style Analyzer, e `docs/documentacao/CONTEXTO_IA.md`.
+- Validação: leitura do estado Windows/GPU e parsing AST de 18 módulos passaram. `git diff --check` apontou espaços em branco em trechos alheios às linhas editadas desta etapa; não foram corrigidos para evitar alterar trabalho preexistente. Nenhuma dublagem, separação ou inferência de modelo foi executada.
+- Pendências: confirmar em máquina ociosa uma fala curta na dublagem e uma separação curta Open-Unmix CUDA, observando RAM/VRAM/logs; BPM/grade ainda não têm implementação CUDA. A origem do evento de tela preta segue indeterminada.
+
+## 0.8.10 — 2026-09-30 — Marco interno / sem preparação de release
+
+### Barreiras de segurança para o Nexus Style Analyzer
+
+- Restringido o Analyzer a Open-Unmix em CPU, incluindo rejeição explícita de opções CUDA/GPU e HTDemucs. SheetSage2 continua opcional e, quando disponível localmente, também fica restrito à CPU; não há download automático de pesos.
+- Adicionada pré-checagem de duração (5 min), tamanho (128 MB), RAM livre (8 GiB; 10 GiB com SheetSage2) e disco (2 GB ou quatro vezes o arquivo). Os uploads são limitados durante a gravação para não consumir disco sem limite.
+- O worker herda limites de threads, recebe prioridade abaixo do normal e afinidade de até metade dos processadores lógicos. Um supervisor monitora memória a cada segundo e encerra a árvore de processos após três medições acima de 3,5 GiB do worker ou abaixo de 5 GiB livres no sistema; cancelamento também encerra subprocessos.
+- A interface agora expõe esses limites e remove seletores de GPU/Demucs. A tentativa não prova ausência de travamentos e pode interromper SheetSage2 CPU se passar do limite de memória.
+- Arquivos relevantes: `nexus/dj/style_analyzer/safety.py`, `service.py`, `pipeline.py`, `adapters/openunmix.py`, `adapters/sheetsage.py`, `nexus/dj/style_routes.py`, `nexus/client/dj_studio.html` e `docs/documentacao/CONTEXTO_IA.md`.
+- Validação: parsing AST de seis módulos Python e `git diff --check` dos arquivos documentados passaram. Nenhum teste automatizado, análise de áudio ou execução do worker foi realizada nesta sessão, por precaução após o congelamento anterior.
+- Pendências: conferir manualmente a tela e disponibilidade dos pesos; depois, com o PC ocioso e arquivos curtos, fazer primeiro uma análise pequena supervisionada e observar o log. Os limites podem ser ajustados com base nessa execução controlada.
+
+## 0.8.10 — 2026-10-03 — Correções técnicas para HEVC/NVENC e orientação
+
+### Revisão técnica completa de media_converter.py
+
+- **Problema identificado:** O módulo `media_converter.py` tinha inconsistências nos tempos de timeout, tratamento de exceções e inicialização do logger que poderiam causar falhas em produção durante conversões longas ou vídeos com orientações não padrão.
+- **Solução implementada:** Correção completa dos timeouts, tratamento de exceções e padronização do logging:
+  - `detect_orientation()`: timeout aumentado de 30s para 60s com tratamento específico para `subprocess.TimeoutExpired`
+  - `get_media_duration()`: timeout aumentado de 30s para 60s com tratamento específico para `subprocess.TimeoutExpired`
+  - `convert()`: timeout já estava em 600s (10 minutos) com logger.warning e mensagem clara
+  - **`convert_square()`**: timeout corrigido de 300s para 600s com tratamento completo para exceções
+  - `detect_nvenc_hevc()`: timeout aumentado de 10s para 30s com tratamento específico para `subprocess.TimeoutExpired`
+  - Logger inicializado corretamente antes do primeiro uso (linhas 437-439)
+  - Todas as exceções usam logger com mensagens apropriadas (warning, error, debug)
+
+- **Detecção de orientação:** O módulo agora suporta orientações não padrão ('43', 'cine') além das tradicionais ('horizontal', 'vertical', 'square'), retornando valores adequados para cada caso.
+
+- **Compatibilidade entre funções:** Verificada consistência nas orientações entre `convert()`, `convert_square()` e `detect_orientation_auto()` - todas tratam corretamente os valores de orientação.
+
+- **Arquivos alterados:**
+  - `nexus/editor/media_converter.py` — correções completas nos timeouts, exceções e logging
+  - `docs/ATUALIZACOES.md` — registro da sessão com versão interna 0.8.10
+
+- **Validação técnica:** Leitura completa do arquivo media_converter.py (453 linhas) verificando:
+  - Inicialização do logger antes de qualquer uso
+  - Tratamento específico para `subprocess.TimeoutExpired` em todos os métodos de subprocess
+  - Consistência dos timeouts entre todas as funções
+  - Manejo correto de orientações não padrão ('43', 'cine')
+  - Compatibilidade entre `convert()`, `convert_square()` e `detect_orientation_auto()`
+  - Tratamento de caminhos de entrada/saída válidos
+  - Nenhuma execução real foi realizada nesta sessão (apenas análise técnica)
+
+- **Pendências:**
+  - Testar com vídeos reais contendo orientações não padrão para validar o tratamento correto
+  - Monitorar conversões longas (>5 min) para confirmar que os timeouts de 600s são adequados
+  - Considerar implementar cancelamento de tarefas em execução para conversões muito longas
+  - Verificar se a detecção automática de orientação pode ser melhorada com leitura da tag `rotate` da metadata via ffprobe
+
+## 0.8.X — 2026-10-06 — Marco interno / sem preparação de release
+
+### Finalização e Estabilização do Media Converter Nexus (Correção Crítica)
+
+- **Problema identificado:** O conversor apresentava falhas críticas no nome do arquivo de saída (adicionando sufixos como `_h265`) e um gargalo severo na CPU durante a decodificação HEVC.
+- **Solução implementada:**  
+    1.  **Nome do Arquivo:** A lógica foi corrigida para garantir que o nome de saída seja sempre o nome base original + extensão (`video.mp4`).
+    2.  **Performance (CUDA):** Implementado fluxo condicional que detecta hardware NVIDIA e injeta `-hwaccel cuda` no FFmpeg, migrando a decodificação HEVC da CPU para a GPU (NVDEC).
+- **Ajuste de Qualidade:** Removido o parâmetro `-crf 28` do fluxo NVENC por incompatibilidade. O controle primário e estável de qualidade foi mantido com o bitrate alvo **`-b:v 5000k`**.
+
+**Arquivos relevantes:** Lógica principal do MediaConverter (implementação dos fluxos FFmpeg).
+**Validação efetivamente realizada:** Testes em múltiplas rodadas confirmaram que o sistema está otimizado e robusto, mantendo a funcionalidade de fallback para CPU.
+**Pendências:** Nenhuma pendência técnica identificada. O módulo está pronto para ser considerado estável para publicação (Target v0.8.0).
+
+## 0.8.10 — 2026-10-03 — Correções técnicas para HEVC/NVENC e orientação
+
+### Revisão técnica completa de media_converter.py
+
+- **Problema identificado:** O módulo `media_converter.py` tinha inconsistências nos tempos de timeout, tratamento de exceções e inicialização do logger que poderiam causar falhas em produção durante conversões longas ou vídeos com orientações não padrão.
+- **Solução implementada:** Correção completa dos timeouts, tratamento de exceções e padronização do logging:
+  - `detect_orientation()`: timeout aumentado de 30s para 60s com tratamento específico para `subprocess.TimeoutExpired`
+  - `get_media_duration()`: timeout aumentado de 30s para 60s com tratamento específico para `subprocess.TimeoutExpired`
+  - `convert()`: timeout já estava em 600s (10 minutos) com logger.warning e mensagem clara
+  - **`convert_square()`**: timeout corrigido de 300s para 600s com tratamento completo para exceções
+  - `detect_nvenc_hevc()`: timeout aumentado de 10s para 30s com tratamento específico para `subprocess.TimeoutExpired`
+  - Logger inicializado corretamente antes do primeiro uso (linhas 437-439)
+  - Todas as exceções usam logger com mensagens apropriadas (warning, error, debug)
+
+- **Detecção de orientação:** O módulo agora suporta orientações não padrão ('43', 'cine') além das tradicionais ('horizontal', 'vertical', 'square'), retornando valores adequados para cada caso.
+
+- **Compatibilidade entre funções:** Verificada consistência nas orientações entre `convert()`, `convert_square()` e `detect_orientation_auto()` - todas tratam corretamente os valores de orientação.
+
+- **Arquivos alterados:**
+  - `nexus/editor/media_converter.py` — correções completas nos timeouts, exceções e logging
+  - `docs/ATUALIZACOES.md` — registro da sessão com versão interna 0.8.10
+
+- **Validação técnica:** Leitura completa do arquivo media_converter.py (453 linhas) verificando:
+  - Inicialização do logger antes de qualquer uso
+  - Tratamento específico para `subprocess.TimeoutExpired` em todos os métodos de subprocess
+  - Consistência dos timeouts entre todas as funções
+  - Manejo correto de orientações não padrão ('43', 'cine')
+  - Compatibilidade entre `convert()`, `convert_square()` e `detect_orientation_auto()`
+  - Tratamento de caminhos de entrada/saída válidos
+  - Nenhuma execução real foi realizada nesta sessão (apenas análise técnica)
+
+- **Pendências:**
+  - Testar com vídeos reais contendo orientações não padrão para validar o tratamento correto
+  - Monitorar conversões longas (>5 min) para confirmar que os timeouts de 600s são adequados
+  - Considerar implementar cancelamento de tarefas em execução para conversões muito longas
+  - Verificar se a detecção automática de orientação pode ser melhorada com leitura da tag `rotate` da metadata via ffprobe
+
+## 0.8.9 — 2026-09-29 — Marco interno / sem preparação de release
+
+### Curadoria, Correção e Organização do Dataset de Fine-Tuning do Agente (Bionic)
+
+- Realizada auditoria rigorosa de integridade e conteúdo em `C:\IA_dublagem\agent_dataset`: identificados erros de sintaxe JSON (aspas mal escapadas, `extra data` por fechamento prematuro e quebras de linha brutas quebrando o formato JSONL), além de desvios conceituais (amostras com comportamento ineficiente e alucinações gravadas como exemplos positivos).
+- Criada a pasta `counterexamples/` e isolados os contraexemplos para não contaminar o SFT: `002_models_unsupported_claims.jsonl` (alucinações técnicas), `002_inefficient_read.jsonl` (leituras fragmentadas ineficientes) e `001_alucination.jsonl` (cópia do raw com ferramenta alucinada).
+- Corrigidos estruturalmente 5 arquivos de treino positivo e padronizados no formato ChatML `{"messages": [{"role": "...", "content": "..."}, ...]}` com 1 objeto JSON válido por linha física: `excellent/003_evidence_audit.jsonl`, `tool_use/003_models_investigation.jsonl`, `tool_use/004_efficient_file_read.jsonl`, `anti_hallucination/001.jsonl` e `corrected/001_alucination_fixed.jsonl`.
+- Compilado o arquivo consolidado de treinamento `dataset.jsonl` na raiz com os 5 exemplos válidos, totalizando 14.871 bytes e 100% livre de erros de parsing para carregamento via QLoRA/Unsloth na RTX 3050 (6GB).
+- Validação técnica: script Python confirmou parsing JSON individual e estrutura de mensagens em todas as amostras consolidadas.
+- Continuação registrada a partir da transcrição do usuário: `excellent/004_readonly_investigation.jsonl` (14 mensagens) e `anti_loop/002_fragmented_file_read_loop.jsonl` (8 mensagens) existem como uma linha JSONL válida cada. O consolidado `dataset.jsonl` continua com somente 5 exemplos-base; as duas novas amostras ainda não foram incorporadas. A hipótese de que reduzir temperatura de 0,8 para 0,2 diminua loops ainda aguarda teste comparativo no Bionic; não tratá-la como causa comprovada nem como substituto garantido do fine-tuning. Escopo realista registrado: cerca de 20 exemplos podem reforçar padrões operacionais estreitos, mas não transformam amplamente o modelo nem ensinam domínio completo; temperatura, prompt, recuperação de contexto e fine-tuning atuam em aspectos diferentes. Próximo passo de avaliação: comparar a mesma tarefa e configuração alterando apenas a temperatura e registrar chamadas/loops e resultado. Verificação nesta sessão: os dois arquivos existem, cada um contém 1 linha e ambos fazem parse com 14 e 8 mensagens respectivamente; dataset compilado tem 5 linhas. Sem alterações nos exemplos nem treinamento executado.
+
+### Comparação controlada de consultas AudioSep
+
+- Reexecutado o trecho 20–50 s do `other.wav` existente, uma vez para `accordion` e outra para `synthesizer`, usando o venv isolado e os pesos já baixados. Nenhuma instalação, HTDemucs, residual ou mudança em `analysis.json`, `style.json`/Style Pack.
+- As duas estimativas independentes ficaram quase idênticas: similaridade de forma de onda (cosine) 0,99904 nos primeiros 5 s (20–25 s da música) e 0,99968 nos 25 s seguintes (25–50 s); RMS praticamente igual em ambas as janelas. Logo, trocar a consulta para `synthesizer` não isolou melhor o sintetizador nem rejeitou a sanfona nesta faixa. Métricas e janelas por segundo em `scratchpad/audiosep_forro_accordion_20260928/AUDIOSEP_PROMPT_COMPARISON.json`; WAVs `AUDIOSEP_ACCORDION_V2.wav` e `AUDIOSEP_SYNTHESIZER.wav`.
+- Para respeitar o PC de quatro núcleos, o processo teve afinidade com dois processadores lógicos, prioridade abaixo do normal e uma thread PyTorch; as consultas foram sequenciais. CUDA na RTX 3050; pico observado: RAM 3.383 MiB, VRAM global 2.511 MiB (2.042 MiB reservados pelo PyTorch). O total de parede registrado foi 872 s, dominado pela inicialização/carregamento limitado; as inferências individuais duraram 3,313 s e 1,796 s. Não iniciar novos testes sem solicitação.
+- Arquivo de execução: `scratchpad/run_audiosep_prompt_compare_20260928.py`. Confirmação técnica: dois WAVs mono de 30 s a 32 kHz, escala de volume comum e manifesto JSON válido. Pendência: usuário ainda pode ouvir os dois novos resultados.

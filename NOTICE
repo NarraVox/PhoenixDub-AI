@@ -1,0 +1,66 @@
+PhoenixDub AI
+Copyright 2025-2026 Paulo Henrik Carvalho de Araújo
+
+This product includes software developed by Paulo Henrik Carvalho de Araújo
+and the NarraVox Studios open-source community.
+
+=========================================================================
+Third-Party Software, Core AI Engines, and Technology Acknowledgements
+=========================================================================
+
+PhoenixDub AI orchestrates, interfaces with, and builds upon the following
+major open-source software packages, frameworks, neural architectures, and
+generative tools:
+
+1. MOTOR DE TRANSCRIÇÃO E ALINHAMENTO FONÉTICO
+   - Faster-Whisper / OpenAI Whisper (MIT License)
+     Efficient speech transcription using CTranslate2.
+   - WhisperX (BSD-2-Clause License)
+     Forced phoneme alignment and word-level timestamping.
+   - Silero VAD (MIT License)
+     Voice activity detection and adaptive pause trimming.
+
+2. MOTOR DE DIARIZAÇÃO E IDENTIFICAÇÃO DE LOCUTORES
+   - Pyannote.audio 3.1 (MIT License / Hugging Face Community)
+     Multi-speaker diarization and acoustic voice-print clustering.
+   - SpeechBrain & PyTorch Lightning (Apache 2.0 License)
+     Underlying neural pipelines for acoustic representation.
+
+3. MOTOR DE TRADUÇÃO, CONTEXTO E DIREÇÃO DE CENA (LLM)
+   - Qwen 3.5 / Qwen 2.5 (Alibaba Cloud - Apache 2.0 / Qwen Community License)
+     Local LLM reasoning, dialogue context window, and Brazilian Portuguese adaptation.
+   - Llama.cpp & llama-cpp-python (MIT License)
+     High-performance local GGUF quantization inference on GPU (CUDA).
+
+4. MOTOR DE SÍNTESE DE VOZ E CLONAGEM EMOCIONAL (TTS)
+   - Qwen3-TTS / Chatterbox TTS (Apache 2.0 / MIT Licenses)
+     Expressive voice generation and emotional audio synthesis.
+
+5. MOTOR DE MÚSICA E TRILHA SONORA COM IA (VORTEX MUSIC / DJ)
+   - ACE-Step 1.5 / YuE / ACE Studio (Apache 2.0 License)
+     AI music synthesis, backing tracks, instrumental arrangements, and stems.
+   - Demucs / OpenUnmix (MIT License)
+     Stem separation for vocals, drums, bass, and instrumental backings.
+   - SheetSage & mixingbear (MIT License)
+     Harmonic transcription, chord estimation, and automated beatmatching.
+
+6. PROCESSAMENTO, DECODIFICAÇÃO DE JOGOS E MASTERIZAÇÃO DE MÍDIA
+   - FFmpeg (LGPL v2.1+ / GPL v2.0+)
+     Hardware video encoding (NVENC), sidechain compression, audio ducking, and multiplexing.
+   - vgmstream (ISC License)
+     Game audio decoder supporting proprietary video game sound formats.
+   - Pydub, SoundFile & Librosa (MIT / ISC Licenses)
+     Audio editing, envelope manipulation, and waveform analytics.
+
+7. INTERFACE DESKTOP E INFRAESTRUTURA DE SERVIDOR
+   - Flask & Flask-CORS (BSD-3-Clause)
+     Modular microservices and orchestrator API endpoints.
+   - PyWebView (BSD-3-Clause)
+     Native, lightweight desktop GUI shell engine.
+   - PyTorch & Torchaudio (BSD-3-Clause)
+     CUDA tensor computation and GPU resource scheduling.
+
+=========================================================================
+For detailed project credits and volunteer acknowledgements, see CREDITS.md.
+This NOTICE file is for informational purposes only and does not modify the
+terms of the Apache License 2.0.
