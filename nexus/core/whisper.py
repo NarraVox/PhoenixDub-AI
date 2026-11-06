@@ -236,20 +236,32 @@ def transcrever_e_diarizar(audio_path, job_dir=None, cb=None, source_lang="auto"
     import torch
     import gc
     import whisperx
+
+    if not ensure_system_memory_safety("WhisperX medium", min_free_gb=5.5):
+        raise RuntimeError("RAM insuficiente para WhisperX; tarefa não iniciada para proteger o Windows.")
     
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = "cuda" if torch.cuda.is_available() and ensure_vram_safety(
+        "WhisperX medium", required_free_gb=3.0) else "cpu"
     logging.info(f"🎙️ [WhisperX] Inicializando pipeline no dispositivo: {device}")
     
     # 1. TRANSCRIÇÃO (WhisperX)
     if cb: cb(10, 1, "[WhisperX] Carregando modelo Whisper medium...")
     compute_type = "float16" if device == "cuda" else "int8"
     # [v2026.SILERO_VAD] Usa Silero VAD em vez de Pyannote VAD para evitar agrupamentos gigantes de silêncio e falas omitidas
+    batch_size = 8 if device == "cuda" else 1
     model = whisperx.load_model("medium", device=device, compute_type=compute_type, vad_method="silero")
+    if device == "cuda" and not ensure_vram_safety("WhisperX medium após carregamento"):
+        del model
+        gc.collect()
+        torch.cuda.empty_cache()
+        device, compute_type, batch_size = "cpu", "int8", 1
+        logging.warning("⚠️ WhisperX excedeu a margem CUDA; continuando em CPU.")
+        model = whisperx.load_model("medium", device=device, compute_type=compute_type, vad_method="silero")
     
     if cb: cb(20, 1, "[WhisperX] Transcrevendo áudio do vídeo...")
     audio = whisperx.load_audio(str(audio_path))
     whisper_lang = source_lang if source_lang != "auto" else None
-    result = model.transcribe(audio, batch_size=16, language=whisper_lang)
+    result = model.transcribe(audio, batch_size=batch_size, language=whisper_lang)
     
     detected_lang = result.get("language")
     logging.info(f"✅ [WhisperX] Transcrição concluída. Idioma: {detected_lang}")

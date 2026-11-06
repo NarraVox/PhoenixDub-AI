@@ -125,6 +125,9 @@ def processar_dublagem_jogos(job_dir, job_id, start_time, start_from_stage=1, st
     try:
         set_low_process_priority()
 
+        if not ensure_system_memory_safety("início da dublagem de jogos"):
+            raise RuntimeError("RAM insuficiente para iniciar a dublagem com margem para o Windows.")
+
         # [v2026.PRE_FLIGHT_PURGE] Faxina preventiva de VRAM no início
         logging.info("🧹 [SISTEMA] Realizando faxina preventiva de VRAM (PRE-FLIGHT)...")
         unload_whisper_model()
@@ -246,10 +249,10 @@ def processar_dublagem_jogos(job_dir, job_id, start_time, start_from_stage=1, st
                     logging.info(f"✨ [AUTO-PURGE] Concluído! {arquivos_apagados} arquivos defeituosos foram expurgados para re-geração.")
         # =====================================================================
         
-        # [v2026.RTX_GUARD] Trava Real de Segurança de 5GB
+        # [v2026.RTX_GUARD] Reserva 10% da VRAM para desktop/driver.
         if not ensure_vram_safety("Início da Pipeline"):
-             cb(0, 1, "ERRO: VRAM Excedida (Limite 5GB). Feche outros apps.")
-             raise Exception("VRAM Excedida: O sistema bloqueou para evitar travamento.")
+             cb(0, 1, "ERRO: VRAM acima do teto de 90%. Feche outros apps que usam a GPU.")
+             raise Exception("VRAM excedeu o teto seguro de 90%; tarefa bloqueada.")
 
         cb(0, 1, "Iniciando Diarização Automática...")
         # [MODIFICADO] Substituído Manual por Auto Diarização

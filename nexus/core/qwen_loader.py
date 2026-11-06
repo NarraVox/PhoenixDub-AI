@@ -253,6 +253,16 @@ def get_local_gemma_engine(model_path=None):
             logging.error(f"❌ [ERRO] MODELO NÃO ENCONTRADO!")
             logging.error(f"👉 Por favor, coloque um arquivo do Qwen 3.5 (ex: 'Qwen3.5-4B-Q4_K_M.gguf') em: C:/IA_dublagem/MODELS/")
             return None
+
+        model_file_gb = os.path.getsize(model_path) / (1024 ** 3)
+        required_ram_gb = max(4.0, model_file_gb + 1.25)
+        if not ensure_system_memory_safety("carregamento do Qwen local GGUF", min_free_gb=required_ram_gb):
+            raise RuntimeError("RAM_SAFETY_BLOCKED: memória do sistema sem margem para carregar o modelo")
+
+        if torch.cuda.is_available():
+            reserve_gb = max(1.5, model_file_gb + 0.25)
+            if not ensure_vram_safety("Qwen local GGUF", required_free_gb=reserve_gb):
+                raise RuntimeError("VRAM_SAFETY_BLOCKED: margem insuficiente para o modelo GGUF")
   
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -267,7 +277,8 @@ def get_local_gemma_engine(model_path=None):
             model_path=model_path,
             n_gpu_layers=-1,
             n_ctx=2048,  # [v2026.SAFETY_VRAM] 2048 tokens é perfeito para diálogos e mantém VRAM abaixo de 4.5GB
-            n_threads=os.cpu_count() or 4,
+            # Keep logical cores available for the UI/Windows while CUDA performs inference.
+            n_threads=max(1, (os.cpu_count() or 4) // 2),
             type_k=2,    # [v2026.KV_COMPRESS_4BIT] Comprime Key-Cache para Q4_0 (4 bits) para máxima leveza na RTX 3050!
             type_v=2,    # [v2026.KV_COMPRESS_4BIT] Comprime Value-Cache para Q4_0 (4 bits) para máxima leveza na RTX 3050!
             flash_attn=True,
@@ -288,6 +299,9 @@ def get_local_gemma_engine(model_path=None):
             
             if vram_delta > 50:
                 logging.info(f"🚀 [RTX_TURBO] Hardware: {gpu_name} | VRAM Delta: +{vram_delta:.0f}MB | Status: GPU_ACTIVE")
+                if not ensure_vram_safety("Qwen local GGUF após carregamento"):
+                    unload_local_gemma_engine()
+                    raise RuntimeError("VRAM_SAFETY_BLOCKED: modelo ultrapassou o teto de 90%")
             else:
                 msg = f"❌ [BLOQUEIO_DE_HARDWARE] A RTX 3050 FOI REJEITADA! Delta: {vram_delta:.0f}MB."
                 logging.error(msg)
@@ -303,7 +317,8 @@ def get_local_gemma_engine(model_path=None):
         return _LOCAL_LLM_INSTANCE
     except Exception as e:
         logging.error(f"❌ Erro ao inicializar Llama-cpp: {e}")
-        if "RTX_REJECTED" in str(e) or "NVIDIA" in str(e):
+        if ("RTX_REJECTED" in str(e) or "NVIDIA" in str(e)
+                or "VRAM_SAFETY_BLOCKED" in str(e) or "RAM_SAFETY_BLOCKED" in str(e)):
             raise e
         return None
 

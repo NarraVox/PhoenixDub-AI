@@ -123,9 +123,9 @@ class VortexDJ:
         from nexus.dj.vortex_utils import mix_tracks_professional_logic
         return mix_tracks_professional_logic(self, track_a_data, track_b_data, output_name, custom_output)
 
-    def run_music_generation_flow(self, title, style, lyrics, mode='text2music', source_audio='', cover_strength=0.6, extend_duration=30, enable_mastering=False, steps=30, cfg_scale=4.0, duration=60, batch_count=1, upscale_steps=25):
+    def run_music_generation_flow(self, title, style, lyrics, mode='text2music', source_audio='', cover_strength=0.6, extend_duration=30, enable_mastering=False, steps=30, cfg_scale=4.0, duration=60, batch_count=1, upscale_steps=25, arrangement=None, use_qwen=False, abc_file=None):
         from nexus.dj.vortex_music import run_music_generation_flow_logic
-        return run_music_generation_flow_logic(self, title, style, lyrics, mode, source_audio, cover_strength, extend_duration, enable_mastering, steps, cfg_scale, duration, batch_count, upscale_steps)
+        return run_music_generation_flow_logic(self, title, style, lyrics, mode, source_audio, cover_strength, extend_duration, enable_mastering, steps, cfg_scale, duration, batch_count, upscale_steps, arrangement, use_qwen, abc_file)
 
     def ignite_mix_lot(self, valid_metadata):
         from nexus.dj.vortex_mix import ignite_mix_lot_logic
@@ -144,48 +144,60 @@ class VortexDJ:
         return check_vocal_conflict_logic(self, data_a, data_b)
 
     def transcribe_lot(self, track_paths):
-        import threading
-        self.worker_busy = True
-        def run():
-            temp_list = [str(p) for p in track_paths]
-            temp_list_path = UPLOAD_FOLDER / f"whisper_queue_{int(time.time())}.json"
-            with open(temp_list_path, 'w') as f:
-                json.dump(temp_list, f)
-            cmd = [sys.executable, __file__, "--worker-whisper", str(temp_list_path), str(self.status_file)]
-            self.current_worker_process = subprocess.Popen(cmd)
-            self.current_worker_process.wait()
-            try: os.remove(temp_list_path)
-            except: pass
-            self.worker_busy = False
-        threading.Thread(target=run).start()
+        self._launch_worker("--worker-whisper", "whisper", track_paths)
 
     def analyze_lot(self, track_paths):
+        self._launch_worker("--worker-analysis", "analysis", track_paths)
+
+    def _launch_worker(self, flag, queue_prefix, track_paths):
+        # O Popen roda aqui, ainda sob o lock de admissão da rota, para que o
+        # stop_job sempre enxergue o processo. Só a thread dona libera worker_busy.
         import threading
         self.worker_busy = True
-        def run():
-            temp_list = [str(p) for p in track_paths]
-            temp_list_path = UPLOAD_FOLDER / f"analysis_queue_{int(time.time())}.json"
-            with open(temp_list_path, 'w') as f:
-                json.dump(temp_list, f)
-            cmd = [sys.executable, __file__, "--worker-analysis", str(temp_list_path), str(self.status_file)]
-            self.current_worker_process = subprocess.Popen(cmd)
-            self.current_worker_process.wait()
-            try: os.remove(temp_list_path)
-            except: pass
+        queue_path = UPLOAD_FOLDER / f"{queue_prefix}_queue_{int(time.time())}.json"
+        try:
+            with open(queue_path, 'w') as f:
+                json.dump([str(p) for p in track_paths], f)
+            cmd = [sys.executable, __file__, flag, str(queue_path), str(self.status_file)]
+            process = subprocess.Popen(cmd)
+        except Exception:
+            try: os.remove(queue_path)
+            except OSError: pass
             self.worker_busy = False
-        threading.Thread(target=run).start()
+            raise
+        self.current_worker_process = process
+        def wait_worker():
+            try:
+                process.wait()
+            finally:
+                try: os.remove(queue_path)
+                except OSError: pass
+                if self.current_worker_process is process:
+                    self.current_worker_process = None
+                self.worker_busy = False
+        threading.Thread(target=wait_worker).start()
+
+    @staticmethod
+    def _terminate(process):
+        if process is None or process.poll() is not None:
+            return
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
 
     def stop_current_worker(self):
-        if self.current_worker_process:
-            try:
-                self.current_worker_process.terminate()
-                self.current_worker_process.wait(timeout=5)
-            except:
-                try: self.current_worker_process.kill()
-                except: pass
-            self.current_worker_process = None
-        self.worker_busy = False
-        self.project_state["current_task"] = None
+        """Mata os subprocessos ativos. Não mexe em worker_busy: a thread dona de
+        cada job o libera no finally, só depois que o processo realmente saiu."""
+        self._terminate(self.current_worker_process)
+        self._terminate(self.active_process)
+        self.stop_ace_server()
+        from nexus.dj.yu_backend import cleanup_audio_processes
+        cleanup_audio_processes()
+        self.project_state = self.load_status()
+        self.project_state["current_task"] = "🛑 Interrompido pelo usuário."
         self.save_status()
 
     def download_file_with_progress(self, url, dest_path, task_name, status_callback):

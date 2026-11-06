@@ -17,6 +17,9 @@ def get_qwen3_engine():
     with model_lock:
         if _QWEN3_INSTANCE is None:
             try:
+                if not ensure_system_memory_safety("carregamento do Qwen3-TTS", min_free_gb=6.0):
+                    logging.error("❌ RAM insuficiente para carregar Qwen3-TTS com margem segura.")
+                    return None
                 try:
                     torch.set_num_threads(1)
                 except:
@@ -30,6 +33,16 @@ def get_qwen3_engine():
                 
                 # Se o CUDA estiver ativo e não estiver forçado o uso do 0.6B, prioriza o de 1.7B
                 force_06b = os.path.exists("C:/IA_dublagem/usar_qwen_06b.txt")
+                if torch.cuda.is_available():
+                    reserve_gb = 2.8 if force_06b else 4.5
+                    if not ensure_vram_safety(f"Qwen3-TTS {('0.6B' if force_06b else '1.7B')}",
+                                              required_free_gb=reserve_gb):
+                        if not force_06b and ensure_vram_safety("Qwen3-TTS 0.6B", required_free_gb=2.8):
+                            force_06b = True
+                            logging.warning("⚠️ VRAM limitada: usando Qwen3-TTS 0.6B para manter margem segura.")
+                        else:
+                            logging.error("❌ VRAM insuficiente para Qwen3-TTS; geração bloqueada para evitar OOM.")
+                            return None
                 
                 # Escolhe qual modelo carregar
                 if force_06b:
@@ -71,6 +84,12 @@ def get_qwen3_engine():
                 import traceback
                 logging.warning(f"⚠️ [NEXUS_VOICE] Falha ao carregar o motor via FasterQwen3TTS: {e}. Usando Fallback PyTorch 0.6B padrão...")
                 try:
+                    if torch.cuda.is_available():
+                        gc.collect()
+                        torch.cuda.empty_cache()
+                        if not ensure_vram_safety("Qwen3-TTS fallback 0.6B", required_free_gb=2.8):
+                            logging.error("❌ VRAM insuficiente para fallback Qwen3-TTS 0.6B; geração bloqueada.")
+                            return None
                     # Baixa o 0.6B se não existir localmente
                     if not os.path.exists(os.path.join(model_dir_06b, "model.safetensors")):
                         logging.info("⏳ Modelo Qwen3-0.6B não encontrado. Baixando...")
@@ -94,6 +113,13 @@ def get_qwen3_engine():
                     logging.error(f"❌ Falha crítica total no carregamento de TTS: {fallback_err}\n{traceback.format_exc()}")
                     return None
                     
+    if _QWEN3_INSTANCE is not None and torch.cuda.is_available():
+        if not ensure_vram_safety("Qwen3-TTS após carregamento"):
+            logging.error("❌ Qwen3-TTS excedeu a margem de VRAM; descarregando o modelo.")
+            _QWEN3_INSTANCE = None
+            gc.collect()
+            torch.cuda.empty_cache()
+            return None
     return _QWEN3_INSTANCE
 
 def unload_qwen3_model():

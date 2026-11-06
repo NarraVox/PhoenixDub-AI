@@ -245,7 +245,42 @@ Ela dança que dança.</textarea>
 
     </div>
 
+    <button id="open-styles" class="styles-launch">🎼 Nexus Style Analyzer</button>
+    <dialog id="styles-dialog" aria-labelledby="styles-heading">
+        <header><h2 id="styles-heading">Nexus Style Analyzer · experimental</h2><button id="styles-close">Fechar</button></header>
+        <p>Open-Unmix e SheetSage2 usam a GPU quando selecionados; BPM, grade e extração de descritores continuam na CPU. Ouça cada trecho para conferir os padrões detectados.</p>
+        <form id="styles-form">
+            <label>Música de referência <input name="audio" type="file" accept="audio/*" required></label>
+            <label>Nome do Style <input name="name" maxlength="100" placeholder="Meu Style" required></label>
+            <details><summary>Ajustar grade / score opcional</summary>
+                <label>Processamento <select name="device"><option value="gpu" selected>GPU NVIDIA (preferencial, limite VRAM 90%)</option><option value="cpu">CPU (alternativa)</option></select></label>
+                <label>Separador de stems <select name="separator"><option value="openunmix">Open-Unmix (GPU quando disponível)</option></select></label>
+                <p>Deixe vazio para estimar. Se os compassos estiverem deslocados, informe o primeiro tempo forte e analise novamente.</p>
+                <label>BPM <input name="bpm" type="number" min="40" max="240" step="0.1"></label>
+                <label>Compasso <select name="meter"><option value="">Estimar 3/4 ou 4/4</option><option value="2">2/4</option><option value="3">3/4</option><option value="4">4/4</option><option value="5">5/4</option><option value="7">7/4</option></select></label>
+                <label>Primeiro tempo forte (segundos) <input name="offset" type="number" min="0" max="30" step="0.01"></label>
+                <label><input name="sheetsage" type="checkbox" value="true"> Analisar acordes, tonalidade, melodia e estrutura com SheetSage2</label>
+                <p>SheetSage2, quando ativado e instalado, usa CUDA. RAM e VRAM são monitoradas; a tarefa para se qualquer uma atingir 90% ou se o processo passar de 3,5 GiB de RAM.</p>
+                <p id="styles-model-info"></p>
+            </details>
+            <button id="styles-analyze" type="submit">Analisar Style</button>
+            <button id="styles-cancel" type="button" disabled>Cancelar análise</button>
+        </form>
+        <p id="styles-status" role="status" aria-live="polite">Modo seguro: GPU para Open-Unmix quando selecionada, prioridade reduzida, até metade dos núcleos, 128 MB / 5 min. Inicia com margem projetada e interrompe ao atingir 90% de RAM/VRAM ou 3,5 GiB no worker; exige 2 GB de disco livre. Sem leitura VRAM via nvidia-smi, a análise não inicia.</p>
+        <progress id="styles-progress" max="100" value="0"></progress>
+        <label>Styles salvos <select id="styles-saved"><option value="">Selecione…</option></select></label>
+        <button id="styles-refresh" type="button">Atualizar lista</button>
+        <div id="styles-summary"></div>
+        <div id="styles-timeline" aria-label="Timeline dos padrões"></div>
+        <p id="styles-evidence"></p>
+        <label>Ouvir faixa <select id="styles-track"><option value="drums">Bateria</option><option value="reference">Referência completa</option><option value="bass">Baixo</option><option value="vocals">Voz</option><option value="other">Outros instrumentos</option></select></label>
+        <label><input id="styles-context" type="checkbox" checked> Incluir 2 segundos antes/depois</label>
+        <audio id="styles-player" controls preload="metadata"></audio>
+        <a id="styles-download" hidden>Baixar style.json</a>
+    </dialog>
+    <link rel="stylesheet" href="css/dj_styles.css">
     <script src="js/dj_studio.js"></script>
+    <script src="js/dj_styles.js"></script>
     <script src="js/donation_widget.js"></script>
 </body>
 </html>

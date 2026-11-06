@@ -89,8 +89,9 @@ BACKUP_DIR = "arch_manager_backups"
 MODS_FINALIZADOS_DIR = 'mods_finalizados'
 
 import subprocess
+from nexus.runtime_paths import resolve_vgmstream_path
 # Caminho para Ferramentas Externas
-VGMSTREAM_PATH = os.path.join(os.getcwd(), 'tools', 'vgmstream-cli', 'vgmstream-cli.exe')
+VGMSTREAM_PATH = str(resolve_vgmstream_path(os.path.dirname(os.path.abspath(__file__))))
 
 KNOWN_ARCH_MAGICS = [
     b'Arch01\x00\x00', # Versão comum
@@ -828,7 +829,7 @@ HTML_TEMPLATE = """
                     <p style="font-size: 0.9em;">Necessário para converter áudios originais de consoles/PC.</p>
                     <ul style="font-size: 0.9em;">
                         <li>Baixe em <a href="https://vgmstream.org" target="_blank" style="color:#03dac6">vgmstream.org</a>.</li>
-                        <li>Extraia em: <code>C:\IA_dublagem\tools\vgmstream-cli\</code>.</li>
+                        <li>Extraia em: <code>C:\IA_dublagem\env\tools_vgmstream\</code>.</li>
                     </ul>
 
                     <h3 style="font-size: 1.1em; color: #bb86fc; margin-top: 15px;">3. Bibliotecas Python</h3>
@@ -1807,11 +1808,11 @@ if __name__ == '__main__':
     print(f"Python Executable: {sys.executable}")
     print(f"VPK Lib Status: {'OK' if vpk else 'MISSING'}")
     print(f"FSB5 Lib Status: {'OK' if fsb5 else 'MISSING'}")
-    print(f"VGMStream Status: {'OK' if os.path.exists(VGMSTREAM_PATH) else 'MISSING (Place in tools/)'}")
+    print(f"VGMStream Status: {'OK' if os.path.exists(VGMSTREAM_PATH) else 'MISSING (Place in env/tools_vgmstream/)'}")
     if not fsb5:
         print(" [!] ATENÇÃO: Para usar Bioshock (Análise), instale: pip install fsb5")
     if not os.path.exists(VGMSTREAM_PATH):
-        print(" [!] ATENÇÃO: Para usar Bioshock (Extração), baixe vgmstream-cli e coloque em 'tools/'")
+        print(" [!] ATENÇÃO: Para usar Bioshock (Extração), baixe vgmstream-cli e coloque em 'env/tools_vgmstream/'")
     else:
         print(" [!] Módulo Bioshock .fsb ativo (vgmstream encontrado)!")
     print("="*40)

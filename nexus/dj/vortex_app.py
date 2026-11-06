@@ -14,6 +14,8 @@ from flask_cors import CORS
 
 def register_routes(app, dj_engine, UPLOAD_FOLDER):
     """Registers all Flask routes for the Vortex DJ engine using closure scope."""
+    from nexus.dj.style_routes import register_style_routes
+    register_style_routes(app, dj_engine, UPLOAD_FOLDER)
 
     @app.route('/api/init_session', methods=['POST'])
     def init_session():
@@ -140,6 +142,11 @@ def register_routes(app, dj_engine, UPLOAD_FOLDER):
             meta = dj_engine.project_state["tracks"].get(f_path.name, {})
             metadata_batch.append({"name": f_path.name, **meta})
         return jsonify({"success": True, "metadata": metadata_batch, "count": len(to_analyze)})
+
+    @app.route('/api/stop_job', methods=['POST'])
+    def stop_job():
+        dj_engine.stop_current_worker()
+        return jsonify({"success": True, "busy": dj_engine.worker_busy})
 
     @app.route('/api/curate_set', methods=['POST'])
     def curate_set():

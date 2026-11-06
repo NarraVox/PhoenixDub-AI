@@ -126,7 +126,7 @@ def start_ace_server_helper(dj, acestep_tools_dir, models_dir, update_status):
     if not server_ready:
         raise Exception("Timeout ao iniciar ace-server.exe local na porta 8085.")
 
-def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music', source_audio='', cover_strength=0.6, extend_duration=30, enable_mastering=False, steps=30, cfg_scale=4.0, duration=60, batch_count=1, upscale_steps=25):
+def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music', source_audio='', cover_strength=0.6, extend_duration=30, enable_mastering=False, steps=30, cfg_scale=4.0, duration=60, batch_count=1, upscale_steps=25, arrangement=None, use_qwen=False, abc_file=None):
     """Orchestrates the temporally decoupled music generation flow."""
     def update_status(task_msg, log_msg=None):
         msg = log_msg or task_msg
@@ -159,6 +159,20 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
     reference_paths = []
     temporary_references = []
     try:
+        if arrangement is not None:
+            if mode != 'text2music':
+                raise ValueError('Um arrangement só pode ser usado no modo text2music.')
+            from nexus.dj.arranger import compile_yue2_request, qwen_enrich_prompt
+            compiled = compile_yue2_request(arrangement, abc_file=abc_file)
+            duration = compiled['target_duration_seconds']
+            lyrics = compiled['lyrics']
+            if use_qwen:
+                compiled['style_prompt'] = qwen_enrich_prompt(arrangement, compiled['style_prompt'])
+            style = compiled['style_prompt']
+            dj.arrangement_yue2_request = compiled
+        duration = float(duration)
+        if not np.isfinite(duration) or duration <= 0:
+            raise ValueError('A duração da música deve ser um número positivo de segundos.')
         if mode == 'extend':
             extend_duration = float(duration)
             if not np.isfinite(extend_duration) or not 15 <= extend_duration <= 180:
@@ -463,73 +477,34 @@ def run_music_generation_flow_logic(dj, title, style, lyrics, mode='text2music',
         time.sleep(1) # Intervalo para a GPU estabilizar
 
         # ----------------------------------------------------
-        # FASE 2: SÍNTESE E DIFUSÃO DEDICADA (AUDIO GENERATION)
+        # FASE 2: SÍNTESE YuE2 VIA CLI (AUDIO GENERATION)
         # ----------------------------------------------------
-        update_status("🚀 [65%] Iniciando Fase 2: Geração do áudio...", "Carregando servidor em modo Síntese (DiT)...")
-        start_ace_server_helper(dj, acestep_tools_dir, models_dir, update_status)
-        
+        update_status("🚀 [65%] Iniciando Fase 2: Geração do áudio...", "Preparando YuE2 via CLI...")
+        from nexus.dj.yu_backend import YuE2Backend
+        backend = YuE2Backend()
+        # Estimativa existente no backend: 25 tokens/s, limites de ±10%.
+        target_tokens = max(1, round(duration * 25))
+
         generated_files = []
         for idx, lm_data in enumerate(lm_data_list):
             current_title = f"{title}_{idx+1}" if batch_count > 1 else title
             log_prefix = f"[{idx+1}/{batch_count}] " if batch_count > 1 else ""
-            
-            lm_data["inference_steps"] = steps
-            lm_data["guidance_scale"] = cfg_scale
-            if mode == 'text2music':
-                lm_data["duration"] = duration
-            
-            update_status(f"🎛️ {log_prefix}[70%] Sintetizando ondas sonoras (Difusora)...", f"{log_prefix}Renderizando áudio do lote...")
-            
-            from nexus.dj.music_request import submit_synthesis
-            source_path = None
-            if mode in ('cover', 'extend'):
-                source_path = reference_paths[idx]
-            res_synth = submit_synthesis(requests, lm_data, source_path)
 
-            if res_synth.status_code != 200: raise Exception(f"Erro no /synth: {res_synth.text}")
-            synth_job_id = res_synth.json().get("id")
-            
-            synth_done = False
-            synth_timeout = min(3600, max(600, float(lm_data.get('duration', duration)) * steps / 4))
-            synth_deadline = time.monotonic() + synth_timeout
-            while time.monotonic() < synth_deadline:
-                time.sleep(1)
-                try:
-                    res_poll = requests.get(f"http://127.0.0.1:8085/job?id={synth_job_id}", timeout=5)
-                    if res_poll.status_code == 200:
-                        data = res_poll.json()
-                        status = data.get("status")
-                        progress = data.get("progress")
-                        
-                        if progress is not None:
-                            pct = int(float(progress))
-                            total_pct = 70 + int(pct * 0.25)
-                            update_status(f"🎛️ {log_prefix}[{total_pct}%] Gerando áudio: {pct}%...", f"{log_prefix}Difusão: {pct}%")
-                            
-                        if status in ["success", "done"]:
-                            synth_done = True
-                            break
-                        elif status == "failed": raise Exception(f"Síntese falhou: {data.get('error')}")
-                except Exception as ex:
-                    if "Síntese falhou" in str(ex): raise ex
-                    
-            if not synth_done: raise Exception("Timeout na síntese de áudio.")
-            
-            res_audio = requests.get(f"http://127.0.0.1:8085/job?id={synth_job_id}&result=1", timeout=120)
-            if res_audio.status_code != 200: raise Exception("Erro ao baixar áudio sintetizado.")
-            
-            audio_bytes = None
-            if "multipart/" in res_audio.headers.get("Content-Type", ""):
-                import email
-                msg = email.message_from_bytes(b"Content-Type: " + res_audio.headers["Content-Type"].encode() + b"\r\n\r\n" + res_audio.content)
-                for part in msg.walk():
-                    if part.get_content_type().startswith("audio/"):
-                        audio_bytes = part.get_payload(decode=True)
-                        break
-            else: audio_bytes = res_audio.content
-            
-            if not audio_bytes: raise Exception("Áudio vazio recebido do servidor.")
-            
+            update_status(f"🎛️ {log_prefix}[70%] Gerando áudio com YuE2...",
+                          f"{log_prefix}Duração alvo: {duration:g}s (~{target_tokens} tokens; margem de ±10%).")
+            result_dict = backend.generate_music(
+                lyrics_normalized, caption, target_tokens=target_tokens,
+                abc_file=abc_file if arrangement is not None else None,
+                cot="full" if arrangement is not None else "off"
+            )
+            if not isinstance(result_dict, dict):
+                raise RuntimeError("Resposta inválida do backend YuE2.")
+            if not result_dict.get("success"):
+                raise RuntimeError(f"Erro na geração YuE2: {result_dict.get('message', 'Sem mensagem')}")
+            audio_bytes = result_dict.get("audio_data")
+            if not audio_bytes:
+                raise RuntimeError("Áudio vazio recebido do YuE2.")
+
             raw_temp_path = dj.generated_music_dir / f"temp_{idx}_{int(time.time())}.wav"
             with open(raw_temp_path, "wb") as f:
                 f.write(audio_bytes)

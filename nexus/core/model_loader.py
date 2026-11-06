@@ -73,14 +73,16 @@ from threading import RLock
 model_lock = RLock()
 
 # Funções utilitárias básicas do hardware
-def get_optimal_device():
-    """Detecta o melhor hardware disponível (Adaptativo v12.7)."""
+def get_optimal_device(required_free_gb=1.5):
+    """Escolhe CUDA quando o modelo cabe sob o teto de 90%; caso contrário, CPU."""
     import torch
     if torch.cuda.is_available() and torch.cuda.device_count() > 0:
         device_idx = torch.cuda.current_device()
-        logging.info(f"🚀 [RTX_LOCKED] Hardware Identificado. Usando CUDA:{device_idx} (RTX 3050).")
-        return f"cuda:{device_idx}"
-    logging.info("💻 [MODO CPU] Usando processador apenas para infraestrutura (NVIDIA não detectada).")
+        if ensure_vram_safety("seleção de dispositivo", required_free_gb=required_free_gb):
+            logging.info(f"🚀 [RTX_LOCKED] Hardware Identificado. Usando CUDA:{device_idx}.")
+            return f"cuda:{device_idx}"
+        logging.warning("⚠️ VRAM sem margem segura; usando CPU para esta etapa.")
+    logging.info("💻 [MODO CPU] NVIDIA ausente ou sem margem segura; usando processador nesta etapa.")
     return "cpu"
 
 def get_vram_usage():
@@ -90,27 +92,55 @@ def get_vram_usage():
     free_m, total_m = torch.cuda.mem_get_info()
     return (total_m - free_m) / (1024**3)
 
-def ensure_vram_safety(label="Processo"):
-    """[v2026.GUARD] Trava Real: Impede o avanço se a VRAM exceder 5.5GB"""
-    import time
-    max_safe_gb = 5.5
-    for attempt in range(5):
-        used_gb = get_vram_usage()
-        if used_gb <= max_safe_gb:
-            return True
-            
-        logging.warning(f"⚠️ [GUARDIÃO VRAM] {label} bloqueado! Uso atual: {used_gb:.1f}GB. Limite: {max_safe_gb}GB.")
-        unload_whisper_model()
-        import gc; gc.collect()
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-        time.sleep(2)
-        
-    final_usage = get_vram_usage()
-    if final_usage > max_safe_gb:
-        logging.error(f"❌ [ERRO CRÍTICO] VRAM Insuficiente ({final_usage:.1f}GB). Reduza o peso dos modelos ou feche outros apps.")
+def get_vram_stats():
+    """Retorna VRAM livre/total da GPU em GiB, incluindo uso de outros processos."""
+    if not torch.cuda.is_available():
+        return None, None
+    free_m, total_m = torch.cuda.mem_get_info()
+    return free_m / (1024**3), total_m / (1024**3)
+
+def ensure_system_memory_safety(label="Processo", min_free_gb=4.0):
+    """Preserva 4 GiB de RAM para Windows e bloqueia nova carga acima de 90%."""
+    import psutil
+    memory = psutil.virtual_memory()
+    free_gb = memory.available / (1024**3)
+    if memory.percent >= 90 or free_gb < min_free_gb:
+        logging.error(
+            "❌ [GUARDIÃO RAM] %s bloqueado: %.1f%% em uso, %.2f GiB livres; "
+            "requer menos de 90%% e pelo menos %.1f GiB livres.",
+            label, memory.percent, free_gb, min_free_gb)
         return False
     return True
+
+def ensure_vram_safety(label="Processo", required_free_gb=0.0):
+    """Não inicia uma etapa CUDA se a reserva prevista ultrapassar 90% da VRAM."""
+    import time
+    required_free_gb = max(0.0, float(required_free_gb))
+    for attempt in range(4):
+        try:
+            free_gb, total_gb = get_vram_stats()
+        except Exception as exc:
+            logging.error("❌ [GUARDIÃO VRAM] Não foi possível ler a VRAM para %s: %s", label, exc)
+            return False
+        if total_gb is None:
+            logging.warning("⚠️ [GUARDIÃO VRAM] CUDA indisponível durante %s.", label)
+            return required_free_gb == 0
+        used_gb = total_gb - free_gb
+        max_safe_gb = total_gb * 0.95
+        if free_gb >= required_free_gb and (used_gb + required_free_gb) <= max_safe_gb:
+            return True
+        logging.warning(
+            "⚠️ [GUARDIÃO VRAM] %s aguardando margem: %.2f/%.2f GiB usados; "
+            "reserva %.2f GiB; teto 95%% (%.2f GiB).",
+            label, used_gb, total_gb, required_free_gb, max_safe_gb)
+        if attempt == 0:
+            unload_whisper_model()
+        gc.collect()
+        torch.cuda.empty_cache()
+        time.sleep(1)
+
+    logging.error("❌ [GUARDIÃO VRAM] VRAM insuficiente para %s; etapa bloqueada para evitar OOM.", label)
+    return False
 
 # Importações seletivas dos submódulos para manter 100% de retrocompatibilidade
 from nexus.core.whisper_loader import whisper_model, get_whisper_model, unload_whisper_model

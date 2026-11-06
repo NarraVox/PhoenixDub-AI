@@ -231,6 +231,33 @@ def list_project_files():
                 })
     return jsonify(files)
 
+@nexus_blueprint.route('/api/open_folder', methods=['POST'])
+def api_open_folder():
+    """Abre com segurança a pasta do projeto ou arquivo no Windows Explorer."""
+    try:
+        data = request.get_json() or {}
+        job_id = data.get('job_id')
+        custom_path = data.get('path')
+        target_dir = None
+
+        if custom_path:
+            p = Path(custom_path)
+            if p.is_dir():
+                target_dir = p
+            elif p.is_file():
+                target_dir = p.parent
+        elif job_id:
+            candidate = UPLOAD_FOLDER / job_id
+            if candidate.is_dir():
+                target_dir = candidate
+
+        if target_dir and target_dir.exists():
+            os.startfile(str(target_dir.resolve()))
+            return jsonify({"success": True, "path": str(target_dir.resolve())})
+        return jsonify({"success": False, "message": "Pasta do projeto não encontrada."}), 404
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Erro ao abrir pasta: {str(e)}"}), 500
+
 @nexus_blueprint.route('/<path:filename>')
 def serve_pages(filename):
     if not filename.endswith('.html'):
@@ -276,6 +303,21 @@ def list_vortex_projects():
                             })
                     except: pass
     return jsonify(projects)
+
+@nexus_blueprint.route('/api/open_conversions_folder', methods=['GET', 'POST'])
+def open_conversions_folder():
+    """Abre a pasta de arquivos convertidos no Windows Explorer."""
+    folder = str((UPLOAD_FOLDER / "conversoes").resolve())
+    try:
+        Path(folder).mkdir(parents=True, exist_ok=True)
+        if sys.platform != "win32":
+            raise OSError("A abertura da pasta requer Windows.")
+        explorer = Path(os.environ.get("WINDIR", "C:/Windows")) / "explorer.exe"
+        subprocess.Popen([str(explorer), "/n,", str(folder)])
+        return jsonify({"success": True, "folder": folder})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e), "folder": folder}), 500
+
 
 @nexus_blueprint.route('/api/security_audit')
 def security_audit():

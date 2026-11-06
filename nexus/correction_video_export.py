@@ -8,14 +8,27 @@ def export_video(self, folder, segments, manifest, output):
     from pydub import AudioSegment, effects
     status = read_json(folder / "job_status.json", {})
     name = Path(status.get("video_path") or "").name
-    source = folder / name if name else None
+    source = folder / name if name and name != "" else None
+
+    # Melhorar a busca do vídeo fonte: prioriza o nome do status, depois tenta encontrar um único candidato 'dublado.mp4'
     if not source or not source.is_file():
         candidates = list(folder.glob("* dublado.mp4"))
-        source = candidates[0] if len(candidates) == 1 else None
+        if len(candidates) == 1:
+            source = candidates[0]
+        elif len(candidates) > 1:
+             # Se houver múltiplos candidatos, levanta um erro claro em vez de escolher o primeiro arbitrariamente
+            raise CorrectionError(f"Múltiplos vídeos dublados encontrados na pasta. Por favor, renomeie ou selecione o vídeo correto. Candidatos: {[c.name for c in candidates]}")
+        else:
+             source = None # Não há candidatos
+
     vocals = folder / "vocals.wav"
     instrumental = folder / "instrumental.wav"
     if not source or not vocals.is_file() or not instrumental.is_file():
-        raise CorrectionError("Para exportar, preserve o vídeo, vocals.wav e instrumental.wav na pasta do projeto.")
+        missing = []
+        if not source: missing.append("vídeo fonte")
+        if not vocals.is_file(): missing.append("vocals.wav")
+        if not instrumental.is_file(): missing.append("instrumental.wav")
+        raise CorrectionError(f"Para exportar, preserve os seguintes arquivos na pasta do projeto: {', '.join(missing)}.")
     source = local_file(folder, source)
     original = read_audio(vocals)
     voices = AudioSegment.silent(duration=len(original), frame_rate=44100).set_channels(2)

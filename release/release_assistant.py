@@ -20,8 +20,8 @@ JS_TESTS = ('tests/test_correction_progress.mjs', 'tests/test_correction_timing.
 
 def version_argument(value):
     value = value.removeprefix('v')
-    if not re.fullmatch(r'\d+\.\d+\.\d+', value):
-        raise argparse.ArgumentTypeError('Use uma versao como 0.8.1.')
+    if not re.fullmatch(r'\d+\.\d+(?:\.\d+)?', value):
+        raise argparse.ArgumentTypeError('Use uma versao como 0.83 (ou 0.8.1 no formato antigo).')
     return value
 
 

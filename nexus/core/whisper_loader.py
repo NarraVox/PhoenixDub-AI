@@ -14,7 +14,9 @@ def get_whisper_model():
     # model_lock and get_optimal_device are injected dynamically via nexus.core namespace patch
     with model_lock:
         if whisper_model is None:
-            device = get_optimal_device()
+            if not ensure_system_memory_safety("carregamento do Whisper"):
+                raise RuntimeError("RAM_SAFETY_BLOCKED: memória do sistema sem margem para Whisper")
+            device = get_optimal_device(required_free_gb=2.0)
             total_threads = os.cpu_count() or 4
             
             if device.startswith("cuda"):

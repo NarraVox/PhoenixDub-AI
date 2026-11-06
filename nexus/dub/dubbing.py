@@ -38,6 +38,7 @@ from pydub import AudioSegment, effects
 # --- IMPORTAÇÃO DO CÉREBRO (NEXUS CORE) ---
 try:
     import nexus.core as core
+    from nexus.runtime_paths import resolve_vgmstream_path
 except ImportError:
     print("[ERRO CRÍTICO] nexus.core não encontrado!")
     sys.exit(1)
@@ -57,7 +58,7 @@ BASE_DIR = Path(__file__).parent.parent.parent.resolve()
 UPLOAD_FOLDER = BASE_DIR / "uploads"
 BACKUP_DIR = UPLOAD_FOLDER / "arch_manager_backups"
 MODS_FINALIZADOS_DIR = UPLOAD_FOLDER / "mods_finalizados"
-VGMSTREAM_PATH = BASE_DIR / "tools" / "vgmstream-cli" / "vgmstream-cli.exe"
+VGMSTREAM_PATH = resolve_vgmstream_path(BASE_DIR)
 KNOWN_ARCH_MAGICS = [b'Arch01\x00\x00', b'Arch00\x00\x00', b'LTAR\x03\x00\x00\x00']
 
 # --- CONFIGURAÇÕES DE LOGS ---
@@ -82,7 +83,8 @@ from nexus.dub.utils import (
     get_best_encoder,
     calcular_hash_sha1,
     sanitize_archive_name,
-    silent_subprocess
+    silent_subprocess,
+    build_hevc_command
 )
 from nexus.dub.speech_trim import TRIM_CACHE_VERSION, trim_generated_speech
 
@@ -173,6 +175,10 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
         loc_status.update(kwargs)
         core.safe_json_write(loc_status, status_path)
 
+    if not core.ensure_system_memory_safety("início da dublagem de vídeo"):
+        cb(0, 0, "RAM insuficiente para iniciar a dublagem com margem para o Windows.")
+        raise RuntimeError("RAM insuficiente para iniciar a dublagem com margem para o Windows.")
+
     logging.info("🧹 [SISTEMA] Realizando faxina preventiva de VRAM (PRE-FLIGHT)...")
     cb(5, 0, "Limpando VRAM para o novo motor...")
     core.unload_whisper_model()
@@ -181,6 +187,9 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
     import gc, torch
     gc.collect()
     if torch.cuda.is_available(): torch.cuda.empty_cache()
+    if not core.ensure_vram_safety("início da dublagem de vídeo"):
+        cb(0, 0, "VRAM já está acima do teto seguro de 90%; tarefa não iniciada.")
+        raise RuntimeError("VRAM acima do limite de segurança de 90%")
 
     cb(2, 0, "Preparando motores Titan...")
     
@@ -345,6 +354,9 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
                         cb(40, 2, msg_alerta)
                         time.sleep(4)
                 except Exception as e:
+                    if "VRAM_SAFETY_BLOCKED" in str(e) or "RAM_SAFETY_BLOCKED" in str(e):
+                        cb(40, 2, "RAM/VRAM insuficiente para o modelo de tradução; tarefa interrompida por segurança.")
+                        raise
                     time.sleep(5)
 
             lore_file = job_dir / "lore_global.json"
@@ -396,32 +408,27 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
                 gap = float(next_seg.get('start', 0.0)) - float(first_seg.get('end', 0.0))
             first_seg['gap_to_next'] = gap
 
-            start_ctx = max(0, i_orig - 4)
-            end_ctx = min(len(segments), i_orig + 3)
-            
-            ctx_lines = []
-            for s in segments[start_ctx:end_ctx]:
-                speaker = s.get('speaker', 'desconhecido')
-                is_current = s['id'] in [b['id'] for b in batch]
-                
-                if is_current:
-                    line = f"{speaker} (fala atual): \"{s.get('original_text', s.get('text', ''))}\""
-                else:
-                    cached_file = backup_texto_dir / f"seg_{s['id']}.json"
-                    text_val = s.get('original_text', s.get('text', ''))
-                    if cached_file.exists():
-                        cached_data = core.safe_json_read(cached_file)
-                        if cached_data and 'text_pt' in cached_data:
-                            text_val = cached_data['text_pt']
-                    line = f"{speaker}: \"{text_val}\""
-                ctx_lines.append(line)
-            
             orig_text = batch[0].get('original_text', batch[0].get('text', ''))
-            word_count = len(orig_text.split())
-            if word_count <= 3:
-                ctx_str = "[FRASE CURTA - TRADUÇÃO DIRETA OBRIGATÓRIA]"
-            else:
-                ctx_str = "\n".join(ctx_lines)
+
+            # [Bidirectional Tri-Context Window] - Fala anterior e proxima fala
+            prev_info = ""
+            if i_orig > 0:
+                p_s = segments[i_orig - 1]
+                p_cache = backup_texto_dir / get_cache_name(p_s['id'])
+                p_txt = p_s.get('original_text', p_s.get('text', ''))
+                if p_cache.exists():
+                    p_data = core.safe_json_read(p_cache) or {}
+                    p_txt = p_data.get('text_pt') or p_txt
+                prev_info = f'Fala anterior ({p_s.get("speaker", "Locutor")}): "{p_txt}"'
+
+            next_info = ""
+            if i_orig + 1 < len(segments):
+                n_s = segments[i_orig + 1]
+                n_txt = n_s.get('original_text', n_s.get('text', ''))
+                next_info = f'Próxima fala ({n_s.get("speaker", "Locutor")}): "{n_txt}"'
+
+            dialogue_parts = [p for p in [prev_info, next_info] if p]
+            ctx_str = "<dialogue_context>\n" + "\n".join(dialogue_parts) + "\n</dialogue_context>" if dialogue_parts else ""
 
             current_count = b_idx + len(batch)
             total_total = len(pending_segments)
@@ -717,7 +724,8 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
                 dub_seg = AudioSegment.from_wav(str(clean_wav))
                 dub_seg = effects.normalize(dub_seg)
                 
-                start_ms = int(seg['start'] * 1000)
+                # Compensação de abertura labial (Visual Lip Lead) para casar com a boca e não cortar no final
+                start_ms = max(0, int(seg['start'] * 1000) - 250)
                 spk = seg.get('speaker', 'default_speaker')
                 
                 next_same_spk_start_ms = len(orig_vocals)
@@ -826,15 +834,30 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
             filter_str = "[1:a]aresample=44100,highpass=f=80,volume=1.4,asplit=2[v_pt1][v_pt2]; [2:a]aresample=44100[v_bg]; "
             filter_str += "[v_bg][v_pt1]sidechaincompress=threshold=0.02:ratio=5:attack=15:release=500[v_ducked]; "
             filter_str += "[v_ducked][v_pt2]amix=inputs=2:duration=longest[v_mixed]"
-            cmd = ['ffmpeg', '-y', '-hwaccel', 'cuda', '-i', str(video_mirror), '-i', str(final_vocals_path), '-i', str(instrumental_path)]
+            cmd = ['ffmpeg', '-y', '-i', str(video_mirror), '-i', str(final_vocals_path), '-i', str(instrumental_path)]
             cmd.extend(['-filter_complex', filter_str, '-map', '0:v', '-map', '[v_mixed]'])
         else:
-            cmd = ['ffmpeg', '-y', '-hwaccel', 'cuda', '-i', str(video_mirror), '-i', str(final_vocals_path)]
+            cmd = ['ffmpeg', '-y', '-i', str(video_mirror), '-i', str(final_vocals_path)]
             cmd.extend(['-map', '0:v', '-map', '1:a'])
         
-        v_codec = encoder
-        cmd.extend(['-c:v', 'copy'])
-        cmd.extend(['-avoid_negative_ts', 'make_zero', '-map_metadata', '-1', '-movflags', '+faststart', '-c:a', 'aac', '-b:a', '128k', str(output_video), '-progress', 'pipe:1'])
+        # Detecta se GPU HEVC está disponível para mensagens de log
+        try:
+            result = subprocess.run(['ffmpeg', '-f', 'lavfi', '-i', 'color=c=black:s=320x240:d=1', '-c:v', 'hevc_nvenc', '-an', '-f', 'null', '-'], capture_output=True, timeout=3)
+            has_gpu_hevc = result.returncode == 0
+        except Exception:
+            has_gpu_hevc = False
+
+        # Preserva o vídeo Full HD original com -c:v copy e embute o áudio novo instantaneamente
+        cmd.extend([
+            '-c:v', 'copy',
+            '-avoid_negative_ts', 'make_zero',
+            '-map_metadata', '-1',
+            '-movflags', '+faststart',
+            '-c:a', 'aac',
+            '-b:a', '192k',
+            str(output_video),
+            '-progress', 'pipe:1'
+        ])
         
         logging.info(f"🚀 [FFmpeg] Executando: {' '.join(cmd)}")
         try:
@@ -848,7 +871,7 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
                         time_us = int(line.split('=')[1])
                         time_sec = time_us / 1000000.0
                         pct_stage = min(100, (time_sec / (full_dur or 1)) * 100)
-                        label_enc = "NVIDIA RTX" if v_codec == 'h264_nvenc' else "Intel CPU"
+                        label_enc = "NVIDIA GPU" if has_gpu_hevc else "CPU Fallback (libx265)"
                         cb(pct_stage, 5, f"[{label_enc}] Masterizando Vídeo... {int(pct_stage)}%")
                     except: pass
             process.wait()
@@ -856,7 +879,7 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
                 error_msg = "\n".join(last_lines)
                 raise Exception(f"Erro FFmpeg (QSV): {process.returncode}\nSaída:\n{error_msg}")
         except Exception as e:
-            cmd_safe = [c if c != v_codec else 'libx264' for c in cmd]
+            cmd_safe = ['ffmpeg'] + [c for c in cmd[1:] if c != 'hevc_nvenc'] + ['libx265']
             if 'balanced' in cmd_safe: cmd_safe[cmd_safe.index('balanced')] = 'ultrafast'
             if 'veryfast' in cmd_safe: cmd_safe[cmd_safe.index('veryfast')] = 'ultrafast'
             

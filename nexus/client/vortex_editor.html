@@ -79,6 +79,13 @@
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px;">
+                <!-- CONVERSOR DE MÍDIAS (ÁUDIO 160K & VÍDEO H.265) -->
+                <div class="card-tool" onclick="toggleConverterPanel()" style="grid-column: span 2; border: 2px solid #00ffaa; background: rgba(0, 255, 170, 0.08); position: relative; overflow: hidden; cursor: pointer;">
+                    <div style="font-size: 2.2rem; margin-bottom: 10px;">🎛️</div>
+                    <div style="font-size: 0.8rem; font-weight: 900; color: #fff; letter-spacing: 3px;">CONVERSOR DE MÍDIAS // FILA</div>
+                    <div style="font-size: 0.5rem; color: #00ffaa; margin-top: 5px; text-transform: uppercase;">Músicas (Padrão 160 kbps) • Vídeos H.265 (Resolução original)</div>
+                    <div style="position: absolute; top: 5px; right: 5px; font-size: 0.4rem; background: #00ffaa; color: #000; padding: 2px 5px; font-weight: 900;">NOVO</div>
+                </div>
                 <!-- SHORTS AI EXPANDIDO -->
                 <div class="card-tool" onclick="openShortsModal()" style="grid-column: span 2; position: relative; overflow: hidden; background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2));">
                     <div style="font-size: 2rem; margin-bottom: 10px;">📱</div>
@@ -92,6 +99,7 @@
                     <div style="font-size: 0.8rem; font-weight: 900; color: #fff; letter-spacing: 3px;">JUNTAR VÍDEOS (RTX 3050)</div>
                     <div style="font-size: 0.5rem; color: var(--accent); margin-top: 5px; text-transform: uppercase;">Une clips seguindo a ordem 1, 2, 3... via NVENC</div>
                 </div>
+
             </div>
 
             <!-- [v2026.SLICER] Painel Fatiador de Vídeo -->
@@ -250,7 +258,217 @@
         </div>
     </div>
 
+    <!-- MODAL CONVERSOR DE MÍDIAS // EM FILA -->
+    <div id="converter-modal" style="display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 20px;">
+        <div style="width: 100%; max-width: 680px; background: #0c0f14; border: 1px solid rgba(0,255,170,0.3); border-radius: 12px; box-shadow: 0 0 35px rgba(0,255,170,0.15); overflow: hidden; display: flex; flex-direction: column;">
+
+            <!-- Header do Modal -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(0,255,170,0.05);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">🎛️</span>
+                    <div>
+                        <div style="font-size: 0.95rem; font-weight: 900; color: #00ffaa; letter-spacing: 2px;">CONVERSOR DE MÍDIAS EM FILA</div>
+                        <div style="font-size: 0.65rem; color: #8899a6;">Músicas com qualidade ajustável & Vídeos H.265 na resolução original</div>
+                    </div>
+                </div>
+                <button onclick="toggleConverterPanel()" style="background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; opacity: 0.7; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.7">✕</button>
+            </div>
+
+            <!-- Corpo do Modal -->
+            <div style="padding: 20px 24px; max-height: 70vh; overflow-y: auto;">
+
+                <!-- Tabs de Modo -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                    <button id="tab-mode-music" class="active-tab" onclick="setConversionMode('music')" style="padding: 12px; font-weight: 900; font-size: 0.75rem; letter-spacing: 2px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                        🎵 CONVERTER MÚSICAS
+                    </button>
+                    <button id="tab-mode-video" onclick="setConversionMode('video_h265')" style="padding: 12px; font-weight: 900; font-size: 0.75rem; letter-spacing: 2px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                        🎬 CONVERTER VÍDEOS (H.265)
+                    </button>
+                </div>
+
+                <style>
+                    #tab-mode-music.active-tab, #tab-mode-video.active-tab {
+                        background: #00ffaa !important;
+                        color: #000 !important;
+                        border: 1px solid #00ffaa !important;
+                        box-shadow: 0 0 15px rgba(0,255,170,0.4);
+                    }
+                    #tab-mode-music:not(.active-tab), #tab-mode-video:not(.active-tab) {
+                        background: rgba(255,255,255,0.05);
+                        color: #bbb;
+                        border: 1px solid rgba(255,255,255,0.1);
+                    }
+                </style>
+
+                <!-- Painel Opções Músicas -->
+                <div id="panel-music-opts" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; background: rgba(0,255,170,0.03); border: 1px dashed rgba(0,255,170,0.3); padding: 15px; border-radius: 8px;">
+                    <div>
+                        <label style="font-size: 0.65rem; font-weight: 900; color: #00ffaa; letter-spacing: 1px; display: block; margin-bottom: 6px;">QUALIDADE DO ÁUDIO (BITRATE)</label>
+                        <select id="sel-audio-bitrate" style="width: 100%; background: #111; color: #fff; border: 1px solid rgba(0,255,170,0.4); border-radius: 6px; padding: 8px; font-size: 0.75rem; font-weight: 700;">
+                            <option value="64k">64 kbps (Muito leve)</option>
+                            <option value="96k">96 kbps (Leve)</option>
+                            <option value="128k">128 kbps (Padrão web)</option>
+                            <option value="160k" selected>160 kbps (PADRÃO RECOMENDADO)</option>
+                            <option value="192k">192 kbps (Alta qualidade)</option>
+                            <option value="256k">256 kbps (Muito alta)</option>
+                            <option value="320k">320 kbps (Máxima MP3)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.65rem; font-weight: 900; color: #00ffaa; letter-spacing: 1px; display: block; margin-bottom: 6px;">FORMATO DE SAÍDA</label>
+                        <select id="sel-audio-format" style="width: 100%; background: #111; color: #fff; border: 1px solid rgba(0,255,170,0.4); border-radius: 6px; padding: 8px; font-size: 0.75rem; font-weight: 700;">
+                            <option value="mp3" selected>MP3 (.mp3)</option>
+                            <option value="aac">AAC (.m4a)</option>
+                            <option value="wav">WAV (.wav sem compressão)</option>
+                            <option value="flac">FLAC (.flac lossless)</option>
+                            <option value="ogg">OGG Vorbis (.ogg)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Painel Opções Vídeo H.265 / H.264 & Resolução Inteligente -->
+                <div id="panel-video-opts" style="display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; background: rgba(0,200,255,0.03); border: 1px dashed rgba(0,200,255,0.3); padding: 15px; border-radius: 8px;">
+                    <div>
+                        <label style="font-size: 0.65rem; font-weight: 900; color: #00c8ff; letter-spacing: 1px; display: block; margin-bottom: 6px;">RESOLUÇÃO MÁXIMA (4K ➔ FULL HD)</label>
+                        <select id="sel-video-max-res" onchange="recalculateQueuePlans()" style="width: 100%; background: #111; color: #fff; border: 1px solid rgba(0,200,255,0.4); border-radius: 6px; padding: 8px; font-size: 0.75rem; font-weight: 700;">
+                            <option value="1080p" selected>Máx. Full HD 1080p (Recomendado - 4K vira 1080p)</option>
+                            <option value="original">Manter Resolução Original (Inclusive 4K)</option>
+                            <option value="720p">Máx. HD 720p (Ultra Leve / Rápido)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.65rem; font-weight: 900; color: #00c8ff; letter-spacing: 1px; display: block; margin-bottom: 6px;">CODEC DE VÍDEO (GPU NVENC)</label>
+                        <select id="sel-video-codec" onchange="recalculateQueuePlans()" style="width: 100%; background: #111; color: #fff; border: 1px solid rgba(0,200,255,0.4); border-radius: 6px; padding: 8px; font-size: 0.75rem; font-weight: 700;">
+                            <option value="h265" selected>H.265 / HEVC (Menor tamanho, moderno)</option>
+                            <option value="h264">H.264 / AVC (Máxima compatibilidade)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.65rem; font-weight: 900; color: #00c8ff; letter-spacing: 1px; display: block; margin-bottom: 6px;">FORMATO DO VÍDEO</label>
+                        <div style="padding: 7px; background: #111; color: #00ffaa; border: 1px solid rgba(0,200,255,0.3); border-radius: 5px; font-size: 0.68rem; font-weight: 700; text-align: center;" title="Vertical continua vertical e horizontal continua horizontal">AUTO • mantém o formato original</div>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.65rem; font-weight: 900; color: #00c8ff; letter-spacing: 1px; display: block; margin-bottom: 6px;">BITRATE DE ÁUDIO DO VÍDEO</label>
+                        <select id="sel-video-audio-bitrate" style="width: 100%; background: #111; color: #fff; border: 1px solid rgba(0,200,255,0.4); border-radius: 6px; padding: 8px; font-size: 0.75rem; font-weight: 700;">
+                            <option value="160k" selected>160 kbps (Recomendado)</option>
+                            <option value="128k">128 kbps (Econômico)</option>
+                        </select>
+                    </div>
+                    <!-- Otimização Inteligente & Prevenção de Desperdício de GPU -->
+                    <div style="grid-column: span 2; background: rgba(0,0,0,0.45); border: 1px solid rgba(0,200,255,0.25); border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                        <div>
+                            <div style="font-size: 0.72rem; font-weight: 800; color: #00e5ff; display: flex; align-items: center; gap: 6px;">
+                                <span>⚡</span> OTIMIZAÇÃO INTELIGENTE & PREVENÇÃO DE CARGA
+                            </div>
+                            <div style="font-size: 0.62rem; color: #8899a6; margin-top: 3px; line-height: 1.35;">
+                                Pula a conversão se o ganho for &lt; 10% (evita aquecer a GPU sem necessidade). Se for <strong style="color:#fff;">.mkv</strong> para <strong style="color:#00ffaa;">.mp4</strong>, executa <em>Stream Copy</em> ultrarrápido em segundos.
+                            </div>
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap;">
+                            <input type="checkbox" id="chk-skip-less-10" checked onchange="recalculateQueuePlans()" style="width: 18px; height: 18px; accent-color: #00c8ff; cursor: pointer;">
+                            <span style="font-size: 0.68rem; font-weight: 700; color: #ccc;">Ativar</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Ações da Fila -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button onclick="addFilesToConverter()" class="btn-vortex" style="background: rgba(0,255,170,0.15); border-color: #00ffaa; color: #00ffaa; padding: 8px 16px; font-size: 0.68rem; font-weight: 900;">
+                            ➕ ADICIONAR ARQUIVOS
+                        </button>
+                        <button onclick="clearConverterQueue()" class="btn-vortex" style="background: rgba(255,255,255,0.05); color: #888; padding: 8px 12px; font-size: 0.65rem;">
+                            🗑️ LIMPAR FILA
+                        </button>
+                    </div>
+                    <span id="converter-queue-count" style="font-size: 0.7rem; color: #8899a6; font-weight: 700;">0 arquivo(s)</span>
+                </div>
+
+                <!-- Resumo Geral da Fila -->
+                <div id="converter-queue-summary" style="display: none;"></div>
+
+                <!-- Lista da Fila -->
+                <div id="converter-queue-list" style="max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px; margin-bottom: 20px;">
+                    <div style="text-align:center; padding: 25px; color: rgba(255,255,255,0.2); font-size: 0.8rem; letter-spacing: 1px;">
+                        Nenhum arquivo na fila de conversão. Adicione músicas ou vídeos acima.
+                    </div>
+                </div>
+
+                <!-- Área de Progresso e Status -->
+                <div id="conversion-status-box" style="display: none; background: #080a0e; border: 1px solid rgba(255, 170, 0, 0.35); border-radius: 10px; padding: 18px; margin-bottom: 18px; box-shadow: 0 0 25px rgba(255, 170, 0, 0.08);">
+
+                    <!-- BLOCO DESTAQUE: ARQUIVO ATUAL EM CONVERSÃO (LARANJA/ÂMBAR GIGANTE) -->
+                    <div style="background: linear-gradient(135deg, rgba(255, 170, 0, 0.12) 0%, rgba(255, 85, 0, 0.06) 100%); border: 1px solid rgba(255, 170, 0, 0.5); border-radius: 8px; padding: 14px; margin-bottom: 16px; position: relative; overflow: hidden;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                            <div style="overflow: hidden; padding-right: 15px; flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 6px; font-size: 0.68rem; font-weight: 900; color: #ffaa00; letter-spacing: 1.5px; text-transform: uppercase;">
+                                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ffaa00; box-shadow: 0 0 8px #ffaa00;"></span>
+                                    <span>CONVERTENDO AGORA:</span>
+                                </div>
+                                <div id="conv-item-filename" style="font-size: 0.95rem; font-weight: 800; color: #ffffff; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 0 10px rgba(255,255,255,0.2);">
+                                    Carregando arquivo...
+                                </div>
+                                <div id="conv-item-details" style="font-size: 0.65rem; color: #ffcc66; margin-top: 4px; font-weight: 600;">
+                                    Aguardando início...
+                                </div>
+                                <div id="conv-item-telemetry" style="display: none; margin-top: 8px; padding: 8px 12px; background: rgba(0,0,0,0.5); border-radius: 6px; border-left: 3px solid #ffaa00; font-size: 0.65rem; color: #d0e0ec; line-height: 1.4;">
+                                </div>
+                            </div>
+                            <!-- Mostrador Gigante da % Individual -->
+                            <div style="text-align: right; min-width: 110px;">
+                                <div id="conv-item-percent" style="font-size: 2.4rem; font-weight: 900; line-height: 1; color: #ffbb00; text-shadow: 0 0 18px rgba(255, 187, 0, 0.8), 0 0 35px rgba(255, 100, 0, 0.5); font-family: 'Outfit', sans-serif;">
+                                    0%
+                                </div>
+                                <div style="font-size: 0.55rem; color: #ffaa00; font-weight: 900; letter-spacing: 1.5px; margin-top: 3px;">DO ARQUIVO</div>
+                            </div>
+                        </div>
+
+                        <!-- Barra de Progresso do Arquivo Individual (Laranja/Âmbar Vibrante) -->
+                        <div style="width: 100%; height: 12px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,170,0,0.35); border-radius: 6px; overflow: hidden; position: relative;">
+                            <div id="conv-item-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #ff5500 0%, #ffaa00 50%, #ffea00 100%); box-shadow: 0 0 16px rgba(255, 170, 0, 0.7); border-radius: 5px; transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                        </div>
+                    </div>
+
+                    <!-- BLOCO PROGRESSO TOTAL DA FILA (AZUL/CIANO) -->
+                    <div style="background: rgba(0, 150, 255, 0.05); border: 1px solid rgba(0, 180, 255, 0.25); border-radius: 8px; padding: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span id="conv-status-text" style="font-size: 0.72rem; font-weight: 800; color: #99ccee; letter-spacing: 1px;">
+                                📊 PROGRESSO TOTAL DA FILA
+                            </span>
+                            <span id="conv-percent-label" style="font-size: 1.25rem; font-weight: 900; color: #00c8ff; text-shadow: 0 0 10px rgba(0,200,255,0.6); font-family: 'Outfit', sans-serif;">
+                                0%
+                            </span>
+                        </div>
+                        <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.6); border-radius: 4px; overflow: hidden; border: 1px solid rgba(0,180,255,0.2);">
+                            <div id="conv-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #0066ff, #00c8ff); box-shadow: 0 0 12px rgba(0,200,255,0.5); border-radius: 3px; transition: width 0.25s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botões de Execução -->
+                <div style="display: flex; gap: 12px;">
+                    <button id="btn-start-conversion" onclick="startBatchConversion()" disabled style="flex: 2; padding: 14px; background: linear-gradient(135deg, #00c8ff, #00ffaa); color: #000; font-weight: 900; font-size: 0.85rem; letter-spacing: 2px; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1.0)'">
+                        🚀 INICIAR CONVERSÃO EM FILA
+                    </button>
+                    <button onclick="cancelConversion()" style="flex: 1; padding: 14px; background: rgba(255,50,50,0.15); border: 1px solid #ff4444; color: #ff6666; font-weight: 900; font-size: 0.75rem; letter-spacing: 1px; border-radius: 8px; cursor: pointer;">
+                        🛑 CANCELAR
+                    </button>
+                    <button onclick="openConvertedFolder()" style="padding: 14px 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 0.85rem; border-radius: 8px; cursor: pointer;" title="Abrir pasta dos arquivos convertidos" aria-label="Abrir pasta dos arquivos convertidos">
+                        📂
+                    </button>
+                </div>
+                <div id="converter-folder-status" role="status" style="margin-top:10px; color:#ffcc66; font-size:0.8rem; overflow-wrap:anywhere;"></div>
+
+            </div>
+        </div>
+    </div>
+
     <script src="js/vortex_editor.js"></script>
+    <script src="js/vortex_converter.js?v=20261106-formato-auto"></script>
     <script src="js/donation_widget.js"></script>
+
+
 </body>
+</html>
 </html>

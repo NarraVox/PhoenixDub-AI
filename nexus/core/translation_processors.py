@@ -8,6 +8,14 @@ import re
 import requests
 from pathlib import Path
 from datetime import datetime
+from nexus.core.translation_prompts import (
+    get_dubbing_system_instruction,
+    get_dubbing_user_content,
+    format_chat_prompt,
+    get_contingency_prompt,
+    get_cps_guard_prompt,
+    get_direct_fallback_prompt
+)
 
 # Runtime globals injected by __init__.py namespace patching:
 # get_local_gemma_engine, get_gemma_model, find_gemma_model_path, load_game_profile
@@ -19,11 +27,20 @@ _ACTIVE_STANDALONE_PORT = None
 
 def gema_batch_processor_v2(batch, cenario_ctx, glossary={}, profile_id='padrao', job_dir=None, target_lang='pt'):
     if not batch: return {}
+
+    if not ensure_system_memory_safety("lote de tradução"):
+        raise RuntimeError("RAM atingiu o limite de segurança antes do lote de tradução.")
+    if not ensure_vram_safety("lote de tradução"):
+        raise RuntimeError("VRAM atingiu 90%; lote de tradução bloqueado para evitar OOM.")
     
     from nexus.core import model_loader
     active_engine = getattr(model_loader, '_LOCAL_LLM_INSTANCE', None)
     if active_engine is not None:
-        return _process_with_local_engine(active_engine, batch, cenario_ctx, glossary, target_lang, job_dir=job_dir)
+        result = _process_with_local_engine(active_engine, batch, cenario_ctx, glossary, target_lang, job_dir=job_dir)
+        if not ensure_vram_safety("lote de tradução após inferência"):
+            unload_local_gemma_engine()
+            raise RuntimeError("VRAM excedeu 90% durante tradução; motor local descarregado.")
+        return result
     
     import requests
     server_online = False
@@ -50,11 +67,18 @@ def gema_batch_processor_v2(batch, cenario_ctx, glossary={}, profile_id='padrao'
                 continue
             
     if server_online:
-        return _process_with_local_engine(None, batch, cenario_ctx, glossary, target_lang, job_dir=job_dir)
+        result = _process_with_local_engine(None, batch, cenario_ctx, glossary, target_lang, job_dir=job_dir)
+        if not ensure_vram_safety("servidor de tradução após inferência"):
+            raise RuntimeError("VRAM excedeu 90% durante tradução; novas chamadas foram bloqueadas.")
+        return result
     
     local_engine = get_local_gemma_engine()
     if local_engine:
-        return _process_with_local_engine(local_engine, batch, cenario_ctx, glossary, target_lang, job_dir=job_dir)
+        result = _process_with_local_engine(local_engine, batch, cenario_ctx, glossary, target_lang, job_dir=job_dir)
+        if not ensure_vram_safety("lote de tradução após inferência"):
+            unload_local_gemma_engine()
+            raise RuntimeError("VRAM excedeu 90% durante tradução; motor local descarregado.")
+        return result
 
     logging.warning("⚠️ AGUARDANDO MODELO GGUF NA PASTA MODELS...")
     time.sleep(5)
@@ -78,7 +102,8 @@ def sanitize_prompt_metadata(text: str) -> str:
     text = re.sub(r'\b\d{1,2}[A-Z]{3}\d{0,4}(?:_\d{1,2}[Hh]\d{2})?(?:_[A-Za-z0-9]+)?\b', '', text)
     # Remove extensões de arquivo
     text = re.sub(r'\.(?:wav|mp3|ogg|flac|m4a|json)\b', '', text, flags=re.IGNORECASE)
-    return re.sub(r'\s+', ' ', text).strip()
+    # Preserva quebras de linha limpando apenas espacos horizontais repetidos
+    return "\n".join(re.sub(r'[ \t]+', ' ', l).strip() for l in text.splitlines() if l.strip())
 
 def is_isolated_reaction_or_grunt(text: str) -> bool:
     """
@@ -116,7 +141,7 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
     if context:
         clean_ctx = sanitize_prompt_metadata(context)
         if clean_ctx:
-            context_str = f"CONTEXTO DA CENA E TOM DE VOZ:\n{clean_ctx}\n\n"
+            context_str = f"{clean_ctx}\n\n" if "<dialogue_context>" in clean_ctx else f"CONTEXTO DA CENA:\n{clean_ctx}\n\n"
         
     lore_str = ""
     if isinstance(glossary, dict) and 'lore_global' in glossary and glossary['lore_global']:
@@ -218,53 +243,29 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
         # a resposta final exceder o valor calculado abaixo.
         char_limit = max(1, int(duration * 18.0))
         word_limit = max(1, int(char_limit / 4.5))
-        system_instruction = (
-            "Você é um Diretor de Dublagem e Tradutor Profissional para Português Brasileiro (PT-BR).\n"
-            "Sua missão é traduzir a fala original em inglês adaptando-a para soar natural, coloquial e impactante para dublagem.\n\n"
-            "0. MODO DIRETO OBRIGATÓRIO: Não use <think>, não exponha raciocínio e não escreva explicações. Use os tokens apenas para Trad e Emo.\n"
-            "DIRETRIZES DE DUBLAGEM:\n"
-            "1. LINGUAGEM NATURAL (PT-BR): Use português coloquial e falado do Brasil (ex: 'pra', 'tá', 'você'). Traduza gírias e expressões pelo sentido cultural.\n"
-            "2. GÊNERO E PERSONAGEM: Mantenha a concordância gramatical com o gênero do Locutor e preserve nomes próprios e codinomes militares.\n"
-            "3. RITMO E TAMANHO: A fala adaptada deve ter no máximo {char_limit} caracteres para caber perfeitamente no tempo do áudio.\n"
-            "4. EMOÇÃO: Identifique a emoção predominante da cena: [RAIVA, TRISTE, FELIZ, URGENTE, SUSPENSE, DRAMATICO, NORMAL, CANTORIA].\n"
-            "5. FORMATO DE SAÍDA OBRIGATÓRIO: Responda APENAS no formato:\n"
-            "Trad: <sua tradução em português>\n"
-            "Emo: <EMOÇÃO>"
+        raw_spk = str(seg.get('speaker', 'desconhecido'))
+
+        clean_spk = sanitize_prompt_metadata(raw_spk)
+
+        speaker_id = clean_spk if clean_spk and clean_spk.lower() not in ["desconhecido", "unknown", "none", ""] else "Locutor"
+
+
+        system_instruction_formatted = get_dubbing_system_instruction(char_limit=char_limit)
+
+        user_content = get_dubbing_user_content(
+            txt_en=txt_en,
+            speaker_id=speaker_id,
+            char_limit=char_limit,
+
+            word_limit=word_limit,
+            lore_str=lore_str,
+            glossary_str=glossary_str,
+
+            context_str=context_str
+
         )
 
-        raw_spk = str(seg.get('speaker', 'desconhecido'))
-        clean_spk = sanitize_prompt_metadata(raw_spk)
-        speaker_id = clean_spk if clean_spk and clean_spk.lower() not in ['desconhecido', 'unknown', 'none', ''] else "Locutor"
-        user_content = (
-            f"{lore_str}"
-            f"{glossary_str}"
-            f"{context_str}"
-            f"Locutor da fala atual: {speaker_id}\n"
-            f"Limite de tamanho: A tradução deve ter no máximo {char_limit} caracteres (cerca de {word_limit} palavras).\n\n"
-            f"Traduza o texto abaixo estritamente para Português Brasileiro (PT-BR):\n"
-            f"Texto original: \"{txt_en}\"\n/no_think"
-        ).format(char_limit=char_limit)
-
-        system_instruction_formatted = system_instruction.format(char_limit=char_limit)
-
-        if is_qwen:
-            # [v2026.FAST_MODE] Prefill 'Trad:' forca resposta direta sem thinking prolixo.
-            # Budget Forcing via prompt nao funciona no llama.cpp: o modelo 4B ignora
-            # limites quantitativos e gera 200-400 tokens de thinking em vez de 30,
-            # tornando cada frase 7x mais lenta (37s vs 5s). Revertido para modo rapido.
-            # Qualidade ja e 89.6% com dicionario tatico + 17 regras do sistema.
-            prompt_tradutor = (
-                f"<|im_start|>system\n{system_instruction_formatted}<|im_end|>\n"
-                f"<|im_start|>user\n{user_content}<|im_end|>\n"
-                f"<|im_start|>assistant\nTrad: "
-            )
-            stop_tokens = ["<|im_end|>", "<|im_start|>"]
-        else:
-            prompt_tradutor = (
-                f"<start_of_turn>user\n{system_instruction_formatted}\n\n{user_content}<end_of_turn>\n"
-                f"<start_of_turn>model\nTrad: "
-            )
-            stop_tokens = ["<end_of_turn>"]
+        prompt_tradutor, stop_tokens = format_chat_prompt(system_instruction_formatted, user_content, is_qwen=is_qwen)
         
         # max_tokens: 128 tokens é suficiente para frases longas + Trad: + Emo: com prefill direto
         max_tokens_to_use = 128
@@ -317,29 +318,16 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
         if not traducao or len(traducao) < 2 or is_hallucinated_number_translation(traducao, txt_en) or traducao.lower().strip() == txt_en.lower().strip():
             was_contingency = True
             logging.info(f"[{model_name}] 🔄 {seg['id']} -> Tradução inválida ou alucinação ('{traducao_raw}'). Iniciando contingência...")
-            user_content_relaxed = (
-                f"{lore_str}"
-                f"{glossary_str}"
-                f"{context_str}"
-                f"Locutor da fala atual: {speaker_id}\n"
-                f"Traduza o texto abaixo estritamente para Português Brasileiro (PT-BR):\n"
-                f"Texto original: \"{txt_en}\""
+            prompt_relaxed, stop_tokens = get_contingency_prompt(
+            txt_en=txt_en,
+            speaker_id=speaker_id,
+            lore_str=lore_str,
+            glossary_str=glossary_str,
+            context_str=context_str,
+            is_qwen=is_qwen
+
             )
-            system_instruction_relaxed = (
-                "Você é um Tradutor para Português Brasileiro. Modo direto: não use <think> nem explicações. "
-                "Traduza a frase para PT-BR falado e natural. Responda apenas: Trad: <sua tradução>"
-            )
-            if is_qwen:
-                prompt_relaxed = (
-                    f"<|im_start|>system\n{system_instruction_relaxed}<|im_end|>\n"
-                    f"<|im_start|>user\n{user_content_relaxed}<|im_end|>\n"
-                    f"<|im_start|>assistant\nTrad: "
-                )
-            else:
-                prompt_relaxed = (
-                    f"<start_of_turn>user\n{system_instruction_relaxed}\n\n{user_content_relaxed}<end_of_turn>\n"
-                    f"<start_of_turn>model\nTrad: "
-                )
+
             output_relaxed = call_engine(prompt_relaxed, max_tokens=max_tokens_to_use, temperature=0.3, stop=stop_tokens)
             if output_relaxed and not output_relaxed.lower().strip().startswith("trad:"):
                 output_relaxed = "Trad: " + output_relaxed.strip()
@@ -368,7 +356,7 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
 
         # [v2026.ZERO_ENGLISH_SHIELD] Se tudo falhar, tenta um fallback direto de tradução rápida para não deixar em inglês
         if not traducao or len(traducao) < 2 or traducao.lower().strip() == txt_en.lower().strip():
-            direct_prompt = f"<|im_start|>user\nModo direto, sem <think>. Traduza para português brasileiro: \"{txt_en}\"\n/no_think<|im_end|>\n<|im_start|>assistant\nTrad: " if is_qwen else f"<start_of_turn>user\nTraduza para português brasileiro: \"{txt_en}\"<end_of_turn>\n<start_of_turn>model\n"
+            direct_prompt = get_direct_fallback_prompt(txt_en, is_qwen=is_qwen)
             out_direct = call_engine(direct_prompt, max_tokens=max_tokens_to_use, temperature=0.1, stop=stop_tokens).strip().strip('"')
             if out_direct and len(out_direct) >= 2:
                 traducao = out_direct
@@ -387,29 +375,16 @@ def _process_with_local_engine(llm, batch, context, glossary, target_lang, job_d
                 f"⏱️ [CPS_GUARD] {seg['id']} excedeu 18 CPS "
                 f"({current_chars}/{char_limit} caracteres). Reescrevendo uma única vez..."
             )
-            sync_system = (
-                "Você é um adaptador de dublagem PT-BR. MODO DIRETO: não use <think>, "
-                "não explique e não escreva metadados. Responda somente: Trad: <frase final>."
+            sync_prompt, sync_stop_tokens = get_cps_guard_prompt(
+            txt_en=txt_en,
+            traducao=traducao,
+            duration=duration,
+            char_limit=char_limit,
+            is_qwen=is_qwen
+
             )
-            sync_user = (
-                f"Original EN: \"{txt_en}\"\n"
-                f"Tradução longa: \"{traducao}\"\n"
-                f"Duração disponível: {duration:.3f} segundos.\n"
-                f"LIMITE OBRIGATÓRIO: no máximo {char_limit} caracteres, contando espaços e pontuação.\n"
-                "Reescreva de forma natural em PT-BR, preservando o sentido essencial."
-            )
-            if is_qwen:
-                sync_prompt = (
-                    f"<|im_start|>system\n{sync_system}<|im_end|>\n"
-                    f"<|im_start|>user\n{sync_user}\n/no_think<|im_end|>\n"
-                    f"<|im_start|>assistant\nTrad: "
-                )
-            else:
-                sync_prompt = (
-                    f"<start_of_turn>user\n{sync_system}\n\n{sync_user}<end_of_turn>\n"
-                    f"<start_of_turn>model\nTrad: "
-                )
-            sync_raw = call_engine(sync_prompt, max_tokens=max_tokens_to_use, temperature=0.1, stop=stop_tokens)
+
+            sync_raw = call_engine(sync_prompt, max_tokens=max_tokens_to_use, temperature=0.1, stop=sync_stop_tokens)
             sync_raw = re.sub(r'<think>.*?</think>', '', sync_raw, flags=re.DOTALL | re.IGNORECASE).strip()
             sync_raw = re.sub(r'^trad\s*:\s*', '', sync_raw, flags=re.IGNORECASE).strip().strip('"')
             sync_raw = re.split(r'\s+emo\s*:\s*', sync_raw, maxsplit=1, flags=re.IGNORECASE)[0].strip()

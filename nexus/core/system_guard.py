@@ -18,6 +18,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(me
 # Limites de Segurança Rígidos
 MAX_RAM_PERCENT_ALLOWED = 75.0  # Máximo de 75% de ocupação no pré-voo
 CRITICAL_RAM_PERCENT = 82.0     # Ponto de corte imediato do Watchdog em tempo real
+MAX_VRAM_PERCENT_ALLOWED = 90.0  # Reserva pelo menos 10% para driver/desktop e outros programas
 MIN_FREE_RAM_GB = 4.0           # Mínimo de 4GB de RAM livre no pré-voo
 CRITICAL_MIN_FREE_RAM_GB = 2.5  # Mínimo absoluto para abortar o processo
 MAX_PROCESS_RAM_GB = 3.5        # Máximo de 3.5GB consumido pelo processo atual
@@ -48,9 +49,9 @@ def check_system_safety(abort_on_risk: bool = True) -> bool:
 
     gpu_info = "N/A"
     if torch.cuda.is_available():
-        gpu_allocated = torch.cuda.memory_allocated() / (1024 ** 2)
-        gpu_total = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
-        gpu_info = f"{gpu_allocated:.1f}MB / {gpu_total:.1f}GB VRAM"
+        free_bytes, total_bytes = torch.cuda.mem_get_info(0)
+        gpu_used_percent = 100 * (total_bytes - free_bytes) / total_bytes
+        gpu_info = f"{gpu_used_percent:.1f}% usado / {total_bytes / (1024 ** 3):.1f}GB VRAM"
 
     logging.info(
         f"🛡️ [SAFETY GUARD] RAM: {used_percent:.1f}% usado ({free_ram_gb:.2f}GB livre de {total_ram_gb:.1f}GB) | "
@@ -69,6 +70,14 @@ def check_system_safety(abort_on_risk: bool = True) -> bool:
 
     if proc_ram_gb > MAX_PROCESS_RAM_GB:
         msg = f"🚨 [ALERTA DE SEGURANÇA] Processo ultrapassou o teto seguro de RAM ({proc_ram_gb:.2f}GB > {MAX_PROCESS_RAM_GB}GB)."
+        logging.error(msg)
+        if abort_on_risk:
+            raise RuntimeError(msg)
+        return False
+
+    if torch.cuda.is_available() and gpu_used_percent >= MAX_VRAM_PERCENT_ALLOWED:
+        msg = (f"🚨 [ALERTA DE SEGURANÇA] VRAM em {gpu_used_percent:.1f}%; "
+               "execução bloqueada antes de nova inferência CUDA.")
         logging.error(msg)
         if abort_on_risk:
             raise RuntimeError(msg)
@@ -94,10 +103,20 @@ class SystemGuardWatchdog:
             mem = psutil.virtual_memory()
             free_gb = mem.available / (1024 ** 3)
             used_pct = mem.percent
+            gpu_used_percent = 0.0
+            if torch.cuda.is_available():
+                try:
+                    free_bytes, total_bytes = torch.cuda.mem_get_info(0)
+                    gpu_used_percent = 100 * (total_bytes - free_bytes) / total_bytes
+                except Exception as exc:
+                    logging.error("Falha ao monitorar VRAM durante a tarefa: %s", exc)
+                    gpu_used_percent = 100.0
 
-            if used_pct >= CRITICAL_RAM_PERCENT or free_gb <= CRITICAL_MIN_FREE_RAM_GB:
+            if (used_pct >= CRITICAL_RAM_PERCENT or free_gb <= CRITICAL_MIN_FREE_RAM_GB
+                    or gpu_used_percent >= MAX_VRAM_PERCENT_ALLOWED):
                 logging.critical(
-                    f"🚨🚨 [WATCHDOG KILL-SWITCH] RAM ATINGIU NÍVEL CRÍTICO: {used_pct:.1f}% ({free_gb:.2f}GB livre)! "
+                    f"🚨🚨 [WATCHDOG KILL-SWITCH] RAM {used_pct:.1f}% ({free_gb:.2f}GB livre), "
+                    f"VRAM {gpu_used_percent:.1f}%! "
                     f"Acionando corte de emergência para proteger o Windows..."
                 )
                 emergency_cleanup()

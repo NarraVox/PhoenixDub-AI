@@ -162,6 +162,12 @@ def _chunk_text_for_tts(text, max_len=120):
 
 def gerar_audio_qwen3(text, ref_audio_path, output_path, language="Portuguese", emotion="NORMAL", max_duration=None):
     """Gera áudio usando clonagem de voz via FasterQwen3TTS + Emoções (Instruct) com blindagem ativa de duração."""
+    if not ensure_system_memory_safety("geração Qwen3-TTS"):
+        unload_qwen3_model()
+        return False
+    if torch.cuda.is_available() and not ensure_vram_safety("geração Qwen3-TTS"):
+        unload_qwen3_model()
+        return False
     engine = get_qwen3_engine()
     if not engine:
         logging.error("❌ Motor Qwen3 não disponível para geração.")
@@ -223,25 +229,19 @@ def gerar_audio_qwen3(text, ref_audio_path, output_path, language="Portuguese", 
             clean_text += "."
         clean_text += " " 
         
-        # [v2026.QWEN_TEMP_SHIELD] Temperatura dinâmica combinada (Duração + Emoção):
-        # 1. Base de temperatura conforme a intenção dramática
+        # [v2026.QWEN_TEMP_SHIELD] Temperatura dinamica de atuacao organica (0.50 a 0.65)
         emo_upper = emotion.upper()
-        if emo_upper in ["TRISTE", "SUSPENSE", "NORMAL"]:
-            base_temp = 0.30
-        elif emo_upper in ["RAIVA", "FELIZ", "URGENTE", "DRAMATICO"]:
-            base_temp = 0.55
-        else:
+        if emo_upper in ['TRISTE', 'SUSPENSE']:
             base_temp = 0.50
-
-        # 2. Se a frase for muito curta, prioriza a estabilidade (temp baixa) contra alucinações
-        if max_duration and max_duration < 4.0:
-            temp_to_use = 0.30
-            top_p_to_use = 0.70
-            top_k_to_use = 20
+        elif emo_upper in ['RAIVA', 'FELIZ', 'URGENTE', 'DRAMATICO']:
+            base_temp = 0.65
         else:
-            temp_to_use = base_temp
-            top_p_to_use = 0.80
-            top_k_to_use = 40
+            base_temp = 0.60
+
+        # Mantem temperatura organica de estudio (evita voz robotizada)
+        temp_to_use = base_temp
+        top_p_to_use = 0.85
+        top_k_to_use = 40
         
         # [v2026.QWEN_TOKEN_GUARD] Limitador físico de tokens por tempo de cena.
         # O Qwen3-TTS opera nativamente a 12Hz (12 tokens = 1 segundo de áudio).
@@ -369,6 +369,8 @@ def gerar_audio_qwen3(text, ref_audio_path, output_path, language="Portuguese", 
             print(f"\n{msg_log}", flush=True)
             
             import numpy as np
+            # [v2026.SILENCE_GUARD] Blindagem contra atraso: remove silencio morto do vocoder Qwen3
+            audio_data = _trim_silence_numpy(audio_data, sr)
             max_val = np.max(np.abs(audio_data))
             if max_val > 0:
                 # [v2026.AUDIO_NORM] Normalização equilibrada para mix de jogos (0.75 / -2.5dB) para não ficar alto no jogo
@@ -381,6 +383,47 @@ def gerar_audio_qwen3(text, ref_audio_path, output_path, language="Portuguese", 
         import traceback
         logging.error(f"❌ Erro na geração Qwen3: {e}\n{traceback.format_exc()}")
         return False
+
+def _trim_silence_numpy(audio_data, sr, threshold=0.015, lead_pad_ms=30, tail_pad_ms=60):
+    """
+    [v2026.SILENCE_GUARD] Remove o silêncio morto gerado pelo vocoder neural (BigVGAN/Qwen3)
+    no início e no fim do áudio, preservando um respiro natural de 30ms antes da primeira consoante
+    e 60ms no final. Garante sincronia labial imediata e impede atrasos na dublagem final.
+    """
+    import numpy as np
+    if audio_data is None or len(audio_data) == 0:
+        return audio_data
+
+    abs_audio = np.abs(audio_data)
+    active_indices = np.where(abs_audio > threshold)[0]
+
+    if len(active_indices) == 0:
+        # Tenta com sensibilidade 3x maior para falas muito suaves/sussurros
+        active_indices = np.where(abs_audio > (threshold / 3.0))[0]
+        if len(active_indices) == 0:
+            return audio_data
+
+    lead_samples = int((lead_pad_ms / 1000.0) * sr)
+    tail_samples = int((tail_pad_ms / 1000.0) * sr)
+
+    start_idx = max(0, active_indices[0] - lead_samples)
+    end_idx = min(len(audio_data), active_indices[-1] + tail_samples)
+
+    if start_idx >= end_idx:
+        return audio_data
+
+    trimmed = audio_data[start_idx:end_idx]
+
+    # Micro-fade de 5ms nas pontas para evitar qualquer estalo digital (click/pop)
+    fade_samples = min(int(0.005 * sr), len(trimmed) // 4)
+    if fade_samples > 0:
+        fade_in = np.linspace(0.0, 1.0, fade_samples, dtype=trimmed.dtype)
+        fade_out = np.linspace(1.0, 0.0, fade_samples, dtype=trimmed.dtype)
+        trimmed[:fade_samples] *= fade_in
+        trimmed[-fade_samples:] *= fade_out
+
+    return trimmed
+
 
 def gerar_audio_batch_qwen3(batch_items, ref_audio_path, language="Portuguese"):
     """
@@ -422,6 +465,7 @@ def gerar_audio_batch_qwen3(batch_items, ref_audio_path, language="Portuguese"):
         success_count = 0
         for i, wav in enumerate(wav_list):
             if wav is not None and len(wav) > 0:
+                wav = _trim_silence_numpy(wav, sr)
                 sf.write(batch_items[i]['output_path'], wav, sr)
                 success_count += 1
         
@@ -430,4 +474,3 @@ def gerar_audio_batch_qwen3(batch_items, ref_audio_path, language="Portuguese"):
     except Exception as e:
         logging.error(f"❌ Erro no Batch Qwen3: {e}")
         return False
-

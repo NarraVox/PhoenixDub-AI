@@ -109,6 +109,15 @@ class PyannoteDiarizer:
         
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
+        if device == "cuda" and torch.cuda.is_available():
+            try:
+                free_bytes, total_bytes = torch.cuda.mem_get_info(0)
+                projected_bytes = total_bytes - free_bytes + 2.0 * (1024 ** 3)
+                if free_bytes < 2.0 * (1024 ** 3) or projected_bytes >= total_bytes * 0.90:
+                    logging.warning("⚠️ VRAM sem margem segura para Pyannote; usando CPU nesta diarização.")
+                    device = "cpu"
+            except Exception as exc:
+                logging.warning("⚠️ Não foi possível verificar VRAM para Pyannote (%s); usando CPU.", exc)
         elif device == "cuda" and not torch.cuda.is_available():
             device = "cpu"
         
@@ -136,6 +145,12 @@ class PyannoteDiarizer:
             })
             if device == "cuda" and torch.cuda.is_available():
                 self.pipeline.to(torch.device("cuda"))
+                free_bytes, total_bytes = torch.cuda.mem_get_info(0)
+                used_percent = 100 * (total_bytes - free_bytes) / total_bytes
+                if used_percent >= 90:
+                    logging.warning("⚠️ Pyannote alcançou %.1f%% da VRAM; movendo diarizador para CPU.", used_percent)
+                    self.pipeline.to(torch.device("cpu"))
+                    device = "cpu"
             self.device = device
             logging.info(f"✅ Diarizador Pyannote 3.1 (Elite) carregado no dispositivo: {device}")
         except Exception as e:

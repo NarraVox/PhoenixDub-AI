@@ -11,10 +11,10 @@ Antes de preparar, confirme `git config user.email`: deve terminar em `@users.no
 No PowerShell, dentro de `C:\IA_dublagem`:
 
 ```powershell
-python PREPARAR_RELEASE.py --version 0.8.1
+python PREPARAR_RELEASE.py --version 0.91
 ```
 
-Troque `0.8.1` pela versão solicitada. Python 3.10+, Git e Node devem estar no PATH;
+Troque `0.91` pela versão solicitada. Python 3.10+, Git e Node devem estar no PATH;
 o Python escolhido deve ter as dependências dos testes (incluindo Flask e requests).
 Pode usar o Python do ambiente existente; não recrie o ambiente nem baixe modelos.
 
@@ -26,7 +26,7 @@ Uma simples menção ao número não substitui a revisão documental.
 Para somente verificar pré-requisitos, sem rede, worktree ou testes:
 
 ```powershell
-python PREPARAR_RELEASE.py --version 0.8.1 --check-only
+python PREPARAR_RELEASE.py --version 0.91 --check-only
 ```
 
 Sem internet, acrescente `--offline` ao comando normal. Isso usa a referência

@@ -1,0 +1,18 @@
+.styles-launch {position:fixed;right:24px;top:18px;z-index:5;background:#182b32;color:#8ef5de;border:1px solid #4a9488;padding:10px;cursor:pointer;border-radius:8px}
+#styles-dialog {width:min(1000px,90vw);max-height:86vh;overflow:auto;background:#101820;color:#e2ecef;border:1px solid #417b78;border-radius:12px;padding:24px;font:14px/1.5 sans-serif}
+#styles-dialog::backdrop {background:#000b}
+#styles-dialog header {display:flex;justify-content:space-between;gap:12px;align-items:center}
+#styles-dialog h2 {font-size:20px}
+#styles-dialog label {display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 12px 8px 0}
+#styles-dialog input:not([type=checkbox]),#styles-dialog select {background:#1b2a36;color:#fff;border:1px solid #506574;padding:8px;border-radius:5px;max-width:100%}
+#styles-dialog button {padding:8px 12px;color:#dbfff7;background:#193b3b;border:1px solid #578c81;border-radius:5px;cursor:pointer;margin:4px}
+#styles-dialog button:disabled {opacity:.45;cursor:wait}
+#styles-dialog details {margin:10px 0;padding:10px;border:1px solid #344852}
+#styles-progress {width:100%;accent-color:#71debd}
+#styles-timeline {display:flex;flex-wrap:wrap;gap:4px;margin:18px 0;max-height:300px;overflow:auto}
+#styles-timeline button {min-width:95px;margin:0;text-align:left;font-size:12px}
+#styles-timeline button[data-status=candidate] {border-style:dashed;color:#ffe2a0;background:#3b3426}
+#styles-timeline button[data-status=unknown] {background:#26303b;color:#afbfcc;border-color:#546274}
+#styles-player {display:block;width:100%;margin:14px 0}
+#styles-download {color:#8ef5de}
+#styles-evidence {min-height:42px}

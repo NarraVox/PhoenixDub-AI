@@ -180,7 +180,7 @@ def separar_vocal_instrumental(input_audio, job_dir, cb=None):
         except:
             pass
             
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = get_optimal_device(required_free_gb=3.0)
 
         v_chunks = []
         i_chunks = []
@@ -327,7 +327,7 @@ def run_openunmix_batch(source_dir, job_dir, cb):
              return
 
     # Check CUDA
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = get_optimal_device(required_free_gb=3.0)
     logging.info(f"OpenUnmix usando dispositivo: {device}")
     
     for i, file_path in enumerate(files):

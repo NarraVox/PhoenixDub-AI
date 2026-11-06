@@ -5,11 +5,70 @@ Este é o mapa cronológico das mudanças do projeto. Consulte-o no início do t
 ## Como registrar
 
 - Use a data real no formato AAAA-MM-DD, no horário de Brasília, e coloque as entradas mais recentes primeiro.
-- O marco atual é 0.8.0, escolhido pelo responsável para o próximo lançamento. Nos próximos dias com mudanças, avance para 0.8.1, 0.8.2 etc., salvo nova decisão de versão. No mesmo dia, complemente a entrada existente. Não crie entradas para dias sem alterações.
-- Esses números identificam marcos internos de desenvolvimento. Eles não significam uma release, tag ou executável publicado. A versão pública será escolhida pelo responsável no lançamento.
+- Formato de versão (decisão do responsável em 2026-11-06): duas partes, como 0.91, 0.92, 0.93. A v0.8.2 publicada equivale a 0.82. Cada dia com mudanças soma 0.01; como houve 9 dias com alterações após a v0.8.2 (de 2026-09-29 a 2026-11-06), a entrada de 2026-11-06 é 0.91, e os próximos dias seguem 0.92, 0.93...; depois de 0.99 vem 1.0. No mesmo dia, complemente a entrada existente. Não crie entradas para dias sem alterações.
+- O número da entrada mais recente é o número da próxima release: ao lançar, publique exatamente essa versão (ex.: última entrada 0.95 → release v0.95). Atualizar o histórico nunca cria tag nem release por si só. Entradas antigas mantêm a numeração 0.8.x original.
 - Registre o que mudou, por quê, os arquivos principais, a validação realmente executada e as pendências. Não declare testes ou recursos como validados sem evidência.
 - Preserve as entradas anteriores. Registre correções posteriores em novas entradas, sem reescrever a história.
 - Ao preparar um lançamento, reúna todas as entradas ainda não publicadas em NOTAS_PARA_GITHUB.md e depois em ../RELEASE_NOTES.md. Após a publicação, registre aqui a versão pública, a data, o link e os marcos internos incluídos.
+
+## 0.91 — 2026-11-06 — Próxima release: v0.91 (ainda não publicada)
+
+### Nova regra de numeração: versão do diário = versão da release
+
+- A pedido do responsável, as versões passam a ter duas partes e cada dia com alterações soma 0.01. A v0.8.2 publicada equivale a 0.82; depois dela houve 9 dias com alterações (2026-09-29, 09-30, 10-01, 10-03, 10-06, 10-26, 10-28, 10-29 e 11-06), então a entrada de hoje é 0.91 (antes numerada provisoriamente como 0.8.16, 0.8.26 e 0.83 na mesma sessão). Os próximos dias seguem 0.92, 0.93..., e a próxima release usa o número da entrada mais recente. As entradas anteriores foram preservadas com a numeração original.
+- O assistente de release (`release/release_assistant.py`) passou a aceitar versões com duas partes (ex.: `--version 0.91`), mantendo o formato antigo com três partes; o exemplo em `docs/PREPARAR_RELEASE_IA.md` foi atualizado. O atualizador (`nexus/update_worker.py`) já aceitava esse formato e reconhece 0.91 como mais nova que 0.8.2 e que a tag antiga v0.10.
+- Arquivos relevantes: `AGENTS.md`, `docs/ATUALIZACOES.md`, `release/release_assistant.py`, `tests/test_release_assistant.py`, `docs/PREPARAR_RELEASE_IA.md`.
+- Validação: `python -m unittest tests.test_release_assistant` com 8 testes OK (incluindo `v0.83`); comparação de `version_tuple` confirmando 0.83 > 0.8.2, 0.84 > 0.83, 0.83 > v0.10 e 1.0 > 0.99. Nenhuma release, tag ou publicação foi feita.
+- Pendência: ao lançar, atualizar `APP_VERSION` em `nexus/version.py` (hoje 0.8.2) e as menções a v0.8.2 no README.
+
+### Preparação da release v0.91
+
+- Notas consolidadas em `RELEASE_NOTES.md` (com a explicação do salto 0.8.2 → 0.91) e `docs/NOTAS_PARA_GITHUB.md`; `nexus/version.py` passou a `APP_VERSION = "0.91"`; menções de versão do README atualizadas.
+- Tags locais estavam apontando para commits anteriores à reescrita do histórico no GitHub (todas as 9 tags divergiam). Cópia das antigas guardada em `refs/backup-tags-20261106/*` e tags locais alinhadas com as do GitHub (`git fetch origin --tags --force`), com autorização do responsável. Nada foi alterado no GitHub.
+- Problemas apontados pelo preparador e resolvidos: fragmento Python inválido `nexus/editor/media_converter_original.py` e pasta de testes avulsos `tests/small_test/` (com sintaxe quebrada e um videoclipe baixado) movidos para `_arquivo/sobras_2026-11-06/`; espaços no fim de linha e linhas em branco finais removidos apenas nas linhas apontadas por `git diff --check` em 14 arquivos; `tests/test_updates.py` atualizado para versões maiores que 0.91 (0.92, 0.93, 1.0) no lugar de 0.9.0/0.10.0.
+- Revisão da cópia isolada: `LICENSE`, `NOTICE` e `COPYRIGHT.md` seriam removidos do GitHub por não constarem em `release/policy.json`; adicionados à lista `files`. Arquivo com nome inválido no Windows `docs/historico/C:IA_dublagemdocsNOTAS_PARA_GITHUB.md` renomeado para `docs/historico/NOTAS_PARA_GITHUB_v0.8.0.md`; `docs/ATUALIZACOES_original.md`, que guarda o histórico até a v0.8.2 ausente deste diário, movido para `docs/historico/ATUALIZACOES_ate_v0.8.2.md`. Busca por caminhos de usuário, e-mails e pasta MEGA nos arquivos novos/alterados não encontrou ocorrências; o nome do autor aparece só nos avisos de copyright já públicos.
+- Histórico anterior a este diário: ver `docs/historico/ATUALIZACOES_ate_v0.8.2.md`.
+
+### Auditoria das entradas anteriores contra o código (correção do histórico)
+
+- Antes de preparar a v0.91, as entradas desde a v0.8.2 foram conferidas no código. Confirmados: botão/rota de abrir pasta e divisão do `video_studio.js` (471 + 223 linhas), correção speechbrain/Pyannote em `nexus/core/utils_sys.py`, `<dialogue_context>`, cache `get_cache_name`, guardas anti-literal e módulo `translation_prompts.py` (140 linhas), sonda real de NVENC e perfil p4/hq com 3.000/5.000 kb/s, teto de 90% de VRAM e fallback Qwen3-TTS 0.6B, limites do Style Analyzer (128 MB, 300 s, 3,5 GiB), nome de saída sem sufixo e `-hwaccel cuda`.
+- Diferenças encontradas (as entradas originais foram preservadas; diferença no código atual não prova que a entrada era falsa, pois alterações posteriores podem ter reescrito o mesmo arquivo):
+  - 0.8.10 (2026-10-03, registrada em duplicidade) e 0.8.13 (2026-10-26): os timeouts de 60 s e os métodos `convert()`/`convert_square()` não existem no `media_converter.py` atual. Os arquivos do conversor (`vortex_editor.html`, `vortex_converter.js`, versão de cache `20261028-smart-estimates`) foram modificados em 2026-10-28, e o conversor atual tem fila com plano inteligente (estimativa de tamanho, remux, pulo abaixo de 10% e limite 4K → 1080p) que não consta em nenhuma entrada. Conclusão provável: houve uma reescrita do conversor por volta de 2026-10-28, não registrada, que substituiu o que as entradas anteriores descreviam. Não há cópia anterior (os arquivos não estão no Git) para confirmar.
+  - 0.8.12 (2026-10-01), "Consertar Vídeo Quadrado": `nexus/fix_square_video.py` e o botão existem, mas hoje o botão (`fixSquareVideo()` em `vortex_editor.html`) envia um formulário para `/api/convert_batch` em formato que a fila não usa e não chama o script; `nexus/server/server.py` é um servidor avulso não integrado ao aplicativo. No estado atual, o recurso não funciona pela interface.
+  - 0.8.9 (2026-09-29): trata de dataset de fine-tuning e testes AudioSep fora do aplicativo; `agent_dataset/` e `dataset.jsonl` não estão nesta pasta.
+- Validação: buscas no código (`grep`) e contagem de linhas nesta sessão; nenhuma execução da interface.
+
+### Remoção do "Consertar Vídeo Quadrado" (recurso obsoleto)
+
+- Contexto informado pelo responsável: o recurso foi uma tentativa de recuperar vídeos que a conversão antiga deixava na horizontal (vertical virava um quadrado pequeno). A causa foi corrigida na própria conversão, que hoje mantém a proporção original; os vídeos problemáticos foram apagados e reconvertidos a partir do original. O conserto deixou de ser necessário e nunca funcionou pela interface.
+- Removidos do aplicativo o botão "🔲 CONsertar Vídeo Quadrado" e as funções `fixSquareVideo()`/`startSquareCorrection()` de `nexus/client/vortex_editor.html`.
+- Movidos (não apagados) para `_arquivo/conserto_video_quadrado_2026-11-06/`: `nexus/fix_square_video.py`, `nexus/server/server.py` (servidor avulso usado só por esse recurso) e `tests/video_orientation/`. Nenhum desses arquivos estava no Git.
+- **⚠️ Lembrete para as próximas sessões/IA: esse recurso NÃO existe mais e NÃO deve ir para o GitHub nem para as notas de release.** Não restaurar esses arquivos para `nexus/` ou `tests/`, e não citar a entrada 0.8.12 (2026-10-01) como novidade publicada.
+- Arquivos relevantes: `nexus/client/vortex_editor.html`, `_arquivo/conserto_video_quadrado_2026-11-06/`.
+- Validação: busca confirmando zero referências restantes no editor; os 2 blocos de JavaScript embutidos do `vortex_editor.html` passaram em `node --check`; `python -m unittest tests.test_media_converter tests.test_release_assistant` com 15 testes OK. A página não foi aberta no navegador nesta sessão.
+- Também movida para a mesma pasta de arquivo (`nexus_js_copia/`) a cópia solta `nexus/js/vortex_converter.js`, que não era carregada por nenhuma página e não estava no Git.
+
+### Conversor: só formato automático e remoção do painel antigo
+
+- Decisão do responsável: o conversor fica só no modo automático, que já era o comportamento real (a fila ignorava a escolha e sempre mantinha a proporção original: vertical continua vertical, horizontal continua horizontal).
+- No modal "Conversor de mídias em fila", os botões AUTO/HORIZONT./VERTICAL foram trocados por um aviso fixo "AUTO • mantém o formato original"; `vortex_converter.js` perdeu `setVideoOrientation`/`selectedOrientation` e sempre envia `orientation: 'auto'`.
+- Removido do `vortex_editor.html` o painel antigo `#converter-panel` (ficava sempre escondido, pois o card abre o modal), com seus botões 16:9/9:16, `setOrientation()`, `startConversion()` (enviava formulário para `/api/convert_batch`, que só aceita JSON) e a inicialização que chamava `setOrientation('AUTO')` sem evento e gerava erro de JavaScript ao abrir a página.
+- Versão de cache do script atualizada para `vortex_converter.js?v=20261106-formato-auto`.
+- Arquivos relevantes: `nexus/client/vortex_editor.html`, `nexus/client/js/vortex_converter.js`.
+- Validação: `node --check` no `vortex_converter.js`; `<div>` balanceadas (111/111); página aberta no navegador embutido via servidor estático local: modal abre, aviso "AUTO • mantém o formato original" visível, nenhum botão antigo nem referência ao conserto de vídeo quadrado; único erro no console foi a API `/api/list_project_files` ausente no servidor estático (esperado fora do aplicativo). Conversão real pela interface não foi executada.
+
+### Conversor de vídeos não gera mais arquivos mais pesados sem necessidade
+
+- O conversor em lote recodificava vídeos mesmo quando o resultado ficava maior que o original (por exemplo, um H.264 com bitrate baixo convertido para H.265 com bitrate fixo de ~2,8 Mbps). Agora, quando a estimativa indica arquivo maior:
+  - vídeo já pronto para TV (`.mp4`/`.m4v` com H.264/HEVC) é pulado;
+  - vídeo com codec compatível em outro contêiner (`.mov`, `.mkv`, `.ts` etc.) só tem o contêiner trocado para MP4, com cópia direta e sem recodificar;
+  - vídeo com codec que provavelmente não toca na TV (ProRes, MPEG-4/DivX, WMV, VP9 etc.) continua sendo recodificado.
+- Como a estimativa é aproximada, após cada recodificação o tamanho real é conferido: se o arquivo final ficou maior e o original já usava codec compatível com TV, o resultado é descartado e o item vira "pulado" (MP4) ou apenas troca de contêiner (outros formatos).
+- O remux de HEVC passa a gravar a tag `hvc1`, melhorando o reconhecimento em TVs e aparelhos Apple.
+- Regras de compatibilidade com TV isoladas no novo módulo `nexus/editor/tv_compat.py`, sem aumentar o tamanho já excedente de `media_converter.py` além do necessário.
+- Arquivos relevantes: `nexus/editor/media_converter.py`, `nexus/editor/tv_compat.py`.
+- Validação: `python -m py_compile` nos dois módulos; simulação de planos (MP4 H.264 → pulado; MOV H.264 e MKV HEVC → remux; MOV ProRes e AVI MPEG-4 → recodificação; MP4 H.264 pesado → recodificação); teste real de `_discard_if_bigger` com arquivos gerados pelo FFmpeg (MP4 descartado e pulado; MOV refeito como remux); `python -m unittest tests.test_media_converter` com 7 testes OK.
+- Pendências: conferir na interface um lote real com os vídeos do usuário. `media_converter.py` continua acima do teto de 500 linhas (já estava antes desta sessão).
 
 ## 0.8.15 — 2026-10-29 — Marco interno / sem preparação de release
 

@@ -43,6 +43,7 @@
                         <div id="dynamic-progress-bar" style="width: 0%; height: 100%; background: var(--accent); box-shadow: 0 0 20px var(--accent); transition: 0.5s cubic-bezier(0.17, 0.67, 0.83, 0.67);"></div>
                     </div>
                     <button id="btn-edit-script" class="btn-titan" style="margin-top: 20px; padding: 10px; font-size: 0.65rem; display: none; background: var(--violet); color: #fff;" onclick="openScriptEditor()">📝 EDITAR VOZES & TRANSCRIÇÃO</button>
+                    <button id="btn-open-project-folder" class="btn-titan" style="margin-top: 10px; padding: 10px; font-size: 0.65rem; display: none; background: rgba(0,243,255,0.15); border: 1px solid var(--accent); color: var(--accent);" onclick="openActiveProjectFolder()">📂 ABRIR PASTA DO PROJETO</button>
                 </div>
             </div>
 
@@ -169,6 +170,7 @@
     </div>
 
     <script src="js/video_studio.js"></script>
+    <script src="js/video_studio_batch.js"></script>
 
     <!-- FULLSCREEN NEURAL SCRIPT EDITOR MODAL -->
     <div id="script-editor-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,1,10,0.98); z-index: 10000; backdrop-filter: blur(30px); overflow-y: auto; padding: 40px; box-sizing: border-box; font-family: 'Outfit', sans-serif;">

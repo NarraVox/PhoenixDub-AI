@@ -12,6 +12,7 @@ from release import release_assistant as module
 class AssistantTests(unittest.TestCase):
     def test_version_argument_rejects_paths(self):
         self.assertEqual(module.version_argument('v0.9.2'), '0.9.2')
+        self.assertEqual(module.version_argument('v0.83'), '0.83')
         import argparse
         with self.assertRaises(argparse.ArgumentTypeError):
             module.version_argument('../0.9.2')

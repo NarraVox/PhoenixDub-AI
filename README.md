@@ -13,7 +13,7 @@
 **PhoenixDub AI**, da NarraVox Studios, é uma suíte desktop para dublagem de jogos e vídeos em português brasileiro, edição de mídia e criação de músicas com IA. O processamento de IA foi desenvolvido para execução local, com gerenciamento de memória voltado a GPUs como a NVIDIA RTX 3050 de 6 GB.
 
 > [!NOTE]
-> **v0.8.2 — Beta:** edição manual de jogos e vídeos, fila de correções e atualizações pelo Hub. Consulte as [notas da versão](RELEASE_NOTES.md) e o [histórico de atualizações](docs/ATUALIZACOES.md).
+> **v0.91 — Beta:** conversor inteligente que não deixa vídeos mais pesados e mantém o formato original, separação de vozes corrigida e tradução com contexto. A versão saltou de 0.8.2 para 0.91 por causa da nova numeração (cada dia com novidades soma 0.01). Consulte as [notas da versão](RELEASE_NOTES.md) e o [histórico de atualizações](docs/ATUALIZACOES.md).
 
 ### 🎥 Demonstração
 
@@ -73,8 +73,6 @@ Games e Video compartilham o módulo de dublagem, com modos e processos distinto
 - Internet para instalação e download inicial dos modelos. Modelos restritos de diarização exigem aceitar os termos no Hugging Face e configurar `HF_TOKEN` com acesso autorizado.
 
 ### Instalação e execução pelo código-fonte
-
-Consulte [Instalar ou reparar](docs/INSTALAR_OU_REPARAR.md). No Windows, abra `TESTAR_SETUP.bat`.
 
 Os comandos abaixo usam PowerShell e pressupõem que o repositório já está em `C:\IA_dublagem`. Há caminhos absolutos de modelos no código atual; mudar a pasta exige revisar essas configurações.
 
@@ -147,7 +145,7 @@ Os links apontam para os artefatos da release marcada como mais recente no GitHu
 **PhoenixDub AI**, by NarraVox Studios, is a desktop suite for Brazilian Portuguese game and video dubbing, media editing and AI music creation. Its AI pipeline is designed for local processing, with memory management targeting GPUs such as the NVIDIA RTX 3050 with 6 GB VRAM.
 
 > [!NOTE]
-> **v0.8.2 — Beta:** manual dubbing corrections for games and videos, correction queues and Hub updates. See RELEASE_NOTES.md for changes and validation limits.
+> **v0.91 — Beta:** smart media converter that keeps the original aspect ratio and never makes videos heavier, fixed speaker diarization and context-aware translation. The jump from 0.8.2 to 0.91 comes from the new numbering (each day with changes adds 0.01). See RELEASE_NOTES.md for changes and validation limits.
 
 ### Demo and features
 

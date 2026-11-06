@@ -181,8 +181,10 @@ class Api:
         win = self._get_window()
         if not win:
             return None
-        clean_filter = file_filter.split('|')[0]
-        result = win.create_file_dialog(webview.FileDialog.OPEN, allow_multiple=allow_multiple, file_types=(clean_filter,))
+        # PyWebView recebe cada filtro como um item separado; manter apenas
+        # o primeiro antes de "|" escondia a opção "Todos os arquivos".
+        clean_filters = tuple(part.strip() for part in file_filter.split('|') if part.strip())
+        result = win.create_file_dialog(webview.FileDialog.OPEN, allow_multiple=allow_multiple, file_types=clean_filters)
         if result:
             # Garante que paths seja uma lista de strings, seja result string ou tupla
             if isinstance(result, str):
@@ -210,6 +212,17 @@ class Api:
                 security.register_allowed_path(p)
             return paths if allow_multiple else paths[0]
         return None
+
+    def open_conversions_folder(self):
+        """Abre o destino do conversor sem depender dos motores HTTP."""
+        folder = (UPLOAD_FOLDER / "conversoes").resolve()
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            explorer = Path(os.environ.get("WINDIR", "C:/Windows")) / "explorer.exe"
+            subprocess.Popen([str(explorer), "/n,", str(folder)])
+            return {"success": True, "folder": str(folder)}
+        except Exception as exc:
+            return {"success": False, "error": str(exc), "folder": str(folder)}
 
     def open_folder_explorer(self, folder_path):
         """Abre uma pasta específica no Windows Explorer (Seguro contra RCE)."""
