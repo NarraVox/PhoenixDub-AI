@@ -1,4 +1,20 @@
-# PhoenixDub AI v0.91 — Conversor inteligente, diarização corrigida e tradução com contexto
+# PhoenixDub AI v0.93 — Correção de segurança
+
+### O que mudou
+
+Esta versão corrige uma falha de segurança que já existia em versões anteriores (inclusive v0.8.2 e v0.91). **Recomenda-se atualizar.**
+
+- **Editor de vídeo (Vortex):** as ferramentas de cortar, cortar vários trechos e juntar vídeos montavam o comando do FFmpeg como texto e o entregavam ao terminal do Windows. Um nome de arquivo ou um tempo de início/fim preparado de propósito poderia executar outro comando no computador. Agora o FFmpeg é chamado diretamente com a lista de argumentos, e os tempos aceitam só números (ex.: `12`, `1:05`, `00:01:05.50`). Nomes de arquivo com apóstrofo também passaram a funcionar na junção.
+- **Serviços locais (Hub, dublagem de jogos e vídeos, DJ e editor):** antes aceitavam pedidos vindos de qualquer site aberto no navegador. Agora só aceitam pedidos do próprio programa (`127.0.0.1` / `localhost`), impedindo que uma página externa use essas APIs enquanto o programa está aberto.
+- No corte sem GPU NVIDIA, foram removidas opções exclusivas do NVENC que não se aplicam ao libx265.
+
+### Por que 0.93?
+
+A v0.91 foi publicada hoje mais cedo. A pedido do responsável, esta correção sai como **0.93**. As novidades da v0.91 continuam valendo e estão descritas abaixo.
+
+---
+
+## Novidades da v0.91 — Conversor inteligente, diarização corrigida e tradução com contexto
 
 ### Por que a versão saltou de 0.8.2 para 0.91?
 

@@ -13,12 +13,13 @@ import threading
 from pathlib import Path
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
+from nexus.local_cors import allow_local_origins
 
 from nexus.editor.vortex_vfx import VortexAI, UPLOAD_FOLDER, OUTPUT_FOLDER, TEMP_FOLDER
 from nexus.editor.media_converter import MediaConverter, ConversionBatchQueue, detect_nvenc_hevc, probe_media_file, calculate_conversion_plan
 
 app = Flask(__name__)
-CORS(app)
+allow_local_origins(app)
 
 CONVERSIONS_FOLDER = UPLOAD_FOLDER / "conversoes"
 os.makedirs(CONVERSIONS_FOLDER, exist_ok=True)
@@ -146,6 +147,54 @@ def update_status(prog, msg, status="processing"):
     with vortex_lock:
         vortex_status.update({"progress": prog, "message": msg, "status": status})
 
+_TIME_RE = re.compile(r'^\d{1,3}(:\d{1,2}){0,2}(\.\d+)?$')
+
+
+def _safe_time(value: str) -> str:
+    """Aceita só tempos como 12, 1:05 ou 00:01:05.50; recusa qualquer outro texto."""
+    t = str(value or '').strip().replace(',', '.')
+    if not _TIME_RE.match(t):
+        raise ValueError(f"Tempo inválido: {value!r}")
+    parts = t.split(':')
+    if len(parts) == 1:
+        return f"00:00:{float(parts[0]):05.2f}"
+    if len(parts) == 2:
+        return f"00:{int(parts[0]):02d}:{float(parts[1]):05.2f}"
+    return t
+
+
+def _hevc_encode_args(gpu: bool) -> list:
+    """Parâmetros de vídeo HEVC: NVENC na GPU ou libx265 na CPU."""
+    if gpu:
+        return ['-c:v', 'hevc_nvenc', '-preset', 'p4', '-tune', 'hq', '-rc', 'vbr',
+                '-b:v', '2500k', '-maxrate:v', '5000k', '-bufsize:v', '3750k']
+    return ['-c:v', 'libx265', '-preset', 'medium',
+            '-b:v', '2500k', '-maxrate:v', '5000k', '-bufsize:v', '3750k']
+
+
+def _trim_command(st: str, et: str, abs_input: str, abs_output: str, gpu: bool) -> list:
+    """Comando de corte como lista de argumentos (sem shell: o nome do arquivo nunca vira comando)."""
+    cmd = ['ffmpeg', '-y']
+    if gpu:
+        cmd += ['-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda']
+    cmd += ['-ss', st, '-to', et, '-i', abs_input] + _hevc_encode_args(gpu)
+    cmd += ['-avoid_negative_ts', 'make_zero', '-map_metadata', '-1', '-movflags', '+faststart',
+            '-c:a', 'aac', '-b:a', '160k', abs_output]
+    return cmd
+
+
+def _merge_command(list_path: str, abs_output: str, gpu: bool) -> list:
+    """Comando de junção (concat) como lista de argumentos."""
+    cmd = ['ffmpeg', '-y']
+    if gpu:
+        cmd += ['-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda']
+    cmd += ['-f', 'concat', '-safe', '0', '-i', str(list_path)] + _hevc_encode_args(gpu)
+    if gpu:
+        cmd += ['-spatial-aq', '1']
+    cmd += ['-avoid_negative_ts', 'make_zero', '-c:a', 'aac', '-b:a', '160k', abs_output]
+    return cmd
+
+
 @app.route('/api/vortex_tool', methods=['POST'])
 def api_vortex_tool():
     data = request.json or {}
@@ -158,15 +207,8 @@ def api_vortex_tool():
     def run_trim():
         try:
             update_status(0, "Iniciando corte acelerado (RTX 3050)...", "processing")
-            def format_time(t):
-                t = t.strip().replace(',', '.')
-                parts = t.split(':')
-                if len(parts) == 1: return f"00:00:{float(parts[0]):05.2f}"
-                elif len(parts) == 2: return f"00:{int(parts[0]):02d}:{float(parts[1]):05.2f}"
-                return t
-
-            st = format_time(start_time)
-            et = format_time(end_time)
+            st = _safe_time(start_time)
+            et = _safe_time(end_time)
             
             def to_sec(t):
                 try:
@@ -189,19 +231,9 @@ def api_vortex_tool():
             except:
                 has_gpu_hevc = False
 
-            if has_gpu_hevc:
-                cmd = (
-                    f'ffmpeg -y -hwaccel cuda -hwaccel_output_format cuda -ss {st} -to {et} -i "{abs_input}" '
-                    f'-c:v hevc_nvenc -preset p4 -tune hq -rc vbr -b:v 2500k -maxrate:v 5000k -bufsize:v 3750k '
-                    f'-avoid_negative_ts make_zero -map_metadata -1 -movflags +faststart -c:a aac -b:a 160k "{abs_output}"'
-                )
-            else:
-                cmd = (
-                    f'ffmpeg -y -ss {st} -to {et} -i "{abs_input}" '
-                    f'-c:v libx265 -preset medium -tune null -rc vbr -b:v 2500k -maxrate:v 5000k -bufsize:v 3750k '
-                    f'-avoid_negative_ts make_zero -map_metadata -1 -movflags +faststart -c:a aac -b:a 160k "{abs_output}"'
-                )
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=True)
+            cmd = _trim_command(st, et, abs_input, abs_output, has_gpu_hevc)
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                                       encoding='utf-8', errors='replace')
             for line in process.stdout:
                 if "time=" in line:
                     try:
@@ -232,7 +264,8 @@ def api_vortex_tool():
             list_path = TEMP_FOLDER / f"merge_list_{int(time.time())}.txt"
             with open(list_path, 'w', encoding='utf-8') as f:
                 for v in video_list:
-                    abs_v = os.path.abspath(v).replace('\\', '/')
+                    # Aspas simples no nome são escapadas no formato da lista concat do FFmpeg
+                    abs_v = os.path.abspath(v).replace('\\', '/').replace("'", "'\\''")
                     f.write(f"file '{abs_v}'\n")
 
             final_output = OUTPUT_FOLDER / f"MERGE_FINAL_{int(time.time())}.mp4"
@@ -248,20 +281,9 @@ def api_vortex_tool():
             except:
                 has_gpu_hevc = False
 
-            if has_gpu_hevc:
-                cmd = (
-                    f'ffmpeg -y -hwaccel cuda -hwaccel_output_format cuda -f concat -safe 0 -i "{list_path}" '
-                    f'-c:v hevc_nvenc -preset p4 -tune hq -rc vbr -b:v 2500k -maxrate:v 5000k -bufsize:v 3750k '
-                    f'-spatial-aq 1 -avoid_negative_ts make_zero -c:a aac -b:a 160k "{abs_output}"'
-                )
-            else:
-                cmd = (
-                    f'ffmpeg -y -f concat -safe 0 -i "{list_path}" '
-                    f'-c:v libx265 -preset medium -tune null -rc vbr -b:v 2500k -maxrate:v 5000k -bufsize:v 3750k '
-                    f'-spatial-aq 1 -avoid_negative_ts make_zero -c:a aac -b:a 160k "{abs_output}"'
-                )
+            cmd = _merge_command(list_path, abs_output, has_gpu_hevc)
             update_status(20, "Renderizando via RTX 3050...", "processing")
-            res = subprocess.run(cmd, shell=True, capture_output=True)
+            res = subprocess.run(cmd, capture_output=True)
             if res.returncode == 0:
                 update_status(100, "Junção RTX concluída!", "done")
                 try: os.startfile(os.path.dirname(abs_output))
@@ -289,17 +311,8 @@ def api_vortex_tool():
 
                 update_status(0, f"Corte {i+1}/{total_cuts}: Iniciando...", "processing")
 
-                def format_time(t):
-                    t = t.strip().replace(',', '.')
-                    parts = t.split(':')
-                    if len(parts) == 1:
-                        return f"00:00:{float(parts[0]):05.2f}"
-                    elif len(parts) == 2:
-                        return f"00:{int(parts[0]):02d}:{float(parts[1]):05.2f}"
-                    return t
-
-                st = format_time(start_time)
-                et = format_time(end_time)
+                st = _safe_time(start_time)
+                et = _safe_time(end_time)
 
                 def to_sec(t):
                     try:
@@ -322,21 +335,10 @@ def api_vortex_tool():
                 except:
                     has_gpu_hevc = False
 
-                if has_gpu_hevc:
-                    cmd = (
-                        f'ffmpeg -y -hwaccel cuda -hwaccel_output_format cuda -ss {st} -to {et} -i "{abs_input}" '
-                        f'-c:v hevc_nvenc -preset p4 -tune hq -rc vbr -b:v 2500k -maxrate:v 5000k -bufsize:v 3750k '
-                        f'-avoid_negative_ts make_zero -map_metadata -1 -movflags +faststart -c:a aac -b:a 160k "{abs_output}"'
-                    )
-                else:
-                    cmd = (
-                        f'ffmpeg -y -ss {st} -to {et} -i "{abs_input}" '
-                        f'-c:v libx265 -preset medium -tune null -rc vbr -b:v 2500k -maxrate:v 5000k -bufsize:v 3750k '
-                        f'-avoid_negative_ts make_zero -map_metadata -1 -movflags +faststart -c:a aac -b:a 160k "{abs_output}"'
-                    )
-
+                cmd = _trim_command(st, et, abs_input, abs_output, has_gpu_hevc)
                 update_status(10 + (i * progress_step), f"Corte {i+1}/{total_cuts}: Renderizando...", "processing")
-                process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=True)
+                process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                                           encoding='utf-8', errors='replace')
 
                 for line in process.stdout:
                     if "time=" in line:

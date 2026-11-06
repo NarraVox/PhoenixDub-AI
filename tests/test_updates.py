@@ -13,7 +13,7 @@ from nexus import update_worker as worker
 
 
 class UpdateTests(unittest.TestCase):
-    def release(self, tag='v0.92'):
+    def release(self, tag='v9.0'):
         return {'tag_name': tag, 'body': '<script>unsafe()</script>', 'assets': []}
 
     def check(self, release):
@@ -23,11 +23,11 @@ class UpdateTests(unittest.TestCase):
             return updates.check_release()
 
     def test_newer_equal_older(self):
-        for tag, status in [('v0.92', 'available'), ('v' + updates.APP_VERSION, 'current'), ('v0.6.0', 'ahead'), ('v1.0', 'available')]:
+        for tag, status in [('v9.0', 'available'), ('v' + updates.APP_VERSION, 'current'), ('v0.6.0', 'ahead'), ('v10.0', 'available')]:
             self.assertEqual(self.check(self.release(tag))['status'], status)
 
     def test_invalid_version_and_prerelease(self):
-        for release in [self.release('v0.92-beta'), {**self.release(), 'prerelease': True}, self.release('../../bad')]:
+        for release in [self.release('v9.0-beta'), {**self.release(), 'prerelease': True}, self.release('../../bad')]:
             with self.assertRaises(ValueError):
                 self.check(release)
 
@@ -45,7 +45,7 @@ class UpdateTests(unittest.TestCase):
         release['assets'] = [{'name': 'PhoenixDub_Update.zip', 'state': 'uploaded',
                               'browser_download_url': 'https://evil.example/file.zip', 'size': 1}]
         self.assertIsNone(self.check(release)['package'])
-        release['assets'][0]['browser_download_url'] = f'https://github.com/{updates.REPOSITORY}/releases/download/v0.92/PhoenixDub_Update.zip'
+        release['assets'][0]['browser_download_url'] = f'https://github.com/{updates.REPOSITORY}/releases/download/v9.0/PhoenixDub_Update.zip'
         self.assertIsNotNone(self.check(release)['package'])
 
     def test_mutation_requires_header_and_local_origin(self):
@@ -86,7 +86,7 @@ class UpdateTests(unittest.TestCase):
             target.mkdir()
             (target/'.nexus-development').write_text('protected')
             (target/'Nexus_AI_Pro.py').write_bytes(b'unpublished local work')
-            manifest = worker.stage_package(self.package(root), stage, '0.92')
+            manifest = worker.stage_package(self.package(root), stage, '9.0')
             with self.assertRaises(ValueError):
                 worker.apply_files(target, stage, root/'backup', manifest['files'], '0.8.0')
             self.assertEqual((target/'Nexus_AI_Pro.py').read_bytes(), b'unpublished local work')
@@ -97,18 +97,18 @@ class UpdateTests(unittest.TestCase):
             root = Path(name)
             stage, target = root/'stage', root/'app'
             (target/'nexus').mkdir(parents=True)
-            (target/'nexus/version.py').write_text('APP_VERSION="0.93"')
-            manifest = worker.stage_package(self.package(root), stage, '0.92')
+            (target/'nexus/version.py').write_text('APP_VERSION="9.1"')
+            manifest = worker.stage_package(self.package(root), stage, '9.0')
             with self.assertRaises(ValueError):
                 worker.apply_files(target, stage, root/'backup', manifest['files'], '0.8.0')
-            self.assertEqual((target/'nexus/version.py').read_text(), 'APP_VERSION="0.93"')
+            self.assertEqual((target/'nexus/version.py').read_text(), 'APP_VERSION="9.1"')
             self.assertFalse((target/'Nexus_AI_Pro.py').exists())
 
     def test_worker_blocks_equal_and_old_package(self):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)
-            manifest = worker.stage_package(self.package(root), root/'stage', '0.92')
-            for current in ('0.92', '0.93'):
+            manifest = worker.stage_package(self.package(root), root/'stage', '9.0')
+            for current in ('9.0', '9.1'):
                 with self.assertRaises(ValueError):
                     worker.apply_files(root/'app', root/'stage', root/'backup', manifest['files'], current)
                 self.assertFalse((root/'app').exists())
@@ -118,7 +118,7 @@ class UpdateTests(unittest.TestCase):
             root = Path(name)
             manager = UpdateManager(root)
             manager.state['status'] = 'ready'
-            manager.plan = {'version': '0.92'}
+            manager.plan = {'version': '9.0'}
             (root/'.nexus-development').write_text('protected')
             with patch('nexus.update_manager.subprocess.Popen') as launch:
                 with self.assertRaises(ValueError):
@@ -136,7 +136,7 @@ class UpdateTests(unittest.TestCase):
 
     def package(self, root, extra=None, bad_hash=False):
         content = {'Nexus_AI_Pro.py': b'entry', 'Nexus_AI_Pro.exe': b'exe',
-                   'nexus/version.py': b'APP_VERSION="0.92"', 'requirements.txt': b'flask'}
+                   'nexus/version.py': b'APP_VERSION="9.0"', 'requirements.txt': b'flask'}
         content.update(extra or {})
         hashes = {n: hashlib.sha256(data).hexdigest() for n, data in content.items()}
         if bad_hash:
@@ -145,7 +145,7 @@ class UpdateTests(unittest.TestCase):
         with zipfile.ZipFile(archive, 'w') as package:
             for n, data in content.items():
                 package.writestr(n, data)
-            package.writestr('manifest.json', json.dumps({'version': '0.92', 'files': hashes}))
+            package.writestr('manifest.json', json.dumps({'version': '9.0', 'files': hashes}))
         return archive
 
     def test_stage_and_preserve_user_data(self):
@@ -155,17 +155,17 @@ class UpdateTests(unittest.TestCase):
             (target/'uploads').mkdir(parents=True)
             (target/'uploads/voice.wav').write_bytes(b'user audio')
             (target/'Nexus_AI_Pro.py').write_bytes(b'old')
-            manifest = worker.stage_package(self.package(root), stage, '0.92')
+            manifest = worker.stage_package(self.package(root), stage, '9.0')
             worker.apply_files(target, stage, backup, manifest['files'], '0.8.0')
             self.assertEqual((target/'Nexus_AI_Pro.py').read_bytes(), b'entry')
             self.assertEqual((backup/'Nexus_AI_Pro.py').read_bytes(), b'old')
             self.assertEqual((target/'uploads/voice.wav').read_bytes(), b'user audio')
 
     def test_bad_paths_hash_and_version_rejected(self):
-        for extra, bad_hash, version in [({'../escape.py': b'x'}, False, '0.92'),
-                                        ({'uploads/user.py': b'x'}, False, '0.92'),
-                                        ({'nexus/core/server_config.json': b'{}'}, False, '0.92'),
-                                        ({}, True, '0.92'), ({}, False, '0.8.0')]:
+        for extra, bad_hash, version in [({'../escape.py': b'x'}, False, '9.0'),
+                                        ({'uploads/user.py': b'x'}, False, '9.0'),
+                                        ({'nexus/core/server_config.json': b'{}'}, False, '9.0'),
+                                        ({}, True, '9.0'), ({}, False, '0.8.0')]:
             with self.subTest(extra=extra, version=version), tempfile.TemporaryDirectory() as name:
                 root = Path(name)
                 with self.assertRaises(ValueError):
@@ -177,7 +177,7 @@ class UpdateTests(unittest.TestCase):
             stage, target, backup = root/'stage', root/'app', root/'backup'
             target.mkdir()
             (target/'Nexus_AI_Pro.py').write_bytes(b'old')
-            manifest = worker.stage_package(self.package(root), stage, '0.92')
+            manifest = worker.stage_package(self.package(root), stage, '9.0')
             real_copy = worker.atomic_copy
             def fail(source, destination):
                 if source == stage/'Nexus_AI_Pro.exe':
@@ -191,7 +191,7 @@ class UpdateTests(unittest.TestCase):
     def test_modified_stage_rejected_before_copy(self):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)
-            manifest = worker.stage_package(self.package(root), root/'stage', '0.92')
+            manifest = worker.stage_package(self.package(root), root/'stage', '9.0')
             (root/'stage/Nexus_AI_Pro.py').write_bytes(b'tampered')
             with self.assertRaises(ValueError):
                 worker.apply_files(root/'app', root/'stage', root/'backup', manifest['files'], '0.8.0')
@@ -204,7 +204,7 @@ class UpdateTests(unittest.TestCase):
                 (root/'requirements.txt').write_text(requirements)
                 archive = self.package(root)
                 data = archive.read_bytes()
-                release = {'latest_version': '0.92', 'package': {'url': 'https://example.test/package',
+                release = {'latest_version': '9.0', 'package': {'url': 'https://example.test/package',
                            'size': len(data), 'digest': 'sha256:' + hashlib.sha256(data).hexdigest()}}
                 response = Mock()
                 response.__enter__ = Mock(return_value=response)
@@ -225,7 +225,7 @@ class UpdateTests(unittest.TestCase):
             response.iter_content.return_value = [b'bad']
             manager = UpdateManager(root)
             with patch('nexus.update_manager.requests.get', return_value=response):
-                manager.download({'latest_version': '0.92', 'package': {'url': 'https://example.test', 'size': 3, 'digest': 'sha256:' + '0'*64}})
+                manager.download({'latest_version': '9.0', 'package': {'url': 'https://example.test', 'size': 3, 'digest': 'sha256:' + '0'*64}})
             self.assertEqual(manager.status()['status'], 'error')
             self.assertIsNone(manager.plan)
 
@@ -237,7 +237,7 @@ class UpdateTests(unittest.TestCase):
             manager = UpdateManager(root)
             manager.state['status'] = 'ready'
             manager.plan = {'root': str(root), 'stage': str(stage), 'backup': str(stage.parent/'backup'),
-                            'files': {}, 'version': '0.92'}
+                            'files': {}, 'version': '9.0'}
             with patch('nexus.update_manager.subprocess.Popen') as launch:
                 manager.launch()
             command = launch.call_args.args[0]

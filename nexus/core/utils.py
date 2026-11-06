@@ -44,6 +44,7 @@ MAX_CONCURRENT_JOBS = 1
 # Inicialização do Flask protegida (SecuredFlask herdado via monkeypatch)
 try:
     from flask_cors import CORS
+    from nexus.local_cors import allow_local_origins
     HAS_CORS = True
 except ImportError:
     HAS_CORS = False
@@ -51,7 +52,7 @@ except ImportError:
 CLIENT_DIR = str((Path(__file__).parent.parent / "client").resolve())
 app = Flask(__name__, template_folder=CLIENT_DIR, static_folder=CLIENT_DIR)
 if HAS_CORS:
-    CORS(app)
+    allow_local_origins(app)
 else:
     print("[AVISO] Rodando sem CORS. Instale com: pip install flask-cors")
 

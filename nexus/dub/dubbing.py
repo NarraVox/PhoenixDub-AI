@@ -33,6 +33,7 @@ from datetime import timedelta
 from collections import OrderedDict
 from flask import Flask, request, jsonify, send_from_directory, render_template_string
 from flask_cors import CORS
+from nexus.local_cors import allow_local_origins
 from pydub import AudioSegment, effects
 
 # --- IMPORTAÇÃO DO CÉREBRO (NEXUS CORE) ---
@@ -920,7 +921,7 @@ def pipeline_video_master(video_path, job_id, game_profile='padrao', source_lang
 # =================================================================
 
 app_games = Flask("nexus_dub_games")
-CORS(app_games)
+allow_local_origins(app_games)
 app_games.config['UPLOAD_FOLDER'] = 'uploads'
 
 HTML_TEMPLATE = """
@@ -1803,7 +1804,7 @@ class VideoQueueManager:
 
 # --- APP VIDEO DE DUB ---
 app_video = Flask("video_routes")
-CORS(app_video)
+allow_local_origins(app_video)
 app_video.config['UPLOAD_FOLDER'] = str(UPLOAD_FOLDER)
 
 # Inicializa o gerenciador de fila

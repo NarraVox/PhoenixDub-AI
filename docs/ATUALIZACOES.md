@@ -5,13 +5,37 @@ Este é o mapa cronológico das mudanças do projeto. Consulte-o no início do t
 ## Como registrar
 
 - Use a data real no formato AAAA-MM-DD, no horário de Brasília, e coloque as entradas mais recentes primeiro.
-- Formato de versão (decisão do responsável em 2026-11-06): duas partes, como 0.91, 0.92, 0.93. A v0.8.2 publicada equivale a 0.82. Cada dia com mudanças soma 0.01; como houve 9 dias com alterações após a v0.8.2 (de 2026-09-29 a 2026-11-06), a entrada de 2026-11-06 é 0.91, e os próximos dias seguem 0.92, 0.93...; depois de 0.99 vem 1.0. No mesmo dia, complemente a entrada existente. Não crie entradas para dias sem alterações.
+- Formato de versão (decisão do responsável em 2026-11-06): duas partes, como 0.91, 0.92, 0.93. A v0.8.2 publicada equivale a 0.82. Cada dia com mudanças soma 0.01; como houve 9 dias com alterações após a v0.8.2 (de 2026-09-29 a 2026-11-06), a entrada de 2026-11-06 é 0.91; a correção de segurança do mesmo dia saiu como 0.93 por decisão do responsável, e o próximo dia com alterações será 0.94, depois 0.95...; depois de 0.99 vem 1.0. No mesmo dia, complemente a entrada existente. Não crie entradas para dias sem alterações.
 - O número da entrada mais recente é o número da próxima release: ao lançar, publique exatamente essa versão (ex.: última entrada 0.95 → release v0.95). Atualizar o histórico nunca cria tag nem release por si só. Entradas antigas mantêm a numeração 0.8.x original.
 - Registre o que mudou, por quê, os arquivos principais, a validação realmente executada e as pendências. Não declare testes ou recursos como validados sem evidência.
 - Preserve as entradas anteriores. Registre correções posteriores em novas entradas, sem reescrever a história.
 - Ao preparar um lançamento, reúna todas as entradas ainda não publicadas em NOTAS_PARA_GITHUB.md e depois em ../RELEASE_NOTES.md. Após a publicação, registre aqui a versão pública, a data, o link e os marcos internos incluídos.
 
-## 0.91 — 2026-11-06 — Próxima release: v0.91 (ainda não publicada)
+## 0.93 — 2026-11-06 — Próxima release: v0.93 (correção de segurança)
+
+- Numeração: por decisão explícita do responsável, a correção publicada no mesmo dia da v0.91 sai como 0.93 (não 0.92). A partir daqui, o próximo dia com alterações será 0.94.
+
+### Correção de segurança: comandos do editor Vortex e CORS dos serviços locais
+
+- Problema (existente desde versões anteriores, inclusive v0.8.2 e v0.91): `nexus/editor/narravox_editor.py` (`/api/vortex_tool`, ferramentas `trim`, `multi_trim` e `merge`) montava o comando FFmpeg como texto com o caminho do arquivo e os tempos vindos do pedido e executava com `shell=True`; os serviços Flask usavam `CORS(app)` liberado para qualquer origem. Uma página externa aberta no navegador com o editor ativo poderia, em tese, enviar um pedido que executasse comandos no computador.
+- Correção: comandos montados como lista de argumentos (`_trim_command`, `_merge_command`), sem shell; tempos validados por `_safe_time` (só números, `:` e `.`); apóstrofos escapados na lista do concat. Novo `nexus/local_cors.py` com `allow_local_origins(app)`, aplicado ao Hub (`nexus/core/utils.py`), dublagem de jogos e vídeos (`nexus/dub/dubbing.py`), DJ (`nexus/dj/vortex_dj.py`) e editor, liberando só `http(s)://127.0.0.1` e `localhost` em qualquer porta. No corte por CPU foram removidas opções exclusivas do NVENC (`-rc`, `-tune null`, `-spatial-aq`) passadas ao libx265.
+- Arquivos relevantes: `nexus/editor/narravox_editor.py`, `nexus/local_cors.py`, `nexus/core/utils.py`, `nexus/dub/dubbing.py`, `nexus/dj/vortex_dj.py`, `nexus/version.py`, `README.md`, `RELEASE_NOTES.md`.
+- Validação: `py_compile` dos módulos alterados; teste com o cliente Flask: pré-requisição CORS de `https://site-malicioso.com` sem `Access-Control-Allow-Origin`, `http://127.0.0.1:5000` e `http://localhost:5003` liberados; corte real (1 s → 4 s) gerou HEVC de 3,02 s pela GPU; junção real de dois vídeos (um com apóstrofo no nome) gerou HEVC de 12,04 s; tentativas de injeção pelo nome do arquivo e pelo tempo falharam sem criar o arquivo de prova. `python -m unittest tests.test_media_converter tests.test_release_assistant tests.test_updates` com 35 testes OK. O corte pela CPU (sem NVENC) não foi executado; as interfaces não foram abertas no aplicativo empacotado.
+- Preparação da v0.93: o assistente parou com conflito no `AGENTS.md` porque o `main` local continua em `a3e8017` e o GitHub já estava na v0.91 (`32f232b`). Conferido que, ignorando quebras de linha, cada arquivo local é igual ao do GitHub mais as alterações desta correção; preparação feita com `release/prepare_release.py --resolved-remote` nos 10 arquivos alterados, e as verificações do assistente foram executadas manualmente na cópia isolada (`git diff --check`, 5 testes Python de release, `test_media_converter` e 5 testes JavaScript, todos OK). `tests/test_updates.py` passou a usar versões futuras fixas (9.0, 9.1, 10.0) em vez de 0.92/0.93, para não falhar a cada nova versão.
+- Observação: durante o teste, o editor abriu a pasta de saída no Explorer ao concluir (comportamento existente de `os.startfile`).
+
+## 0.91 — 2026-11-06 — Publicada como v0.91
+
+### Publicação confirmada — v0.91
+
+- Release: https://github.com/NarraVox/PhoenixDub-AI/releases/tag/v0.91 (publicada em 2026-11-06 14:25 UTC, não é rascunho nem pré-release; aparece como "latest").
+- Commit `32f232b` enviado ao `main` por fast-forward a partir de `a3e8017`, feito na branch `codex/release-v0.91` do worktree isolado `C:\IA_releases0.91_20261106_110340_27fb1bab`, com identidade `noreply`; 90 arquivos, nenhuma remoção. Tag anotada `v0.91` (`fdea1d1`).
+- Workflow https://github.com/NarraVox/PhoenixDub-AI/actions/runs/42232751932 concluído com sucesso (testes do atualizador/distribuição, dependências em ambiente limpo, build e teste dos executáveis fora do checkout).
+- Anexos conferidos via API do GitHub, todos `uploaded`: `Nexus_AI_Pro.exe` (15.019.595 bytes), `Setup_Nexus.exe` (28.368.605 bytes), `PhoenixDub_Update.zip` (15.264.558 bytes).
+- Marcos incluídos: 0.8.9 a 0.8.15, 0.8.X e 0.91 (exceto o "Consertar Vídeo Quadrado" e o dataset/AudioSep), além da reescrita do conversor de ~2026-10-28.
+- Não validado: instalação limpa pelo `Setup_Nexus.exe`, atualização pelo Hub a partir da v0.8.2 e dublagem completa em GPU com esta versão.
+- A cópia de desenvolvimento (`C:\IA_dublagem`) continua com o `main` local em `a3e8017` e as alterações não commitadas; não foi atualizada a partir da release, conforme a proteção `.nexus-development`.
+- Próxima versão: 0.92 no próximo dia com alterações.
 
 ### Nova regra de numeração: versão do diário = versão da release
 

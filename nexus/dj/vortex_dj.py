@@ -14,6 +14,7 @@ import shutil
 from pathlib import Path
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from nexus.local_cors import allow_local_origins
 import nexus.core as core
 
 # --- LOGS CONFIGURATION ---
@@ -27,7 +28,7 @@ ENV_DIR = BASE_DIR / "env"
 ENV_DIR.mkdir(exist_ok=True)
 
 app = Flask(__name__)
-CORS(app)
+allow_local_origins(app)
 
 @app.route('/api/health')
 def health_check():
